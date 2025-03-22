@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/artifact"
 )
 
 // IsModelKitReference returns true if the ref string "looks" like a modelkit reference

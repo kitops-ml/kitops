@@ -31,8 +31,8 @@ import (
 	"syscall"
 	"time"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 const LlamaFileVersion = "0.8.16"

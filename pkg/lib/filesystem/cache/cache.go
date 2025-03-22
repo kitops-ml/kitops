@@ -19,8 +19,8 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"github.com/kitops-ml/kitops/pkg/output"
 	"io/fs"
-	"kitops/pkg/output"
 	"os"
 	"path/filepath"
 )

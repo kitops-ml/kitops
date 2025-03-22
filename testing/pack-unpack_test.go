@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"github.com/stretchr/testify/assert"
 )

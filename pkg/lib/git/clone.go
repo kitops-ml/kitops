@@ -23,7 +23,7 @@ import (
 	"os"
 	"os/exec"
 
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 func CloneRepository(repo, dest, token string) error {

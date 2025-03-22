@@ -26,7 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 )
 
 func extractFile(fs fs.FS, file, harnessHome string) (err error) {

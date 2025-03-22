@@ -22,10 +22,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	kfutils "kitops/pkg/lib/repo/util"
+	kfutils "github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"github.com/moby/patternmatcher"
 	"github.com/moby/patternmatcher/ignorefile"

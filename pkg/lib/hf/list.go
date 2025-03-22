@@ -25,8 +25,8 @@ import (
 	"path"
 	"time"
 
-	kfgen "kitops/pkg/lib/kitfile/generate"
-	"kitops/pkg/output"
+	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 const (

@@ -1,4 +1,4 @@
-module kitops
+module github.com/kitops-ml/kitops
 
 go 1.23.0
 

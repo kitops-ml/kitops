@@ -23,9 +23,9 @@ import (
 	"slices"
 	"strings"
 
-	"kitops/pkg/lib/constants"
-	repoutils "kitops/pkg/lib/repo/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	repoutils "github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"

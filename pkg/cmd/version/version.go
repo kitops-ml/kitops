@@ -17,9 +17,9 @@
 package version
 
 import (
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/update"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/update"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 )

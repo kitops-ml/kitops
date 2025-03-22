@@ -31,7 +31,7 @@ import (
 	"runtime"
 	"strings"
 
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 const (

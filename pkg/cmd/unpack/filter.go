@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"strings"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 )
 
 type filterConf struct {

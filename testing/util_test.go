@@ -26,8 +26,8 @@ import (
 	"strings"
 	"testing"
 
-	"kitops/cmd"
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/cmd"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"

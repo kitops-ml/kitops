@@ -24,15 +24,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/filesystem"
-	"kitops/pkg/lib/filesystem/cache"
-	"kitops/pkg/lib/git"
-	kfutils "kitops/pkg/lib/kitfile"
-	kfgen "kitops/pkg/lib/kitfile/generate"
-	"kitops/pkg/lib/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/lib/git"
+	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
+	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
+	"github.com/kitops-ml/kitops/pkg/lib/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 func importUsingGit(ctx context.Context, opts *importOptions) error {

@@ -29,13 +29,13 @@ import (
 	"strings"
 	"time"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"golang.org/x/mod/semver"
 )
 
-const releaseUrl = "https://api.github.com/repos/jozu-ai/kitops/releases/latest"
+const releaseUrl = "https://api.github.com/repos/jozu-ai/github.com/kitops-ml/kitops/releases/latest"
 
 // Regexp for a semver version -- taken from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 // We've added an optional 'v' to the start (e.g. v1.2.3) since using a 'v' prefix is common (and used, in our case)

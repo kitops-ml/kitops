@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/google/licensecheck"
 )

@@ -26,9 +26,9 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
 
-	"kitops/pkg/cmd/options"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 const (

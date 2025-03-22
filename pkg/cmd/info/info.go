@@ -20,11 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/local"
-	"kitops/pkg/lib/repo/remote"
-	"kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 )
 
 func getInfo(ctx context.Context, opts *infoOptions) (*artifact.KitFile, error) {

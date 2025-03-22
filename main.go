@@ -16,7 +16,7 @@
 
 package main
 
-import "kitops/cmd"
+import "github.com/kitops-ml/kitops/cmd"
 
 func main() {
 	cmd.Execute()

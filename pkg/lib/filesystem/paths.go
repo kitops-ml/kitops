@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 )
 
 // VerifySubpath checks that filepath.Join(context, subDir) is a subdirectory of context, following

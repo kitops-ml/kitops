@@ -17,7 +17,7 @@
 package remote
 
 import (
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 	"regexp"
 )
 

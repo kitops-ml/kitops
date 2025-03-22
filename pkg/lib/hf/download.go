@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
