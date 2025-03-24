@@ -147,6 +147,10 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 		}
 	}
 
+	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
+		return err
+	}
+
 	return nil
 }
 
