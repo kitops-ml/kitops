@@ -6,6 +6,6 @@
     data-icon="octicon-star"
     data-size="large"
     data-show-count="true"
-    aria-label="Star jozu-ai/kitops on GitHub">Star</a>
+    aria-label="Star kitops-ml/kitops on GitHub">Star</a>
 </div>
 </template>

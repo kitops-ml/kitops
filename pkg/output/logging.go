@@ -79,7 +79,7 @@ func SystemInfoln(s any) {
 	loglnTo(stderr, LogLevelInfo, s)
 }
 
-// SystemInfof is like Infof except it logs to stder. This should be used
+// SystemInfof is like Infof except it logs to stderr. This should be used
 // for system messages such as update notifications
 func SystemInfof(s string, args ...any) {
 	logfTo(stderr, LogLevelInfo, s, args)
