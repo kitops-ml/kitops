@@ -77,7 +77,6 @@ func CheckForUpdate(configHome string) {
 	// The Go semver package requires versions start with a 'v' (contrary to the spec)
 	currentVersion := fmt.Sprintf("v%s", strings.TrimPrefix(constants.Version, "v"))
 	latestVersion := fmt.Sprintf("v%s", strings.TrimPrefix(info.TagName, "v"))
-	output.Errorf("current version: %s; latest version: %s", currentVersion, latestVersion)
 	if semver.Compare(currentVersion, latestVersion) < 0 {
 		output.SystemInfof("Note: A new version of Kit is available! You are using Kit %s. The latest version is %s.", currentVersion, latestVersion)
 		output.SystemInfof("      To see a list of changes, visit %s", info.Url)

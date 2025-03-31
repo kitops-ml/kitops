@@ -26,7 +26,7 @@ The simplest way to install Kit on a Mac is with [Homebrew](https://brew.sh/). Y
 ### Mac Brew Install
 
 1. Open a Terminal window
-1. At the prompt type: `brew tap jozu-ai/kitops` (if that doesn't work use the [ZIP instructions](#mac-install-from-zip)
+1. At the prompt type: `brew tap kitops-ml/kitops` (if that doesn't work use the [ZIP instructions](#mac-install-from-zip)
 1. When the previous command completes, type `brew install kitops`
 
 You can verify that `kit` is correctly installed by opening a new terminal or command prompt and typing:
@@ -137,7 +137,7 @@ The simplest way to install Kit on Linux is with [Homebrew](https://brew.sh/). Y
 ### Linux Brew Install
 
 1. Open a Terminal window
-1. At the prompt type: `brew tap jozu-ai/kitops` (if that doesn't work use the [TAR instructions](#linux-tar-install)
+1. At the prompt type: `brew tap kitops-ml/kitops` (if that doesn't work use the [TAR instructions](#linux-tar-install)
 1. When the previous command completes, type `brew install kitops`
 
 You can verify that `kit` is correctly installed by opening a new terminal or command prompt and typing:
