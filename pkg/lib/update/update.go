@@ -35,7 +35,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const releaseUrl = "https://api.github.com/repos/jozu-ai/github.com/kitops-ml/kitops/releases/latest"
+const releaseUrl = "https://api.github.com/repos/kitops-ml/kitops/releases/latest"
 
 // Regexp for a semver version -- taken from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 // We've added an optional 'v' to the start (e.g. v1.2.3) since using a 'v' prefix is common (and used, in our case)
@@ -77,6 +77,7 @@ func CheckForUpdate(configHome string) {
 	// The Go semver package requires versions start with a 'v' (contrary to the spec)
 	currentVersion := fmt.Sprintf("v%s", strings.TrimPrefix(constants.Version, "v"))
 	latestVersion := fmt.Sprintf("v%s", strings.TrimPrefix(info.TagName, "v"))
+	output.Errorf("current version: %s; latest version: %s", currentVersion, latestVersion)
 	if semver.Compare(currentVersion, latestVersion) < 0 {
 		output.SystemInfof("Note: A new version of Kit is available! You are using Kit %s. The latest version is %s.", currentVersion, latestVersion)
 		output.SystemInfof("      To see a list of changes, visit %s", info.Url)
