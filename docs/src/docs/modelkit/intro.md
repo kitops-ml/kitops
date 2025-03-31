@@ -24,4 +24,4 @@ ModelKit revolutionizes the way AI/ML artifacts are shared and managed throughou
 
 ModelKit is not just a packaging format; it's a building block for innovation, simplifying the complexities of AI/ML development and deployment. By adopting ModelKit, teams can focus more on creating value and less on managing the intricacies of artifact storage and sharing.
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/jozu-ai/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.

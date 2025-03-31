@@ -8,8 +8,8 @@ To get the most out of KitOps secure ModelKits, many teams and organizations cre
 Typically this is done by installing the Kit CLI and running `kit` commands as tasks in the pipeline.
 
 The KitOps community has shared some of their CI/CD tool integrations:
-* [Dagger Modules](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit@fc53d7802be6553298f4f54dd73cc1c1913d4ce6)
+* [Dagger Modules](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit@fc53d7802be6553298f4f54dd73cc1c1913d4ce6)
 * [GitHub Action](https://github.com/marketplace/actions/setup-kit-cli)
 
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/jozu-ai/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.

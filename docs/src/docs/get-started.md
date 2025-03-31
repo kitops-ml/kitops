@@ -149,6 +149,6 @@ If you'd like to learn more about using Kit, try our [Next Steps with Kit](../ne
 
 Or, if you want to run an LLM-based ModelKit locally try our [dev mode](../dev-mode/).
 
-Finally, if you're building workflows using Dagger you can use KitOps through our [Daggerverse modules](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit). Or get the [GitHub Action for Kit](https://github.com/marketplace/actions/setup-kit-cli).
+Finally, if you're building workflows using Dagger you can use KitOps through our [Daggerverse modules](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit). Or get the [GitHub Action for Kit](https://github.com/marketplace/actions/setup-kit-cli).
 
-Thanks for taking some time to play with Kit. We'd love to hear what you think. Feel free to drop us an [issue in our GitHub repository](https://github.com/jozu-ai/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy).
+Thanks for taking some time to play with Kit. We'd love to hear what you think. Feel free to drop us an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy).

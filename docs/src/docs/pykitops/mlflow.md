@@ -58,4 +58,4 @@ kit.init(directory=artifact_location, name=name, description="my cool project", 
 manager.pack_and_push_modelkit(with_login_and_logout=False)
 ```
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/jozu-ai/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.

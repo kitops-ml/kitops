@@ -1,6 +1,6 @@
 <!-- Thank you for submitting a Pull Request. Please review
-* Our contributing guide: https://github.com/jozu-ai/kitops/blob/main/CONTRIBUTING.md
-* Our code of conduct: https://github.com/jozu-ai/kitops/blob/main/CODE-OF-CONDUCT.md
+* Our contributing guide: https://github.com/kitops-ml/kitops/blob/main/CONTRIBUTING.md
+* Our code of conduct: https://github.com/kitops-ml/kitops/blob/main/CODE-OF-CONDUCT.md
 -->
 
 ### Description

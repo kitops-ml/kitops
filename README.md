@@ -1,5 +1,5 @@
 
-<img width="1270" alt="KitOps" src="https://github.com/jozu-ai/kitops/assets/10517533/41295471-fe49-4011-adf6-a215f29890c2" id="top">
+<img width="1270" alt="KitOps" src="https://github.com/kitops-ml/kitops/assets/10517533/41295471-fe49-4011-adf6-a215f29890c2" id="top">
 
 
 ## Standards-based packaging and versioning system for AI/ML projects.
@@ -38,7 +38,7 @@ For our friends in the EU - ModelKits are the perfect way to create a library of
 
 * 🚢 Create a **[runnable container from a ModelKit](https://tinyurl.com/5b76p5u3)** with one command! Read [KitOps deploy docs](https://kitops.org/docs/deploy/) for details.
 * 🥂 Get the most out of KitOps' ModelKits by using them with the **[Jozu Hub](https://jozu.ml/)** repository. Or, continue using ModelKits with your existing OCI registry (even on-premises and air-gapped).
-* 🛠️ Use KitOps with Dagger pipelines using our modules from the [Daggerverse](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit).
+* 🛠️ Use KitOps with Dagger pipelines using our modules from the [Daggerverse](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit).
 * ⛑️ [KitOps works great with Red Hat](https://developers.redhat.com/articles/2024/09/16/enhance-llms-instructlab-kitops) InstructLab and Quay.io products.
 
 
@@ -48,7 +48,7 @@ For our friends in the EU - ModelKits are the perfect way to create a library of
 * 🏭 **[Versioning](https://kitops.org/docs/cli/cli-reference/#kit-tag):** Each ModelKit is tagged so everyone knows which dataset and model work together.
 * 🔒 **[Tamper-proofing](https://kitops.org/docs/modelkit/spec/):** Each ModelKit package includes an SHA digest for itself, and every artifact it holds.
 * 🤩 **[Selective-unpacking](https://kitops.org/docs/cli/cli-reference/#kit-unpack):** Unpack only what you need from a ModelKit with the `kit unpack --filter` command - just the model, just the dataset and code, or any other combination.
-* 🤖 **[Automation](https://github.com/marketplace/actions/setup-kit-cli):** Pack or unpack a ModelKit locally or as part of your CI/CD workflow for testing, integration, or deployment (e.g. [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli) or [Dagger](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit).
+* 🤖 **[Automation](https://github.com/marketplace/actions/setup-kit-cli):** Pack or unpack a ModelKit locally or as part of your CI/CD workflow for testing, integration, or deployment (e.g. [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli) or [Dagger](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit).
 * 🐳 **[Deploy containers](https://kitops.org/docs/deploy/):** Generate a basic or custom docker container from any ModelKit.
 * 🚢 **[Kubernetes-ready](https://kitops.org/docs/deploy/):** Generate a Kubernetes / KServe deployment config from any ModelKit.
 * 🪛 **[LLM fine-tuning](https://dev.to/kitops/fine-tune-your-first-large-language-model-llm-with-lora-llamacpp-and-kitops-in-5-easy-steps-1g7f):** Use KitOps to fine-tune a large language model using LoRA.

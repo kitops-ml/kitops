@@ -27,7 +27,7 @@ The KitOps project leadership embraces the following values:
 
 ## 👥 Maintainers
 
-KitOps maintainers have write access to the [project GitHub repository](https://github.com/jozu-ai/kitops). They can merge patches and are expected to review large or critical patches personally. The current maintainers can be found in [MAINTAINERS.md](./MAINTAINERS.md). Maintainers collectively manage the project's resources and contributors.
+KitOps maintainers have write access to the [project GitHub repository](https://github.com/kitops-ml/kitops). They can merge patches and are expected to review large or critical patches personally. The current maintainers can be found in [MAINTAINERS.md](./MAINTAINERS.md). Maintainers collectively manage the project's resources and contributors.
 
 This privilege is granted with some expectation of responsibility: maintainers are people who care about the KitOps project and want to help it grow and improve. A maintainer is not just someone who can make changes, but someone who has demonstrated good judgement and an ability to collaborate with the team, get the most knowledgeable people to review code and docs, contribute high-quality code, and follow through to fix issues (in code or tests).
 
