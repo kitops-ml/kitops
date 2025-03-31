@@ -78,10 +78,10 @@ func CheckForUpdate(configHome string) {
 	currentVersion := fmt.Sprintf("v%s", strings.TrimPrefix(constants.Version, "v"))
 	latestVersion := fmt.Sprintf("v%s", strings.TrimPrefix(info.TagName, "v"))
 	if semver.Compare(currentVersion, latestVersion) < 0 {
-		output.Infof("Note: A new version of Kit is available! You are using Kit %s. The latest version is %s.", currentVersion, latestVersion)
-		output.Infof("      To see a list of changes, visit %s", info.Url)
-		output.Infof("      To disable this notification, use 'kit version --show-update-notifications=false'")
-		output.Infof("") // Add a newline to not confuse it with regular output
+		output.SystemInfof("Note: A new version of Kit is available! You are using Kit %s. The latest version is %s.", currentVersion, latestVersion)
+		output.SystemInfof("      To see a list of changes, visit %s", info.Url)
+		output.SystemInfof("      To disable this notification, use 'kit version --show-update-notifications=false'")
+		output.SystemInfof("") // Add a newline to not confuse it with regular output
 	}
 }
 
