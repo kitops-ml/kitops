@@ -53,7 +53,7 @@ jobs:
 
       - name: Import Apple Code Signing Certificates
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_signing }}
-        uses: Apple-Actions/import-codesign-certs@2dbeb2d7c37642111f938c56ef0feb5d51dad55d # v4.0.1
+        uses: Apple-Actions/import-codesign-certs@cfd6eb39a2c848ead8836bda6b56813585404ba7 # v5.0.0
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
