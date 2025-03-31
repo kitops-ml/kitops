@@ -35,7 +35,7 @@ For local development, [pnpm](https://pnpm.io/) is preferred as package manager.
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/jozu-ai/kitops.git
+   git clone https://github.com/kitops-ml/kitops.git
    ```
 2. Navigate to the docs directory:
    ```sh
@@ -75,7 +75,7 @@ We welcome contributions from the community to help improve our project and docu
 
 ### Reporting Bugs and Issues
 
-If you encounter any bugs or issues with the documentation, please report them in our [GitHub issue tracker](https://github.com/jozu-ai/kitops/issues) and add the `docs` label. Be sure to provide clear details about the problem, including steps to reproduce if possible.
+If you encounter any bugs or issues with the documentation, please report them in our [GitHub issue tracker](https://github.com/kitops-ml/kitops/issues) and add the `docs` label. Be sure to provide clear details about the problem, including steps to reproduce if possible.
 
 ### Submitting Pull Requests
 

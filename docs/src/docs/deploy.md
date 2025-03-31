@@ -9,8 +9,8 @@ This page outlines how to use `init` or Kit CLI containers to deploy a ModelKit-
 
 There are currently two pre-built containers:
 
-1. Init container: https://github.com/jozu-ai/kitops/blob/main/build/dockerfiles/init/README.md
-1. Kit CLI container: https://github.com/jozu-ai/kitops/blob/main/build/dockerfiles/README.md
+1. Init container: https://github.com/kitops-ml/kitops/blob/main/build/dockerfiles/init/README.md
+1. Kit CLI container: https://github.com/kitops-ml/kitops/blob/main/build/dockerfiles/README.md
 
 ## Init Container
 
@@ -112,4 +112,4 @@ Example `dockerfile` for a custom container that has `my-modelkit` built into it
  COPY --from=modelkit-download /tmp/my-modelkit /home/user/modelkit-data
 ```
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/jozu-ai/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.

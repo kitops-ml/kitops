@@ -6,7 +6,7 @@ description: Use KitOps in development mode for rapid iteration. Discover how to
 If you're using Kit with LLMs you can quickly run the model locally to speed integration, testing, or experimentation.
 
 ::: tip
-Kit dev currently only works with `GGUF` serialized models, if you'd like to expand its support for other types please create a [feature issue](https://github.com/jozu-ai/kitops/issues) and describe your planned approach.
+Kit dev currently only works with `GGUF` serialized models, if you'd like to expand its support for other types please create a [feature issue](https://github.com/kitops-ml/kitops/issues) and describe your planned approach.
 :::
 
 To run the ModelKit locally, first create a new directory for your LLM:
@@ -43,4 +43,4 @@ When you're done don't forget to stop the Kit dev server:
 kit dev stop
 ```
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/jozu-ai/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.

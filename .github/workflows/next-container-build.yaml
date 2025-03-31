@@ -53,7 +53,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.NEXT_TAG }}
           annotations: |
             index:org.opencontainers.image.description=Kit CLI container built from source
-            index:org.opencontainers.image.source=https://github.com/jozu-ai/kitops
+            index:org.opencontainers.image.source=https://github.com/kitops-ml/kitops
             index:org.opencontainers.image.licenses=Apache-2.0
 
       - name: Build and push Kit init container
@@ -70,7 +70,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.INIT_IMAGE_NAME }}:${{ env.NEXT_TAG }}
           annotations: |
             index:org.opencontainers.image.description=Kit CLI init container
-            index:org.opencontainers.image.source=https://github.com/jozu-ai/kitops
+            index:org.opencontainers.image.source=https://github.com/kitops-ml/kitops
             index:org.opencontainers.image.licenses=Apache-2.0
 
       # - name: Generate artifact attestation for base container

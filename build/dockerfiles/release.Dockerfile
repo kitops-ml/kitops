@@ -15,8 +15,8 @@ RUN <<EOF
 
   echo "Downloading CLI and checksums"
   curl -fsSL \
-    -o kit.tar.gz "https://github.com/jozu-ai/kitops/releases/download/$KIT_VERSION/kitops-linux-$ARCH.tar.gz" \
-    -o checksums.txt "https://github.com/jozu-ai/kitops/releases/download/$KIT_VERSION/kitops_${KIT_VERSION}_checksums.txt" \
+    -o kit.tar.gz "https://github.com/kitops-ml/kitops/releases/download/$KIT_VERSION/kitops-linux-$ARCH.tar.gz" \
+    -o checksums.txt "https://github.com/kitops-ml/kitops/releases/download/$KIT_VERSION/kitops_${KIT_VERSION}_checksums.txt" \
 
   echo "Checking SHA256 checksum"
   CHECKSUM=$(cat checksums.txt | grep "kitops-linux-$ARCH.tar.gz" | cut -f 1 -d ' ')
@@ -50,5 +50,5 @@ USER ${USER_ID}
 ENTRYPOINT ["kit"]
 
 LABEL org.opencontainers.image.description="Official release Kit CLI container"
-LABEL org.opencontainers.image.source="https://github.com/jozu-ai/kitops"
+LABEL org.opencontainers.image.source="https://github.com/kitops-ml/kitops"
 LABEL org.opencontainers.image.licenses="Apache-2.0"

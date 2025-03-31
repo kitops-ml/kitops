@@ -38,7 +38,7 @@ func TestExtractRepoFromURL(t *testing.T) {
 		{input: "https://github.com/org/repo.git", expected: "org/repo.git"},
 		{input: ":///invalidURL", expectErrRegexp: "failed to parse url.*"},
 		{input: "too/many/path/segments", expectErrRegexp: "could not extract organization and repository from.*"},
-		{input: "https://github.com/jozu-ai/github.com/kitops-ml/kitops/tree/main", expectErrRegexp: "could not extract organization and repository from.*"},
+		{input: "https://github.com/kitops-ml/github.com/kitops-ml/kitops/tree/main", expectErrRegexp: "could not extract organization and repository from.*"},
 	}
 
 	for _, tt := range testcases {
