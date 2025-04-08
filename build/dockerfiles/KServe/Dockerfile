@@ -1,4 +1,4 @@
-ARG KIT_BASE_IMAGE=ghcr.io/kitops-ml/kit:next
+ARG KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:next
 FROM $KIT_BASE_IMAGE
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

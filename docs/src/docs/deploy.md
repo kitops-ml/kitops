@@ -69,7 +69,7 @@ This container runs `kit` as its entrypoint, accepting Kit CLI arguments. So you
 
 Docker run example:
 
-`docker run ghcr.io/kitops-ml/kit:latest pull jozu.ml/jozu/llama3-8b:8B-instruct-q5_0`
+`docker run ghcr.io/kitops-ml/kitops:latest pull jozu.ml/jozu/llama3-8b:8B-instruct-q5_0`
 
 Kubernetes example:
 
@@ -81,7 +81,7 @@ Kubernetes example:
  spec:
    containers:
      - name: me-using-kit
-       image: ghcr.io/kitops-ml/kit:latest
+       image: ghcr.io/kitops-ml/kitops:latest
        args: # You can put whatever you want; args is an array
          - pull
          - jozu.ml/jozu/llama3-8b:8B-instruct-q5_0
@@ -95,7 +95,7 @@ Example `dockerfile` for a custom container that has `my-modelkit` built into it
 
 ```
  # Staged build to grab the ModelKit so we can use it later
- FROM ghcr.io/kitops-ml/kit:latest AS modelkit-download
+ FROM ghcr.io/kitops-ml/kitops:latest AS modelkit-download
 
  # Download your ModelKit into the container
  RUN kit unpack my-modelkit /tmp/my-modelkit
