@@ -70,9 +70,9 @@ Building the image requires docker or podman. To build the image, run the follow
 docker build -t kit-init-container:latest .
 ```
 
-By default, the image will be built using `ghcr.io/kitops-ml/kit:next` as a base. This can be overridden (to build using a specific version of Kit, for example) by using the build arg `KIT_BASE_IMAGE`:
+By default, the image will be built using `ghcr.io/kitops-ml/kitops:next` as a base. This can be overridden (to build using a specific version of Kit, for example) by using the build arg `KIT_BASE_IMAGE`:
 
 ```shell
-# Build the image based on Kit v0.3.2 instead of 'next'
-docker build -t kit-init-container:latest --build-arg KIT_BASE_IMAGE=ghcr.io/kitops-ml/kit:v0.3.2 .
+# Build the image based on Kit v1.3.0 instead of 'next'
+docker build -t kit-init-container:latest --build-arg KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:v1.3.0 .
 ```
