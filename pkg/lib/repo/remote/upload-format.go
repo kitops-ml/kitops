@@ -17,8 +17,9 @@
 package remote
 
 import (
-	"github.com/kitops-ml/kitops/pkg/output"
 	"regexp"
+
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 type uploadFormat int
@@ -34,8 +35,9 @@ const (
 )
 
 var (
-	googleArtifactRegistryRegexp  = regexp.MustCompile(`.*\.pkg\.dev$`)
-	googleContainerRegistryRegexp = regexp.MustCompile(`.*\.?gcr.io$`)
+	googleArtifactRegistryRegexp         = regexp.MustCompile(`.*\.pkg\.dev$`)
+	googleContainerRegistryRegexp        = regexp.MustCompile(`.*\.?gcr\.io$`)
+	amazonElasticContainerRegistryRegexp = regexp.MustCompile(`.*\.?amazonaws\.com(\.cn)?$`)
 )
 
 func getUploadFormat(registry string, size int64) uploadFormat {
@@ -49,6 +51,10 @@ func getUploadFormat(registry string, size int64) uploadFormat {
 		// Google Artifact Registry does not support chunked uploads and instead requires monolithic
 		// uploads.
 		// docs: https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling#pushing
+		return uploadMonolithicPut
+	case amazonElasticContainerRegistryRegexp.MatchString(registry):
+		// Amazon ECR returns an HTTP 201 after the first piece in a multi-part upload, which causes
+		// uploads to fail.
 		return uploadMonolithicPut
 	default:
 		// No matches above, use heuristic
