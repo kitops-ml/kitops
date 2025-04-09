@@ -20,6 +20,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   INIT_IMAGE_NAME: ${{ github.repository }}-init
+  KIT_SERVE_IMAGE: ${{ github.repository }}-kserve
 
 permissions:
   contents: write
@@ -394,6 +395,24 @@ jobs:
             index:org.opencontainers.image.source=https://github.com/kitops-ml/kitops
             index:org.opencontainers.image.licenses=Apache-2.0
 
+      - name: Build and push Kit KServe container
+        id: build-kit-serve-container
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4    # v6.15.0
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          context: build/dockerfiles/KServe
+          file: build/dockerfiles/KServe/Dockerfile
+          build-args: |
+            KIT_BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-kit-container.outputs.digest }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.KIT_SERVE_IMAGE }}:latest
+            ${{ env.REGISTRY }}/${{ env.KIT_SERVE_IMAGE }}:${{ github.ref_name }}
+          annotations: |
+            index:org.opencontainers.image.description=Kit KServe container
+            index:org.opencontainers.image.source=https://github.com/kitops-ml/kitops
+            index:org.opencontainers.image.licenses=Apache-2.0
+
       - name: Generate artifact attestation for base container
         uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2   # v2.2.3
         with:
@@ -401,9 +420,16 @@ jobs:
           subject-digest: ${{ steps.build-kit-container.outputs.digest }}
           push-to-registry: true
 
-      - name: Generate artifact attestation for base container
+      - name: Generate artifact attestation for kit init container
         uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2   # v2.2.3
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.INIT_IMAGE_NAME }}
           subject-digest: ${{ steps.build-kit-init-container.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate artifact attestation for kit kserve container
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2   # v2.2.3
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.KIT_SERVE_IMAGE }}
+          subject-digest: ${{ steps.build-kit-serve-container.outputs.digest }}
           push-to-registry: true
