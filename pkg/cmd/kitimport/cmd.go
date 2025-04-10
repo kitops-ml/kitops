@@ -58,6 +58,9 @@ REPOSITORY.`
 	example = `# Download repository myorg/myrepo and package it, using the default tag (myorg/myrepo:latest)
 kit import myorg/myrepo
 
+# Download repository using a different version (tag) than the default and package it
+kit import myorg/myrepo --ref v1.0.0
+
 # Download repository and tag it 'myrepository:mytag'
 kit import myorg/myrepo --tag myrepository:mytag
 
@@ -68,6 +71,7 @@ kit import myorg/myrepo --file ./path/to/Kitfile`
 type importOptions struct {
 	configHome   string
 	repo         string
+	repoRef      string
 	tag          string
 	token        string
 	kitfilePath  string
@@ -88,6 +92,7 @@ func ImportCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 	}
 
+	cmd.Flags().StringVar(&opts.repoRef, "ref", "main", "Version (tag) of repository to import (default is 'main')")
 	cmd.Flags().StringVar(&opts.token, "token", "", "Token to use for authenticating with repository")
 	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Tag for the ModelKit (default is '[repository]:latest')")
 	cmd.Flags().StringVarP(&opts.kitfilePath, "file", "f", "", "Path to Kitfile to use for packing (use '-' to read from standard input)")

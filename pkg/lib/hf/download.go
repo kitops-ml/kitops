@@ -34,12 +34,12 @@ import (
 )
 
 const (
-	resolveURLFmt = "https://huggingface.co/%s/resolve/main/%s"
+	resolveURLFmt = "https://huggingface.co/%s/resolve/%s/%s"
 )
 
 func DownloadFiles(
 	ctx context.Context,
-	modelRepo, destDir string,
+	modelRepo, repoRef, destDir string,
 	filepaths []string,
 	token string,
 	maxConcurrency int) error {
@@ -61,7 +61,7 @@ func DownloadFiles(
 			break
 		}
 
-		fileURL := fmt.Sprintf(resolveURLFmt, modelRepo, f)
+		fileURL := fmt.Sprintf(resolveURLFmt, modelRepo, repoRef, f)
 		destPath := filepath.Join(destDir, f)
 		errs.Go(func() error {
 			defer sem.Release(1)
