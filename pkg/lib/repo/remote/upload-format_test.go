@@ -101,3 +101,30 @@ func TestGetUploadFormatGoogleArtifactRegistry(t *testing.T) {
 		assert.Equal(t, uploadMonolithicPut, uploadFormatLarge, "Large layers should use monolithic put")
 	}
 }
+
+func TestGetUploadFormatAmazonECR(t *testing.T) {
+	testRegistries := []string{
+		"123918541723.dkr.ecr.us-east-2.amazonaws.com",
+		"123918541723.dkr.ecr-fips.us-east-1.amazonaws.com",
+		"123918541723.dkr.ecr-fips.us-west-2.amazonaws.com",
+		"123918541723.dkr.ecr.ap-south-1.amazonaws.com",
+		"123918541723.dkr.ecr.ap-northeast-1.amazonaws.com",
+		"123918541723.dkr.ecr.ca-central-1.amazonaws.com",
+		"123918541723.dkr.ecr.cn-north-1.amazonaws.com.cn",
+		"123918541723.dkr.ecr.cn-northwest-1.amazonaws.com.cn",
+		"123918541723.dkr.ecr.eu-central-1.amazonaws.com",
+		"123918541723.dkr.ecr.eu-west-1.amazonaws.com",
+		"123918541723.dkr.ecr.me-south-1.amazonaws.com",
+		"123918541723.dkr.ecr.sa-east-1.amazonaws.com",
+		"123918541723.dkr.ecr-fips.us-gov-east-1.amazonaws.com",
+		"123918541723.dkr.ecr.us-gov-west-1.amazonaws.com",
+		"123918541723.dkr.ecr-fips.us-gov-west-1.amazonaws.com",
+	}
+
+	for _, registry := range testRegistries {
+		uploadFormatSmall := getUploadFormat(registry, 100)
+		assert.Equal(t, uploadMonolithicPut, uploadFormatSmall, "Small layers should use monolithic put")
+		uploadFormatLarge := getUploadFormat(registry, uploadChunkDefaultSize)
+		assert.Equal(t, uploadMonolithicPut, uploadFormatLarge, "Large layers should use monolithic put")
+	}
+}
