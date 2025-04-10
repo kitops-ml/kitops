@@ -18,6 +18,7 @@ package remote
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 )
@@ -42,6 +43,7 @@ var (
 
 func getUploadFormat(registry string, size int64) uploadFormat {
 	output.SafeDebugf("Getting upload format for: %s", registry)
+	registry = strings.ToLower(registry)
 	switch {
 	case registry == "ghcr.io":
 		// ghcr.io returns 416 is a PATCH has Content-Length greater than 4.0 MiB for some reason

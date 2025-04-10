@@ -92,6 +92,8 @@ func TestGetUploadFormatGoogleArtifactRegistry(t *testing.T) {
 		"northamerica-northeast1-docker.pkg.dev",
 		"us-central1-docker.pkg.dev",
 		"us-east1-docker.pkg.dev",
+		".PKG.DEV",
+		".pkg.DEV",
 	}
 
 	for _, registry := range testRegistries {
@@ -119,6 +121,8 @@ func TestGetUploadFormatAmazonECR(t *testing.T) {
 		"123918541723.dkr.ecr-fips.us-gov-east-1.amazonaws.com",
 		"123918541723.dkr.ecr.us-gov-west-1.amazonaws.com",
 		"123918541723.dkr.ecr-fips.us-gov-west-1.amazonaws.com",
+		"123918541723.dkr.ecr.us-east-2.AmAzOnAwS.com",
+		"123918541723.dkr.ecr.us-east-2.AMAZONAWS.COM",
 	}
 
 	for _, registry := range testRegistries {
