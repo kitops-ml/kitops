@@ -4,10 +4,10 @@
     "vue": "^3.4"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "vitepress": "1.5.0",
+    "vitepress": "1.6.3",
     "vue": "^3.5.13",
     "vue-turnstile": "^1.0.11"
   },
