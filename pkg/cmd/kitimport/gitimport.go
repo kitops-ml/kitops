@@ -47,7 +47,7 @@ func importUsingGit(ctx context.Context, opts *importOptions) error {
 		}
 	}()
 
-	if err := cloneRepository(opts.repo, tmpDir, opts.token); err != nil {
+	if err := cloneRepository(opts.repo, opts.repoRef, tmpDir, opts.token); err != nil {
 		return err
 	}
 
@@ -117,12 +117,12 @@ func importUsingGit(ctx context.Context, opts *importOptions) error {
 	return nil
 }
 
-func cloneRepository(repo, destDir, token string) error {
+func cloneRepository(repo, repoRef, destDir, token string) error {
 	fullRepo := repo
 	if !strings.HasPrefix(fullRepo, "http") {
 		fullRepo = fmt.Sprintf("https://huggingface.co/%s", repo)
 	}
-	if err := git.CloneRepository(fullRepo, destDir, token); err != nil {
+	if err := git.CloneRepository(fullRepo, repoRef, destDir, token); err != nil {
 		return err
 	}
 	// Clean up git-related files, since we probably don't want those

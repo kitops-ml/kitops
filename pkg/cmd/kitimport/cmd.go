@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/git"
 	repoutils "github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -92,7 +93,7 @@ func ImportCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 	}
 
-	cmd.Flags().StringVar(&opts.repoRef, "ref", "main", "Version (tag) of repository to import (default is 'main')")
+	cmd.Flags().StringVar(&opts.repoRef, "ref", git.DefaultGitRef, "Version (tag) of repository to import")
 	cmd.Flags().StringVar(&opts.token, "token", "", "Token to use for authenticating with repository")
 	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Tag for the ModelKit (default is '[repository]:latest')")
 	cmd.Flags().StringVarP(&opts.kitfilePath, "file", "f", "", "Path to Kitfile to use for packing (use '-' to read from standard input)")
