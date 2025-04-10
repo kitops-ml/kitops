@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
@@ -114,6 +115,11 @@ func processTreeResponse(resp *http.Response) (*hfTreeResponse, error) {
 		errResp := &hfErrorResponse{}
 		if err := json.NewDecoder(resp.Body).Decode(errResp); err != nil {
 			return nil, fmt.Errorf("failed to parse API error response: %w", err)
+		}
+		if resp.StatusCode == http.StatusNotFound && strings.HasPrefix(errResp.Error, "Invalid rev id") {
+			// Handle case where provided reference (tag) is not found to avoid confusing response
+			ref := errResp.Error[strings.LastIndex(errResp.Error, " ")+1:]
+			return nil, fmt.Errorf("reference '%s' not found", ref)
 		}
 		return nil, fmt.Errorf("got error code %d from API: %s", resp.StatusCode, errResp.Error)
 	}
