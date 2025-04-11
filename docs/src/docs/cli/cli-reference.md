@@ -327,6 +327,9 @@ kit import [flags] REPOSITORY
 # Download repository myorg/myrepo and package it, using the default tag (myorg/myrepo:latest)
 kit import myorg/myrepo
 
+# Download repository using a different version (tag) than the default and package it
+kit import myorg/myrepo --ref v1.0.0
+
 # Download repository and tag it 'myrepository:mytag'
 kit import myorg/myrepo --tag myrepository:mytag
 
@@ -337,6 +340,7 @@ kit import myorg/myrepo --file ./path/to/Kitfile
 ### Options
 
 ```
+      --ref string        Version (tag) of repository to import (default "main")
       --token string      Token to use for authenticating with repository
   -t, --tag string        Tag for the ModelKit (default is '[repository]:latest')
   -f, --file string       Path to Kitfile to use for packing (use '-' to read from standard input)
