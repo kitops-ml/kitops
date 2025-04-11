@@ -27,7 +27,7 @@ spec:
         cpu: 100m
       limits:
         memory: 1Gi
-    supportedUriFormats:
+  supportedUriFormats:
     - prefix: kit://
 ```
 
@@ -70,6 +70,16 @@ The Kit KServe container supports specifying additional flags for the `kit unpac
       - name: KIT_UNPACK_FLAGS
         value: "-v --plain-http"
 ```
+
+To use AWS IRSA credentials, set the following environment variables:
+
+```yaml
+    env:
+      - name: AWS_ECR_REGION
+        value: "" # AWS region of ECR repository containing artifacts
+```
+
+Loggin into AWS ECR using IRSA is conditional based on the presence of the `AWS_ROLE_ARN` environment variable which is set automatically by Kubernetes service account containing proper annotation.
 
 ## Additional links
 
