@@ -71,14 +71,45 @@ The Kit KServe container supports specifying additional flags for the `kit unpac
         value: "-v --plain-http"
 ```
 
-To use AWS IRSA credentials, set the following environment variables:
+
+The default ClusterStorageContainer is configured to use `KIT_USER` and `KIT_PASSWORD` environment variables to login to a registry. You can configure these variables to be accepted with a slight different configuration of the ClusterStorageContainer as below.
 
 ```yaml
+apiVersion: "serving.kserve.io/v1alpha1"
+kind: ClusterStorageContainer
+metadata:
+  name: kitops
+spec:
+  container:
+    name: storage-initializer
+    image: ghcr.io/gorkem/kit-serve:latest
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+      limits:
+        memory: 1Gi
     env:
+      - name: KIT_USER
+        valueFrom:
+          secretKeyRef:
+            name: kit-secret
+            key: KIT_USER
+            optional: true
       - name: AWS_ECR_REGION
         value: "" # AWS region of ECR repository containing artifacts
+          secretKeyRef:
+            name: kit-secret
+            key: KIT_PASSWORD
+            optional: true
+  supportedUriFormats:
+    - prefix: kit://
 ```
 
+This example users the `Secret` kit-secret but it can be modified to inject any secrets.
+
+> [!TIP]
 Loggin into AWS ECR using IRSA is conditional based on the presence of the `AWS_ROLE_ARN` environment variable which is set automatically by Kubernetes service account containing proper annotation.
 
 ## Additional links
