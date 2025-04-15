@@ -103,6 +103,9 @@ const year = (new Date()).getFullYear()
     </ul>
 
     <p class="font-normal text-off-white">This site conforms to <strong>Web Content Accessibility Guidelines 2.1</strong></p>
+    <p class="font-normal">
+      Copyright © KitOps a Series of LF Projects, LLC For website terms of use, trademark policy and other project policies please see <a href="https://lfprojects.org/policies/" class="text-gold hover:underline" target="_blank">lfprojects.org/policies/</a>
+    </p>
   </div>
 </footer>
 </template>

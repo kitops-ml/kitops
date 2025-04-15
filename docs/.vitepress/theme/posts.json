@@ -547,7 +547,7 @@
     "author": "Jesse Williams",
     "published_time": "2025-01-28"
   },
-   {
+  {
     "url": "https://medium.com/gitconnected/secure-your-model-development-lifecycle-9bd81fb40bf6",
     "description": "Secure your model development lifecycle",
     "tags": [
@@ -630,5 +630,27 @@
     ],
     "author": "Jesse Williams",
     "published_time": "2025-02-26"
+  },
+  {
+    "url": "https://blog.devops.dev/building-deploying-and-monitoring-a-model-with-kitops-and-aws-devops-guru-454ad37df92b",
+    "description": "Building, Deploying, and Monitoring a Model with KitOps and AWS DevOps Guru",
+    "tags": [
+      "KitOps",
+      "Open-Source",
+      "AWS",
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-03-14"
+  },
+  {
+    "url": "https://medium.com/data-science-collective/open-source-tools-for-scaling-ml-workloads-e49cd3fe41cd",
+    "description": "Streamlining AI development and Deployment with KitOps | PyData Global 2024",
+    "tags": [
+      "KitOps",
+      "Open-Source",
+      "PyData",
+    ],
+    "author": "Shivay Lamba",
+    "published_time": "2025-04-08"
   }
 ]
