@@ -7,7 +7,7 @@ ModelKit packages can be pushed to any OCI 1.1-compliant registry, whether in th
 
 ModelKits themselves use standards like JSON, YAML, and TAR files so whatever MLOps or DevOps tools you're using...they'll work with ModelKits.
 
-If you've tried using Kit with your favorite tool and are having trouble, please [open an issue](https://github.com/jozu-ai/kitops/issues/new/choose) in our GitHub repository.
+If you've tried using Kit with your favorite tool and are having trouble, please [open an issue](https://github.com/kitops-ml/kitops/issues/new/choose) in our GitHub repository.
 
 If you've used KitOps with a product or project we've missed, please open a pull request updating this file.
 
@@ -32,7 +32,7 @@ The most fully-featured repository for ModelKits is the [Jozu Hub](https://jozu.
 
 ### Pre-Built Workflows
 
-* Dagger: see [Kit modules for Dagger](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit) in the Daggerverse
+* Dagger: see [Kit modules for Dagger](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit) in the Daggerverse
 * GitHub Actions: Kit CLI for [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli)
 
 ## Other Compatible Tools

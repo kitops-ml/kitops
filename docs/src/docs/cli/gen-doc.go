@@ -19,7 +19,7 @@ package main
 import (
 	"log"
 
-	"kitops/cmd"
+	"github.com/kitops-ml/kitops/cmd"
 
 	"github.com/spf13/cobra/doc"
 )

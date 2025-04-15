@@ -24,11 +24,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
-	kfgen "kitops/pkg/lib/kitfile/generate"
-	"kitops/pkg/lib/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
+	"github.com/kitops-ml/kitops/pkg/lib/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 )

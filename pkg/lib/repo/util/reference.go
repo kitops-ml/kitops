@@ -24,8 +24,8 @@ import (
 	"regexp"
 	"strings"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"

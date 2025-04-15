@@ -20,8 +20,8 @@ import (
 	"os"
 	"strconv"
 
-	"kitops/pkg/lib/harness"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/harness"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 )

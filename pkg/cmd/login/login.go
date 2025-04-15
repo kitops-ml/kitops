@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/network"
-	"kitops/pkg/lib/repo/remote"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/network"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"oras.land/oras-go/v2/registry/remote/credentials"
 )

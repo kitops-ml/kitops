@@ -22,7 +22,7 @@ package main
 import (
 	"fmt"
 
-	"kitops/pkg/lib/harness"
+	"github.com/kitops-ml/kitops/pkg/lib/harness"
 )
 
 func main() {

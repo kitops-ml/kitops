@@ -24,7 +24,7 @@ import (
 	"sort"
 	"testing"
 
-	"kitops/pkg/cmd/diff"
+	"github.com/kitops-ml/kitops/pkg/cmd/diff"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )

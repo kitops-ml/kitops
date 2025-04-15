@@ -23,10 +23,10 @@ import (
 	"os"
 	"strings"
 
-	"kitops/pkg/cmd/options"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -145,6 +145,10 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 				Password: password,
 			}
 		}
+	}
+
+	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
+		return err
 	}
 
 	return nil

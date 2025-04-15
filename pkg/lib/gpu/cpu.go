@@ -16,7 +16,7 @@
 package gpu
 
 import (
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"golang.org/x/sys/cpu"
 )

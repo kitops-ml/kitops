@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"kitops/pkg/cmd/options"
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"

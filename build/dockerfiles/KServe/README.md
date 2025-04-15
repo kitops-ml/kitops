@@ -1,23 +1,13 @@
-# Kitops ClusterStorageContainer image for KServe
+# KitOps ClusterStorageContainer image for KServe
 
 The Dockerfile in this directory is used to build an image that can run as a ClusterStorageContainer for [KServe](https://kserve.github.io/website/master/).
 
-## Building
-To build the image, `docker` or `podman` is required. From the root of this repository, set the `$KIT_KSERVE_IMAGE` to the image tag you want to build and run
-```bash
-docker build -t $KIT_KSERVE_IMAGE .
-```
-
-By default, the image will be built using `ghcr.io/jozu-ai/kit:next` as a base. This can be overridden (to build using a specific version of Kit, for example) by using the build arg `KIT_BASE_IMAGE`:
-```shell
-# Build the image based on Kit v0.3.2 instead of 'next'
-docker build -t kit-init-container:latest --build-arg KIT_BASE_IMAGE=ghcr.io/jozu-ai/kit:v0.3.2 .
-```
-
 ## Installing
-The following process will create a new ClusterStorageContainer that uses `kit` to support KServe InferenceServices with storage URIs that have the `kit://` prefix.
 
-Create the following ClusterStorageContainer custom resource in a Kubernetes cluster with KServe installed
+The following process creates a new ClusterStorageContainer that uses `kit` to support KServe InferenceServices with storage URIs that have the `kit://` prefix.
+
+Create the following `ClusterStorageContainer` custom resource in a Kubernetes cluster with KServe installed. Note that the sample below uses the `ghcr.io/kitops-ml/kitops-kserve:next` image, although the repository includes other tags you can use.
+
 ```yaml
 apiVersion: "serving.kserve.io/v1alpha1"
 kind: ClusterStorageContainer
@@ -25,8 +15,8 @@ metadata:
   name: kitops
 spec:
   container:
-    name: kit-storage-initializer
-    image: $KIT_KSERVE_IMAGE
+    name: storage-initializer
+    image: ghcr.io/kitops-ml/kitops-kserve:next
     imagePullPolicy: Always
     env:
       - name: KIT_UNPACK_FLAGS
@@ -41,13 +31,40 @@ spec:
     - prefix: kit://
 ```
 
-Once this CR is installed, modelkits can be used in InferenceServices by specifying with the `kit://` URI:
+Once this custom resource is installed, ModelKits can be used in InferenceServices by specifying the ModelKit URI with the `kit://` prefix in the `storageUri` field:
+
 ```yaml
-storageUri: kit://<modelkit-reference>
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "iris-model"
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: sklearn
+      storageUri: kit://<modelkit-reference>
+```
+
+## Building
+
+To build the image, `docker` or `podman` is required. From the root of this repository, set the `$KIT_KSERVE_IMAGE`  environment variable to the image tag you want to build and run
+
+```bash
+docker build -t $KIT_KSERVE_IMAGE .
+```
+
+By default, the image will be built using `ghcr.io/kitops-ml/kitops:next` as a base. This can be overridden by specifying the build argument `KIT_BASE_IMAGE` to use a specific version of Kit. For example:
+
+```shell
+# Build the image based on Kit v1.3.0 instead of 'next'
+docker build -t kitops-kserve:latest --build-arg KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:v1.3.0 .
 ```
 
 ## Configuration
-The Kit KServe container supports specifying additional flags as supported by the `kit unpack` command. Additional flags are read from the `KIT_UNPACK_FLAGS` environment variable in the ClusterStorageContainer. For example, the following adds `-v` and `--plain-http` for all unpack commands:
+
+The Kit KServe container supports specifying additional flags for the `kit unpack` command. These flags are read from the KIT_UNPACK_FLAGS environment variable in the ClusterStorageContainer. For example, the following configuration adds `-v` and `--plain-http` for all unpack commands:
+
 ```yaml
     env:
       - name: KIT_UNPACK_FLAGS
@@ -55,4 +72,5 @@ The Kit KServe container supports specifying additional flags as supported by th
 ```
 
 ## Additional links
+
 * [KServe ClusterStorageContainer documentation](https://kserve.github.io/website/master/modelserving/storage/storagecontainers/)

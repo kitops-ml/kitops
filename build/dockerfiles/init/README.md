@@ -1,4 +1,5 @@
 # Kit CLI init container
+
 This image is designed to be used as an init container on platforms such as Kubernetes and supports
 
 * Unpacking a ModelKit to a specific path within the container
@@ -25,7 +26,7 @@ In addition, this image can be used to verify the signature on a ModelKit in a r
 
 ## Example
 
-Below is a minimal example of using this image to download a modelkit named `ghcr.io/jozu-ai/my-modelkit:latest` to a container
+Below is a minimal example of using this image to download a modelkit named `ghcr.io/kitops-ml/my-modelkit:latest` to a container
 
 ```yaml
 apiVersion: v1
@@ -35,10 +36,10 @@ metadata:
 spec:
   initContainers:
   - name: kitops-init
-    image: ghcr.io/jozu-ai/kitops-init-container:latest
+    image: ghcr.io/kitops-ml/kitops-init:latest
     env:
       - name: MODELKIT_REF
-        value: "ghcr.io/jozu-ai/my-modelkit:latest"
+        value: "ghcr.io/kitops-ml/my-modelkit:latest"
       - name: UNPACK_PATH
         value: /tmp/my-modelkit
       - name: COSIGN_CERT_IDENTITY
@@ -62,13 +63,16 @@ spec:
 ```
 
 ## Building the image
+
 Building the image requires docker or podman. To build the image, run the following command in this directory:
+
 ```shell
 docker build -t kit-init-container:latest .
 ```
 
-By default, the image will be built using `ghcr.io/jozu-ai/kit:next` as a base. This can be overridden (to build using a specific version of Kit, for example) by using the build arg `KIT_BASE_IMAGE`:
+By default, the image will be built using `ghcr.io/kitops-ml/kitops:next` as a base. This can be overridden (to build using a specific version of Kit, for example) by using the build arg `KIT_BASE_IMAGE`:
+
 ```shell
-# Build the image based on Kit v0.3.2 instead of 'next'
-docker build -t kit-init-container:latest --build-arg KIT_BASE_IMAGE=ghcr.io/jozu-ai/kit:v0.3.2 .
+# Build the image based on Kit v1.3.0 instead of 'next'
+docker build -t kit-init-container:latest --build-arg KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:v1.3.0 .
 ```

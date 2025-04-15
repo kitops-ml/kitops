@@ -23,10 +23,12 @@ import (
 	"os"
 	"os/exec"
 
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
-func CloneRepository(repo, dest, token string) error {
+const DefaultGitRef = "main"
+
+func CloneRepository(repo, repoRef, dest, token string) error {
 	if err := checkGit(); err != nil {
 		return err
 	}
@@ -53,7 +55,12 @@ func CloneRepository(repo, dest, token string) error {
 	}
 
 	// Clone without LFS enabled to get metadata about repo first
-	cloneCmd := exec.Command("git", "clone", "--depth", "1", repo, dest)
+	var cloneCmd *exec.Cmd
+	if repoRef != DefaultGitRef {
+		cloneCmd = exec.Command("git", "clone", "--depth", "1", "--branch", repoRef, "-c", "advice.detachedHead=false", repo, dest)
+	} else {
+		cloneCmd = exec.Command("git", "clone", "--depth", "1", repo, dest)
+	}
 	cloneCmd.Env = cloneEnv
 	cloneCmd.Env = append(cloneCmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	cloneCmd.Stderr = os.Stderr

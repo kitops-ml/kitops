@@ -24,7 +24,7 @@ import (
 	"slices"
 	"strings"
 
-	"kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/artifact"
 )
 
 const partTypeMaxLen = 64

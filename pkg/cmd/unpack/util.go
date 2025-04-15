@@ -21,10 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/local"
-	"kitops/pkg/lib/repo/remote"
-	"kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/errdef"

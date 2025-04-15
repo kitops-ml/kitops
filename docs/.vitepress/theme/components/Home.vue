@@ -123,15 +123,15 @@ onMounted(() => {
       </a>
       <div class="absolute right-0 pt-2 whitespace-nowrap min-w-52 hidden lg:group-hover:block lg:group-focus-within:block">
         <div class="py-1 bg-night border border-off-white mt-2" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-windows-x86_64.zip"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-x86_64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 64-bit
           </a>
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-windows-arm64.zip"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-arm64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             ARM 64-bit
           </a>
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-windows-i386.zip"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-i386.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 32-bit
           </a>
@@ -148,11 +148,11 @@ onMounted(() => {
       </a>
       <div class="absolute right-0 pt-2 whitespace-nowrap min-w-52 hidden lg:group-hover:block lg:group-focus-within:block">
         <div class="py-1 bg-night border border-off-white mt-2" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-darwin-arm64.zip"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-arm64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Apple Silicon / ARM64
           </a>
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-darwin-x86_64.zip"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-x86_64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / x86_64
           </a>
@@ -169,15 +169,15 @@ onMounted(() => {
       </a>
       <div class="absolute right-0 pt-2 whitespace-nowrap min-w-52 hidden lg:group-hover:block lg:group-focus-within:block">
         <div class="py-1 bg-night border border-off-white mt-2" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-linux-x86_64.tar.gz"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-x86_64.tar.gz"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 64-bit
           </a>
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-linux-arm64.tar.gz"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-arm64.tar.gz"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             ARM 64-bit
           </a>
-          <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-linux-i386.tar.gz"
+          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-i386.tar.gz"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 32-bit
           </a>
@@ -297,7 +297,7 @@ onMounted(() => {
 
 <div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 content-container">
   <h2 class="text-center">Key feAtuRes</h2>
-  <p class="p2 text-center mt-16">Visit our <a href="https://github.com/jozu-ai/kitops" target="_blank" class="underline">GitHub repo</a> for a list of all features and our roadmap.</p>
+  <p class="p2 text-center mt-16">Visit our <a href="https://github.com/kitops-ml/kitops" target="_blank" class="underline">GitHub repo</a> for a list of all features and our roadmap.</p>
 
   <ol class="grid grid-cols-1 md:grid-cols-2 gap-x-22 gap-y-16 mt-16 max-w-[960px] mx-auto p1">
     <li>
@@ -633,7 +633,7 @@ onMounted(() => {
   <Accordion content-class="space-y-[1em]">
     <template #title>Is KitOps open source and free to use?</template>
 
-    <p class="mt-6">Yes, it is licensed with the Apache 2.0 license and welcomes all users and contributors. If you’re <a href="https://github.com/jozu-ai/kitops/blob/main/CONTRIBUTING.md" class="underline">interested in contributing</a>, let us know.</p>
+    <p class="mt-6">Yes, it is licensed with the Apache 2.0 license and welcomes all users and contributors. If you’re <a href="https://github.com/kitops-ml/kitops/blob/main/CONTRIBUTING.md" class="underline">interested in contributing</a>, let us know.</p>
   </Accordion>
 
   <Accordion content-class="space-y-[1em]">
@@ -682,7 +682,7 @@ onMounted(() => {
       </div>
     </a>
 
-    <a href="https://github.com/jozu-ai/kitops" v-ga-track="{ category: 'button', label: 'contribute to kit', location: 'how to get involved' }" class="border border-gray-02 p-8 md:px-14 md:py-10 flex justify-between gap-8 items-center hover:border-gold transition-colors">
+    <a href="https://github.com/kitops-ml/kitops" v-ga-track="{ category: 'button', label: 'contribute to kit', location: 'how to get involved' }" class="border border-gray-02 p-8 md:px-14 md:py-10 flex justify-between gap-8 items-center hover:border-gold transition-colors">
       <div class="p1">Contribute to Kit</div>
 
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" class="size-8 md:size-12">
@@ -690,7 +690,7 @@ onMounted(() => {
       </svg>
     </a>
 
-    <a href="https://github.com/jozu-ai/kitops" v-ga-track="{ category: 'button', label: 'star the repo', location: 'how to get involved' }" class="border border-gray-02 p-8 md:px-14 md:py-10 flex justify-between gap-8 items-center hover:border-gold transition-colors">
+    <a href="https://github.com/kitops-ml/kitops" v-ga-track="{ category: 'button', label: 'star the repo', location: 'how to get involved' }" class="border border-gray-02 p-8 md:px-14 md:py-10 flex justify-between gap-8 items-center hover:border-gold transition-colors">
       <div class="p1">Star the repo on GitHub</div>
 
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" class="size-8 md:size-12">

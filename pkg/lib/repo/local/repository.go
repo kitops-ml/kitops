@@ -24,8 +24,8 @@ import (
 	"os"
 	"sort"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"

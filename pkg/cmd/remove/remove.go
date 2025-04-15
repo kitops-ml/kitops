@@ -23,11 +23,11 @@ import (
 	"net/http"
 	"strings"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/local"
-	"kitops/pkg/lib/repo/remote"
-	"kitops/pkg/lib/repo/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"

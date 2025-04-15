@@ -25,11 +25,11 @@ import (
 	"regexp"
 	"strings"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/cmd/options"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"

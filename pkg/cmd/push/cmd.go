@@ -22,12 +22,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"kitops/pkg/cmd/options"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/local"
-	"kitops/pkg/lib/repo/remote"
-	"kitops/pkg/lib/repo/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"

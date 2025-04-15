@@ -23,9 +23,10 @@ import (
 	"slices"
 	"strings"
 
-	"kitops/pkg/lib/constants"
-	repoutils "kitops/pkg/lib/repo/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/git"
+	repoutils "github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
@@ -58,6 +59,9 @@ REPOSITORY.`
 	example = `# Download repository myorg/myrepo and package it, using the default tag (myorg/myrepo:latest)
 kit import myorg/myrepo
 
+# Download repository using a different version (tag) than the default and package it
+kit import myorg/myrepo --ref v1.0.0
+
 # Download repository and tag it 'myrepository:mytag'
 kit import myorg/myrepo --tag myrepository:mytag
 
@@ -68,6 +72,7 @@ kit import myorg/myrepo --file ./path/to/Kitfile`
 type importOptions struct {
 	configHome   string
 	repo         string
+	repoRef      string
 	tag          string
 	token        string
 	kitfilePath  string
@@ -88,6 +93,7 @@ func ImportCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 	}
 
+	cmd.Flags().StringVar(&opts.repoRef, "ref", git.DefaultGitRef, "Version (tag) of repository to import")
 	cmd.Flags().StringVar(&opts.token, "token", "", "Token to use for authenticating with repository")
 	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "Tag for the ModelKit (default is '[repository]:latest')")
 	cmd.Flags().StringVarP(&opts.kitfilePath, "file", "f", "", "Path to Kitfile to use for packing (use '-' to read from standard input)")

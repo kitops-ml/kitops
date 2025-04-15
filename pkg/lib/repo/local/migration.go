@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"

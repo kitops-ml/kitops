@@ -22,7 +22,7 @@ Security conscious organizations often can't allow internal teams to use any pub
 * They don't match the organization's security testing requirements
 * Their provenance isn't understood
 
-In these cases teams may use a pipeline (with [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli), [Dagger](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit), or [another tool](../modelkit/compatibility/)) to pull models or sample datasets from Hugging Face, run them through a battery of tests, then publish them in tamper-proof and signed ModelKits to their private container registry.
+In these cases teams may use a pipeline (with [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli), [Dagger](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit), or [another tool](../modelkit/compatibility/)) to pull models or sample datasets from Hugging Face, run them through a battery of tests, then publish them in tamper-proof and signed ModelKits to their private container registry.
 
 This ensures that:
 * __Everyone has a library of safe, immutable, and signed ModelKits__ speeding development without compromising security
@@ -33,7 +33,7 @@ This ensures that:
 * __Organizations are protected against vendor shifts__ in their MLOps and Serving Infrastructure domains (this also gives them negotiating leverage with vendors)
 
 **Get Started:**
-* [Kit Dagger Modules](https://daggerverse.dev/mod/github.com/jozu-ai/daggerverse/kit): Kit Dagger modules make it easy to pack and selectively unpack ModelKits to speed pipelines.
+* [Kit Dagger Modules](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit): Kit Dagger modules make it easy to pack and selectively unpack ModelKits to speed pipelines.
 * [Kit GitHub Action](https://github.com/marketplace/actions/setup-kit-cli): Our Kit GitHub Action is used to build hundreds of ModelKits every day as part of pipelines.
 * [Learn to pack and unpack ModelKits](../get-started/)
 * [Create containers or Kubernetes deployments directly from ModelKits](../deploy/)

@@ -26,7 +26,7 @@ The simplest way to install Kit on a Mac is with [Homebrew](https://brew.sh/). Y
 ### Mac Brew Install
 
 1. Open a Terminal window
-1. At the prompt type: `brew tap jozu-ai/kitops` (if that doesn't work use the [ZIP instructions](#mac-install-from-zip)
+1. At the prompt type: `brew tap kitops-ml/kitops` (if that doesn't work use the [ZIP instructions](#mac-install-from-zip)
 1. When the previous command completes, type `brew install kitops`
 
 You can verify that `kit` is correctly installed by opening a new terminal or command prompt and typing:
@@ -45,7 +45,7 @@ Now follow our [Quick Start](../../get-started/) to learn how to pack and share 
 
 There are two generations of Mac hardware, if you aren't sure which you have [check here](https://www.sweetwater.com/sweetcare/articles/intel-based-mac-or-mac-with-apple-silicon/#:~:text=Choose%20About%20This%20Mac.,a%20Mac%20with%20Apple%20silicon.&text=As%20of%20this%20writing%2C%20Apple,have%20an%20Intel%2Dbased%20Mac.).
 
-1. MacOS: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-darwin-arm64.zip"
+1. MacOS: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-arm64.zip"
   v-ga-track="{
     category: 'link',
     label: 'MacOS (Apple Silicon)',
@@ -54,7 +54,7 @@ There are two generations of Mac hardware, if you aren't sure which you have [ch
   Apple Silicon / ARM64
 </a>
 
-2. MacOS: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-darwin-x86_64.zip"
+2. MacOS: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-x86_64.zip"
   v-ga-track="{
     category: 'link',
     label: 'MacOS (Intel)',
@@ -85,7 +85,7 @@ Now follow our [Quick Start](../../get-started/) to learn how to pack and share 
 
 Make sure you get the correct download for your hardware.
 
-1. Windows: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-windows-x86_64.zip"
+1. Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-x86_64.zip"
   v-ga-track="{
     category: 'link',
     label: 'Windows (AMD64)',
@@ -94,7 +94,7 @@ Make sure you get the correct download for your hardware.
   Intel / AMD, 64-bit
 </a>
 
-1. Windows: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-windows-arm64.zip"
+1. Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-arm64.zip"
   v-ga-track="{
     category: 'link',
     label: 'Windows (ARM64)',
@@ -103,7 +103,7 @@ Make sure you get the correct download for your hardware.
   ARM 64-bit
 </a>
 
-1. Windows: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-windows-i386.zip"
+1. Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-i386.zip"
   v-ga-track="{
     category: 'link',
     label: 'Windows (x86_32)',
@@ -137,7 +137,7 @@ The simplest way to install Kit on Linux is with [Homebrew](https://brew.sh/). Y
 ### Linux Brew Install
 
 1. Open a Terminal window
-1. At the prompt type: `brew tap jozu-ai/kitops` (if that doesn't work use the [TAR instructions](#linux-tar-install)
+1. At the prompt type: `brew tap kitops-ml/kitops` (if that doesn't work use the [TAR instructions](#linux-tar-install)
 1. When the previous command completes, type `brew install kitops`
 
 You can verify that `kit` is correctly installed by opening a new terminal or command prompt and typing:
@@ -156,7 +156,7 @@ Now follow our [Quick Start](../../get-started/) to learn how to pack and share 
 
 Make sure you get the correct download for your hardware.
 
-1. Linux: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-linux-x86_64.tar.gz"
+1. Linux: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-x86_64.tar.gz"
   v-ga-track="{
     category: 'link',
     label: 'Linux (AMD64)',
@@ -165,7 +165,7 @@ Make sure you get the correct download for your hardware.
   Intel / AMD, AMD 64-bit
 </a>
 
-1. Linux: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-linux-arm64.tar.gz"
+1. Linux: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-arm64.tar.gz"
   v-ga-track="{
     category: 'link',
     label: 'Linux (ARM64)',
@@ -174,7 +174,7 @@ Make sure you get the correct download for your hardware.
   ARM 64-bit
 </a>
 
-1. Linux: <a href="https://github.com/jozu-ai/kitops/releases/latest/download/kitops-linux-i386.tar.gz"
+1. Linux: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-i386.tar.gz"
   v-ga-track="{
     category: 'link',
     label: 'Linux (x86_32)',
@@ -228,7 +228,7 @@ First, clone the `kitops` GitHub repository to your local machine. Open a termin
 
 
 ```shell
-git clone https://github.com/jozu-ai/kitops.git
+git clone https://github.com/kitops-ml/kitops.git
 cd kitops
 ```
 

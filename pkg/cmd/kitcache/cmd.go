@@ -18,9 +18,9 @@ package kitcache
 
 import (
 	"fmt"
+	fscache "github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/output"
 	"io"
-	fscache "kitops/pkg/lib/filesystem/cache"
-	"kitops/pkg/output"
 	"sort"
 	"text/tabwriter"
 

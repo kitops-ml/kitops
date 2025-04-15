@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/errdef"

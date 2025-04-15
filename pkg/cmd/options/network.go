@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"github.com/spf13/cobra"
 )

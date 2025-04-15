@@ -73,6 +73,18 @@ func SafeDebugf(s string, args ...any) {
 	SafeLogf(LogLevelDebug, s, args...)
 }
 
+// SystemInfoLn is like Infoln except it logs to stderr. This should be used
+// for system messages such as update notifications
+func SystemInfoln(s any) {
+	loglnTo(stderr, LogLevelInfo, s)
+}
+
+// SystemInfof is like Infof except it logs to stderr. This should be used
+// for system messages such as update notifications
+func SystemInfof(s string, args ...any) {
+	logfTo(stderr, LogLevelInfo, s, args...)
+}
+
 func Logln(level LogLevel, s any) {
 	loglnTo(level.getOutput(), level, s)
 }

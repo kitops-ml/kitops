@@ -23,16 +23,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/filesystem"
-	"kitops/pkg/lib/filesystem/cache"
-	"kitops/pkg/lib/hf"
-	kfutils "kitops/pkg/lib/kitfile"
-	kfgen "kitops/pkg/lib/kitfile/generate"
-	repoutil "kitops/pkg/lib/repo/util"
-	"kitops/pkg/lib/util"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/lib/hf"
+	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
+	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
+	repoutil "github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/util"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 func importUsingHF(ctx context.Context, opts *importOptions) error {
@@ -53,7 +53,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 		}
 	}()
 
-	dirListing, err := hf.ListFiles(ctx, repo, opts.token)
+	dirListing, err := hf.ListFiles(ctx, repo, opts.repoRef, opts.token)
 	if err != nil {
 		return fmt.Errorf("failed to list files from HuggingFace API: %w", err)
 	}
@@ -106,7 +106,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := hf.DownloadFiles(ctx, repo, tmpDir, toDownload, opts.token, opts.concurrency); err != nil {
+	if err := hf.DownloadFiles(ctx, repo, opts.repoRef, tmpDir, toDownload, opts.token, opts.concurrency); err != nil {
 		return fmt.Errorf("error downloading repository: %w", err)
 	}
 

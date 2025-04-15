@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.22.6-alpine AS builder
+FROM docker.io/library/golang:1.23.7-alpine AS builder
 
 RUN apk --no-cache upgrade && apk add --no-cache git
 ARG KIT_VERSION=next
@@ -13,7 +13,7 @@ COPY . .
 RUN \
     CGO_ENABLED=0 go build \
     -o kit \
-    -ldflags="-s -w -X kitops/pkg/lib/constants.Version=${KIT_VERSION} -X kitops/pkg/lib/constants.GitCommit=$(git rev-parse --short HEAD) -X kitops/pkg/lib/constants.BuildTime=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+    -ldflags="-s -w -X github.com/kitops-ml/kitops/pkg/lib/constants.Version=${KIT_VERSION} -X github.com/kitops-ml/kitops/pkg/lib/constants.GitCommit=$(git rev-parse --short HEAD) -X github.com/kitops-ml/kitops/pkg/lib/constants.BuildTime=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
 FROM docker.io/library/alpine
 ENV USER_ID=1001 \
@@ -36,5 +36,5 @@ COPY --from=builder /build/kit /usr/local/bin/kit
 ENTRYPOINT ["kit"]
 
 LABEL org.opencontainers.image.description="Kit CLI container built from source"
-LABEL org.opencontainers.image.source="https://github.com/jozu-ai/kitops"
+LABEL org.opencontainers.image.source="https://github.com/kitops-ml/kitops"
 LABEL org.opencontainers.image.licenses="Apache-2.0"

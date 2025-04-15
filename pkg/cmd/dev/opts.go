@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/filesystem"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 type DevBaseOptions struct {

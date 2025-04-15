@@ -24,7 +24,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"

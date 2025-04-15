@@ -28,11 +28,11 @@ import (
 	"strings"
 	"time"
 
-	"kitops/pkg/artifact"
-	"kitops/pkg/lib/constants"
-	"kitops/pkg/lib/filesystem"
-	"kitops/pkg/lib/filesystem/cache"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"

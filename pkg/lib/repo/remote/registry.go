@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"kitops/pkg/cmd/options"
-	"kitops/pkg/lib/network"
-	"kitops/pkg/output"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/network"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
