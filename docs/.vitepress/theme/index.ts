@@ -35,6 +35,19 @@ export default {
       'nav-bar-content-after': () => h(GithubStartButton, {
         class: 'ml-4 pt-2'
       }),
+      'doc-after': () => h('div', {
+        class: 'mt-20 text-off-white',
+        style: { 'font-size': '0.8rem' }
+      }, [
+        h('p', [
+          'Copyright © KitOps a Series of LF Projects, LLC For website terms of use, trademark policy and other project policies please see ',
+          h('a', {
+            href: 'https://lfprojects.org/policies/',
+            target: '_blank',
+            class: 'text-gold hover:underline'
+          }, 'lfprojects.org/policies/')
+        ]),
+      ]),
     })
   },
   enhanceApp({ app, router, siteData }) {
