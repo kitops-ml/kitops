@@ -1,10 +1,10 @@
-# KitOps ClusterStorageContainer image for KServe
+# KitOps ClusterStorageContainer Image for KServe
 
-The Dockerfile in this directory is used to build an image that can run as a ClusterStorageContainer for [KServe](https://kserve.github.io/website/master/).
+This directory’s Dockerfile builds an image that runs as a `ClusterStorageContainer` for [KServe](https://kserve.github.io/website/master/).
 
 ## Installing
 
-The following process creates a new ClusterStorageContainer that uses `kit` to support KServe InferenceServices with storage URIs that have the `kit://` prefix.
+The following steps create a new `ClusterStorageContainer` that uses the `kit` CLI to support KServe `InferenceService` resources whose `storageUri` begins with `kit://`.
 
 Create the following `ClusterStorageContainer` custom resource in a Kubernetes cluster with KServe installed. Note that the sample below uses the `ghcr.io/kitops-ml/kitops-kserve:next` image, although the repository includes other tags you can use.
 
@@ -56,14 +56,19 @@ docker build -t $KIT_KSERVE_IMAGE .
 
 By default, the image will be built using `ghcr.io/kitops-ml/kitops:next` as a base. This can be overridden by specifying the build argument `KIT_BASE_IMAGE` to use a specific version of Kit. For example:
 
-```shell
-# Build the image based on Kit v1.3.0 instead of 'next'
-docker build -t kitops-kserve:latest --build-arg KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:v1.3.0 .
+```bash
+# Example: build against Kit v1.3.0 instead of "next"
+docker build \
+  -t kitops-kserve:latest \
+  --build-arg KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:v1.3.0 \
+  .
 ```
 
 ## Configuration
 
-The Kit KServe container supports specifying additional flags for the `kit unpack` command. These flags are read from the KIT_UNPACK_FLAGS environment variable in the ClusterStorageContainer. For example, the following configuration adds `-v` and `--plain-http` for all unpack commands:
+### Unpack Flags
+
+Set extra flags for `kit unpack` via the `KIT_UNPACK_FLAGS` environment variable. For example:
 
 ```yaml
     env:
@@ -71,11 +76,12 @@ The Kit KServe container supports specifying additional flags for the `kit unpac
         value: "-v --plain-http"
 ```
 
+### Registry Credentials
 
-The default ClusterStorageContainer is configured to use `KIT_USER` and `KIT_PASSWORD` environment variables to login to a registry. You can configure these variables to be accepted with a slight different configuration of the ClusterStorageContainer as below.
+By default, the container logs in to a registry using `KIT_USER` and `KIT_PASSWORD`. To pull credentials from a Kubernetes Secret:
 
 ```yaml
-apiVersion: "serving.kserve.io/v1alpha1"
+apiVersion: serving.kserve.io/v1alpha1
 kind: ClusterStorageContainer
 metadata:
   name: kitops
@@ -97,8 +103,8 @@ spec:
             name: kit-secret
             key: KIT_USER
             optional: true
-      - name: AWS_ECR_REGION
-        value: "" # AWS region of ECR repository containing artifacts
+      - name: KIT_PASSWORD
+        valueFrom:
           secretKeyRef:
             name: kit-secret
             key: KIT_PASSWORD
@@ -107,11 +113,10 @@ spec:
     - prefix: kit://
 ```
 
-This example users the `Secret` kit-secret but it can be modified to inject any secrets.
+This example uses the `Secret` kit-secret but it can be modified to inject any secrets.
 
-> [!TIP]
-Loggin into AWS ECR using IRSA is conditional based on the presence of the `AWS_ROLE_ARN` environment variable which is set automatically by Kubernetes service account containing proper annotation.
+> **Tip:** The KitOps KServe container also supports AWS ECR login via IRSA. If `AWS_ROLE_ARN` is set on the service account, it takes effect—unless you have `KIT_USER` and `KIT_PASSWORD`, which take precedence.
 
 ## Additional links
 
-* [KServe ClusterStorageContainer documentation](https://kserve.github.io/website/master/modelserving/storage/storagecontainers/)
+* [KServe ClusterStorageContainer Documentation](https://kserve.github.io/website/master/modelserving/storage/storagecontainers/)

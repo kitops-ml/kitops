@@ -6,8 +6,6 @@ echo "Binary version info:"
 kit version
 
 read -r -a UNPACK_FLAGS <<< "$KIT_UNPACK_FLAGS"
-read -r AWS_ECR_REGION <<< "$AWS_ECR_REGION"
-read -r AWS_ROLE_ARN <<< "$AWS_ROLE_ARN"
 
 if [ $# != 2 ]; then
   echo "Usage: entrypoint.sh <src-uri> <dest-path>"
@@ -21,13 +19,10 @@ if [ -n "$KIT_USER" ] && [ -n "$KIT_PASSWORD" ]; then
     BASE_URL=$(echo "$REPO_NAME" | cut -d '/' -f 1)
     echo "Logging in using repo url: $BASE_URL"
     echo "$KIT_PASSWORD" | kit login "$BASE_URL" -u "$KIT_USER" --password-stdin
-elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ]; then
- 
-if [ -n "$AWS_ROLE_ARN" ]; then
+elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] &&  [ -n "$AWS_ROLE_ARN" ]; then
   AWS_ACCOUNT_ID=$(echo "$AWS_ROLE_ARN" | cut -d: -f5)
   echo "Logging into AWS ECR $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com"
   aws ecr get-login-password --region $AWS_ECR_REGION | kit login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com
-
 fi
 
 echo "Unpacking $REPO_NAME to $OUTPUT_DIR"
