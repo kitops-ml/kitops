@@ -96,6 +96,14 @@ Your insights help KitOps evolve as an open standard for AI/ML. We *deeply value
 
 We ❤️ our KitOps community and contributors. To learn more about the many ways you can contribute (you don't need to be a coder) and how to get started see our [Contributor's Guide](./CONTRIBUTING.md). Please read our [Governance](./GOVERNANCE.md) and our [Code of Conduct](./CODE-OF-CONDUCT.md) before contributing.
 
+#### 📢 KitOps Community Calls (bi-weekly)
+
+**Wednesdays @ 13:30 – 14:00**  
+**Time zone**: America/Toronto  
+**Video call link**: [Google Meet](https://meet.google.com/zfq-uprp-csd)  
+Or dial: (CA) +1 647-736-3184 PIN: 144 931 404#  
+More phone numbers: [Phone Numbers](https://tel.meet/zfq-uprp-csd?pin=1283456375953)
+
 ### A Community Built on Respect
 
 At KitOps, inclusivity, empathy, and responsibility are at our core. Please read our [Code of Conduct](./CODE-OF-CONDUCT.md) to understand the values guiding our community.
