@@ -1,5 +1,5 @@
 ---
-description: Use KitOps ModelKits from a CI/CD tool's pipelines.
+description: Use KitOps ModelKits to add AI/ML to your CI/CD tool's pipelines.
 ---
 # Using KitOps ModelKits from a CI/CD Tool
 
@@ -8,8 +8,9 @@ To get the most out of KitOps secure ModelKits, many teams and organizations cre
 Typically this is done by installing the Kit CLI and running `kit` commands as tasks in the pipeline.
 
 The KitOps community has shared some of their CI/CD tool integrations:
-* [Dagger Modules](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit@fc53d7802be6553298f4f54dd73cc1c1913d4ce6)
-* [GitHub Action](https://github.com/marketplace/actions/setup-kit-cli)
-
+* GitHub Actions: [Tutorial](https://jozu.com/blog/automating-ml-pipeline-with-modelkits-github-actions/), and [Action](https://github.com/marketplace/actions/setup-kit-cli)
+* Red Hat OpenShift Pipelines: [Tutorial](https://jozu.com/blog/how-to-turn-your-openshift-pipelines-into-an-mlops-pipeline)
+* ArgoCD: [Tutorial](https://jozu.com/blog/deploying-ml-projects-with-argo-cd/)
+* Dagger: [Tutorial](https://jozu.com/blog/building-an-mlops-pipeline-with-dagger-io-and-kitops/), and [Module](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit@fc53d7802be6553298f4f54dd73cc1c1913d4ce6)
 
 **Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
