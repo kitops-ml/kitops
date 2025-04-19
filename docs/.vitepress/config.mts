@@ -82,10 +82,8 @@ export default defineConfig({
           { text: 'Next Steps', link: '/docs/next-steps/' },
           { text: 'HuggingFace Import', link: '/docs/hf-import/' },
           { text: 'Deploy ModelKits', link: '/docs/deploy/' },
-          { text: 'Local LLM Dev', link: '/docs/dev-mode/' },
           { text: 'Why KitOps?', link: '/docs/why-kitops/' },
           { text: 'How it is Used', link: '/docs/use-cases/' },
-          { text: 'KitOps versus...', link: '/docs/versus/' },
         ]
       },
       {
@@ -94,7 +92,7 @@ export default defineConfig({
           { text: 'Overview', link: '/docs/modelkit/intro/' },
           { text: 'Specification', link: '/docs/modelkit/spec/' },
           { text: 'ModelKit Quick Starts', link: 'https://jozu.ml/organization/jozu-quickstarts' },
-          { text: 'Compatibility', link: '/docs/modelkit/compatibility/' },
+          // { text: 'Compatibility', link: '/docs/modelkit/compatibility/' },
         ]
       },
       {
@@ -120,7 +118,7 @@ export default defineConfig({
           { text: 'Overview', link: '/docs/pykitops/' },
           { text: 'Before You Begin', link: '/docs/pykitops/before-you-begin/' },
           { text: 'How-to Guides', link: '/docs/pykitops/how-to-guides/' },
-          { text: 'Reference', link: '/docs/pykitops/reference/' },
+          { text: 'Class Reference', link: '/docs/pykitops/reference/' },
         ]
       },
       {
@@ -128,7 +126,7 @@ export default defineConfig({
         items: [
           { text: 'MLFlow', link: '/docs/pykitops/mlflow/' },
           { text: 'CI/CD', link: '/docs/pykitops/cicd/' },
-          // { text: 'Juptyer', link: '/docs/pykitops/jupyter/' },
+          //{ text: 'Notebooks', link: '/docs/pykitops/notebooks/' },
         ]
       },
       {

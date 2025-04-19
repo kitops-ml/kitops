@@ -5,6 +5,10 @@ description: Use KitOps PyKitOps Python library to automate ModelKit creation wi
 
 Many KitOps users automate the creation of secure and tamper-proof [ModelKits](../modelkit/intro.md) for each experiment run in MLFlow. This gives the team and organization a library of models that they can reproduce on any infrastructure.
 
+::tip
+You can follow the instructions below, or in a [community-generated tutorial](https://jozu.com/blog/how-to-use-kitops-with-mlflow/)
+:::
+
 ## Install PyKitOps Python Library
 
 PyKitOps is a community provided Python library for simplifying the creation and management of ModelKits from code. First install PyKitOps into the python interpreter used for by MLFlow for experiment runs:
