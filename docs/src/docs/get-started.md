@@ -15,7 +15,7 @@ In this guide, we'll use ModelKits and the kit CLI to easily:
 * Package the ModelKit as a container or Kubernetes deployment
 
 :::info
-If you're more interested in using KitOps with [MLFlow](../pykitops/mlflow.md) , [Jupyter Notebooks](../docs/pykitops/), or [CI/CD pipelines](../docs/pykitops/cicd.md) check out our integrations section.
+If you're more interested in using KitOps with [MLFlow](../pykitops/mlflow.md) or [CI/CD pipelines](../pykitops/cicd.md) check out our integrations section.
 :::
 
 ## Before we start...
