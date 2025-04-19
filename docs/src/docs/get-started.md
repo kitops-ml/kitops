@@ -14,6 +14,10 @@ In this guide, we'll use ModelKits and the kit CLI to easily:
 * Grab only the assets you need from the ModelKit for testing, integration, local running, or deployment
 * Package the ModelKit as a container or Kubernetes deployment
 
+:::info
+If you're more interested in using KitOps with [MLFlow](../pykitops/mlflow.md) , [Jupyter Notebooks](../docs/pykitops/), or [CI/CD pipelines](../docs/pykitops/cicd.md) check out our integrations section.
+:::
+
 ## Before we start...
 
 1. Make sure you've got the [Kit CLI setup](../cli/installation/).
