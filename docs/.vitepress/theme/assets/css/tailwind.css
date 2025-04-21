@@ -1,236 +1,284 @@
-@tailwind base;
+@import "tailwindcss";
 
-@tailwind components;
+@source "../../../../src*.md";
+@source "../../**/*.{ts,vue,css}";
 
-@tailwind utilities;
+@theme {
+  --font-brand: 'Major Mono Display', sans-serif;
+  --font-heading: 'Titillium Web', sans-serif;
+  --font-sans: 'Atkinson Hyperlegible', sans-serif;
+  --default-font-family: 'Atkinson Hyperlegible', sans-serif;
 
-@layer base {
-  html {
-    @apply font-sans;
+  --color-off-white: #ECECEC;
+  --color-gold: #FFAF52;
+  --color-night: #121212;
+  --color-salmon: #FFA3AF;
+  --color-cornflower: #7A8CFF;
+  --color-ash: #BED8D4;
+  --color-aero: #00C3E2;
+  --color-lavender: #BC7EFF;
+  --color-mustard: #D4BF40;
+  --color-redish: #DB636A;
+  --color-zomp: #659E8B;
+  --color-tea: #DEF2C8;
+
+  --color-gray-02: #4D4D4F;
+  --color-gray-05: #6A6A6A;
+  --color-gray-06: #AAAAAA;
+
+  --color-elevation-0: rgb(18, 18, 18);
+  --color-elevation-01: #1F1F1F;
+  --color-elevation-02: #292929;
+  --color-elevation-03: #333333;
+  --color-elevation-04: #3D3D3D;
+  --color-elevation-05: #464646;
+
+  --shadow-modal: '0px 6px 24px 0px rgba(0, 0, 0, 0.24), 0px 0px 32px 0px rgba(0, 0, 0, 0.40)';
+
+  --spacing-22: 5.5rem;
+}
+
+/* We CANT use @layer base because Vitepress default's theme is applied directly in the root, with not @layer */
+html {
+  @apply font-sans;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-heading;
+}
+
+h1 {
+  @apply font-extralight;
+
+  /* Fonts/Mobile/H1 */
+  font-size: 48px;
+  line-height: 54px;
+  /* 112.5% */
+  letter-spacing: -0.6px;
+
+  /* Fonts/Tablet/H1 */
+  @variant md {
+    font-size: 72px;
+    line-height: 82px;
+    /* 113.889% */
+    letter-spacing: -0.6px;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
-    @apply font-heading;
+  @variant xl {
+    /* Fonts/Desktop/H1 */
+    font-size: 96px;
+    line-height: 122px;
+    /* 127.083% */
+    letter-spacing: -0.6px;
+  }
+}
+
+h2 {
+  @apply font-normal;
+
+  font-size: 30px;
+  line-height: 37px;
+  /* 123.333% */
+  letter-spacing: -0.6px;
+
+  @variant md {
+    font-size: 40px;
+    line-height: 54px;
+    /* 135% */
+    letter-spacing: -0.6px;
   }
 
-  h1 {
-    @apply font-extralight;
-
-    /* Fonts/Mobile/H1 */
+  @variant xl {
     font-size: 48px;
-    line-height: 54px; /* 112.5% */
+    line-height: 68px;
+    /* 141.667% */
     letter-spacing: -0.6px;
+  }
+}
 
-    /* Fonts/Tablet/H1 */
-    @media screen(md) {
-      font-size: 72px;
-      line-height: 82px; /* 113.889% */
-      letter-spacing: -0.6px;
-    }
+h3 {
+  @apply font-normal;
 
-    @media screen(xl) {
-      /* Fonts/Desktop/H1 */
-      font-size: 96px;
-      line-height: 122px; /* 127.083% */
-      letter-spacing: -0.6px;
-    }
+  /* Fonts/Mobile/H3 */
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 38px;
+  /* 135.714% */
+  letter-spacing: -0.6px;
+
+  @variant md {
+    /* Fonts/Tablet/H3 */
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 38px;
+    /* 118.75% */
+    letter-spacing: -0.6px;
   }
 
-  h2 {
-    @apply font-normal;
-
-    /* Fonts/Mobile/H2 */
-    font-size: 30px;
-    line-height: 37px; /* 123.333% */
+  @variant xl {
+    /* Fonts/Desktop/H3 */
+    font-size: 38px;
+    font-weight: 400;
+    line-height: 46px;
+    /* 121.053% */
     letter-spacing: -0.6px;
-
-    @media screen(md) {
-      /* Fonts/Tablet/H2 */
-      font-size: 40px;
-      line-height: 54px; /* 135% */
-      letter-spacing: -0.6px;
-    }
-
-    @media screen(xl) {
-      /* Fonts/Desktop/H2 */
-      font-size: 48px;
-      line-height: 68px; /* 141.667% */
-      letter-spacing: -0.6px;
-    }
   }
+}
 
-  h3 {
-    @apply font-normal;
+h4,
+.h4 {
+  @apply font-normal;
 
-    /* Fonts/Mobile/H3 */
+  /* Fonts/Mobile/H4 */
+  font-size: 24px;
+  font-weight: 200;
+  line-height: 30px;
+  /* 125% */
+  letter-spacing: -0.6px;
+
+  @variant md {
+    /* Fonts/Tablet/H4 */
     font-size: 28px;
-    font-weight: 400;
-    line-height: 38px; /* 135.714% */
+    line-height: 34px;
+    /* 121.429% */
     letter-spacing: -0.6px;
-
-    @media screen(md) {
-      /* Fonts/Tablet/H3 */
-      font-size: 32px;
-      font-weight: 400;
-      line-height: 38px; /* 118.75% */
-      letter-spacing: -0.6px;
-    }
-
-    @media screen(xl) {
-      /* Fonts/Desktop/H3 */
-      font-size: 38px;
-      font-weight: 400;
-      line-height: 46px; /* 121.053% */
-      letter-spacing: -0.6px;
-    }
   }
 
-  h4,
-  .h4 {
-    @apply font-normal;
+  @variant xl {
+    /* Fonts/Desktop/H4 */
+    font-size: 32px;
+    line-height: 48px;
+    /* 150% */
+    letter-spacing: -0.6px;
+  }
+}
 
-    /* Fonts/Mobile/H4 */
+.p1 {
+  @apply text-off-white;
+
+  /* Fonts/Mobile/P1 */
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 28px;
+  /* 155.556% */
+
+  @variant md {
+    /* Fonts/Tablet/P1 */
+    font-size: 22px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 32px;
+    /* 145.455% */
+  }
+
+  @variant xl {
+    /* Fonts/Desktop/P1 */
     font-size: 24px;
-    font-weight: 200;
-    line-height: 30px; /* 125% */
-    letter-spacing: -0.6px;
-
-    @media screen(md) {
-      /* Fonts/Tablet/H4 */
-      font-size: 28px;
-      line-height: 34px; /* 121.429% */
-      letter-spacing: -0.6px;
-    }
-
-    @media screen(xl) {
-      /* Fonts/Desktop/H4 */
-      font-size: 32px;
-      line-height: 48px; /* 150% */
-      letter-spacing: -0.6px;
-    }
-  }
-
-  .p1 {
-    @apply text-off-white;
-
-    /* Fonts/Mobile/P1 */
-    font-size: 18px;
     font-style: normal;
     font-weight: 400;
-    line-height: 28px; /* 155.556% */
-
-    @media screen(md) {
-      /* Fonts/Tablet/P1 */
-      font-size: 22px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 32px; /* 145.455% */
-    }
-
-    @media screen(xl) {
-      /* Fonts/Desktop/P1 */
-      font-size: 24px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 36px; /* 150% */
-    }
-  }
-
-  .p2 {
-    @apply text-off-white;
-
-    /* Fonts/Mobile/P2 */
-    font-size: 18px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 24px; /* 133.333% */
-
-    @media screen(md) {
-      /* Fonts/Tablet/P2 */
-      font-size: 17px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 28px; /* 164.706% */
-    }
-
-    @media screen(xl) {
-      /* Fonts/Desktop/P2 */
-      font-size: 20px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 32px; /* 160% */
-    }
+    line-height: 36px;
+    /* 150% */
   }
 }
 
-@layer components {
-  .kit-button {
-    @apply inline-block appearance-none;
-    @apply px-5 py-3 relative;
-    @apply text-gold font-bold uppercase text-center;
-    @apply disabled:opacity-50;
+.p2 {
+  @apply text-off-white;
 
-    border: 2px solid var(--color-gold);
-    font-size: 14px;
-    line-height: normal;
-    letter-spacing: 2.1px;
-    transition: background 150ms, color 150ms;
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
-    background-image: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) min(15px, 10%), rgba(255,255,255,0) min(15px, 10.1%), rgba(255,255,255,0) 100%);
+  /* Fonts/Mobile/P2 */
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px;
+  /* 133.333% */
 
-    @media screen(md) {
-      @apply text-left;
-      font-size: 16px;
-      letter-spacing: 2.4px;
-    }
-
-    @media screen(xl) {
-      font-size: 18px;
-      letter-spacing: 2.7px;
-    }
-
-    &:not(:disabled):hover,
-    &:not(:disabled):focus {
-      @apply text-white;
-      background-color: var(--color-gold);
-      background-size: 0% 0%;
-    }
-
-    &:not(:disabled):focus {
-      @apply text-white;
-    }
+  @variant md {
+    /* Fonts/Tablet/P2 */
+    font-size: 17px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 28px;
+    /* 164.706% */
   }
 
-  .kit-button.kit-button-small {
-    font-size: 12px;
-  }
-
-  .kit-button.kit-button-cornflower {
-    @apply text-cornflower;
-    @apply hocus:text-white hocus:bg-cornflower;
-    border: 2px solid var(--color-cornflower);
-  }
-
-  .kit-button.kit-button-salmon {
-    @apply text-salmon;
-    @apply hocus:text-white hocus:bg-salmon;
-    border: 2px solid var(--color-salmon);
-  }
-
-  .kit-cards {
-    @apply grid grid-cols-1 lg:grid-cols-3 gap-2;
-
-    > .kit-card {
-      @apply border border-gray-02 p-8 xl:p-10;
-      @apply w-full max-w-md mx-auto;
-    }
-
-    .kit-card h4 {
-      @apply text-cornflower !font-bold;
-    }
+  @variant xl {
+    /* Fonts/Desktop/P2 */
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 32px;
+    /* 160% */
   }
 }
+
+.kit-button {
+  @apply inline-block appearance-none;
+  @apply px-5 py-3 relative;
+  @apply text-gold font-bold uppercase text-center;
+  @apply disabled:opacity-50;
+
+  border: 2px solid var(--color-gold);
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 2.1px;
+  transition: background 150ms, color 150ms;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) min(15px, 10%), rgba(255, 255, 255, 0) min(15px, 10.1%), rgba(255, 255, 255, 0) 100%);
+
+  @variant md {
+    @apply text-left;
+    font-size: 16px;
+    letter-spacing: 2.4px;
+  }
+
+  @variant xl {
+    font-size: 18px;
+    letter-spacing: 2.7px;
+  }
+
+  &:not(:disabled):hover,
+  &:not(:disabled):focus {
+    @apply text-white;
+    background-color: var(--color-gold);
+    background-size: 0% 0%;
+  }
+
+  &:not(:disabled):focus {
+    @apply text-white;
+  }
+}
+
+.kit-button.kit-button-small {
+  font-size: 12px;
+}
+
+.kit-button.kit-button-cornflower {
+  @apply text-cornflower;
+  @apply hocus:text-white hocus:bg-cornflower;
+  border: 2px solid var(--color-cornflower);
+}
+
+.kit-button.kit-button-salmon {
+  @apply text-salmon;
+  @apply hocus:text-white hocus:bg-salmon;
+  border: 2px solid var(--color-salmon);
+}
+
+.kit-cards {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-2;
+
+  &>.kit-card {
+    @apply border border-gray-02 p-8 xl:p-10;
+    @apply w-full max-w-md mx-auto;
+  }
+
+  & .kit-card h4 {
+    @apply text-cornflower !font-bold;
+  }
+}
+
+@custom-variant hocus (&:hover, &:focus);

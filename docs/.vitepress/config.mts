@@ -5,6 +5,8 @@ import { URL, fileURLToPath } from 'node:url'
 import { resolve } from 'path'
 
 import { defineConfig, type HeadConfig } from 'vitepress'
+import tailwindcss from '@tailwindcss/vite'
+
 import { getSidebarItemsFromMdFiles } from './utils.mts'
 
 const inProd = process.env.NODE_ENV === 'production'
@@ -170,6 +172,9 @@ export default defineConfig({
   },
 
   vite: {
+    plugins: [
+      tailwindcss()
+    ],
     resolve: {
       alias: [
         // Override the footer with out custom footer

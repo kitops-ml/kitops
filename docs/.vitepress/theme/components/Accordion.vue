@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{
 </script>
 
 <template>
-<Component :is="props.tag" class="border-b border-opacity-20 border-gold py-10 px-4 p2 text-gray-06">
+<Component :is="props.tag" class="border-b border-gold/20 !py-10 !px-4 p2 !text-gray-06">
   <details class="group peer">
     <summary :class="props.summaryClass" class="flex items-center justify-between">
       <slot name="title"></slot>
@@ -29,7 +29,10 @@ const props = withDefaults(defineProps<{
 
 <style scoped>
 details summary {
-  @apply flex justify-between text-off-white cursor-pointer;
+  color: var(--color-off-white);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
 }
 
 details summary::marker,
@@ -39,7 +42,7 @@ details summary::-webkit-details-marker {
 }
 
 details summary::after {
-  @apply ml-4;
+  margin-left: 16px;
   content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z' fill='%23ECECEC'/%3E%3C/svg%3E");
 }
 
