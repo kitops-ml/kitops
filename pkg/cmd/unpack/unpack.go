@@ -181,12 +181,29 @@ func unpackParent(ctx context.Context, ref string, optsIn *unpackOptions, visite
 	opts := *optsIn
 	opts.modelRef = parentRef
 	// Unpack only model, ignore code/datasets
-	modelFilter, err := parseFilter("model")
-	if err != nil {
-		// Shouldn't happen, ever
-		return fmt.Errorf("failed to parse filter for parent modelkit: %w", err)
+	if len(opts.filterConfs) == 0 {
+		modelFilter, err := parseFilter("model")
+		if err != nil {
+			// Shouldn't happen, ever
+			return fmt.Errorf("failed to parse filter for parent modelkit: %w", err)
+		}
+		opts.filterConfs = []filterConf{*modelFilter}
+	} else {
+		var filterConfs []filterConf
+		for _, conf := range opts.filterConfs {
+			if conf.matchesBaseType(constants.ModelType) {
+				// Drop any other base types from this filter
+				conf.baseTypes = []string{constants.ModelType}
+				filterConfs = append(filterConfs, conf)
+			}
+		}
+		// If we've filtered out all confs, we don't want anything from the parent ModelKit.
+		// We have to return here, as no filters is interpreted as "unpack everything"
+		if len(filterConfs) == 0 {
+			return nil
+		}
+		opts.filterConfs = filterConfs
 	}
-	opts.filterConfs = []filterConf{*modelFilter}
 
 	return runUnpackRecursive(ctx, &opts, append(visitedRefs, ref))
 }
