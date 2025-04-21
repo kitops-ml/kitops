@@ -20,12 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2/registry"
 )
 
 // parseIndexJson parses an OCI index at specified path
@@ -80,16 +78,4 @@ func canSafelyDeleteManifest(ctx context.Context, storagePath string, desc ocisp
 		}
 	}
 	return refCount <= 1, nil
-}
-
-func getBaseBlobDownloadUrl(ref registry.Reference, plainHttp bool) string {
-	scheme := "https"
-	if plainHttp {
-		scheme = "http"
-	}
-	return fmt.Sprintf("%s://%s/v2/%s/blobs/", scheme, ref.Host(), ref.Repository)
-}
-
-func blobUrlForDescriptor(baseUrl string, digest string) (string, error) {
-	return url.JoinPath(baseUrl, digest)
 }

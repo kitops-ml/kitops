@@ -17,7 +17,6 @@ package dev
 
 import (
 	"net"
-	"os"
 	"strconv"
 
 	"github.com/kitops-ml/kitops/pkg/lib/harness"
@@ -46,7 +45,7 @@ func DevStartCommand() *cobra.Command {
 		Short:   devStartShortDesc,
 		Long:    devStartLongDesc,
 		Example: devStartExample,
-		Run:     runStartCommand(opts),
+		RunE:    runStartCommand(opts),
 	}
 	cmd.Args = cobra.MaximumNArgs(1)
 	cmd.Flags().StringVarP(&opts.modelFile, "file", "f", "", "Path to the kitfile")
@@ -63,7 +62,7 @@ func DevStopCommand() *cobra.Command {
 		Use:   "stop",
 		Short: devStopShortDesc,
 		Long:  devStopLongDesc,
-		Run:   runStopCommand(opts),
+		RunE:  runStopCommand(opts),
 	}
 	return cmd
 }
@@ -74,58 +73,55 @@ func DevLogsCommand() *cobra.Command {
 		Use:   "logs",
 		Short: devLogsShortDesc,
 		Long:  devLogsLongDesc,
-		Run:   runLogsCommand(opts),
+		RunE:  runLogsCommand(opts),
 	}
 	cmd.Flags().BoolVarP(&opts.follow, "follow", "f", false, "Stream the log file")
 	return cmd
 }
 
-func runStartCommand(opts *DevStartOptions) func(cmd *cobra.Command, args []string) {
-	return func(cmd *cobra.Command, args []string) {
+func runStartCommand(opts *DevStartOptions) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
-			output.Errorf("failed to complete options: %s", err)
-			return
+			return output.Fatalf("failed to complete options: %s", err)
 		}
 
 		err := runDev(cmd.Context(), opts)
 		if err != nil {
-			output.Errorf("Failed to start dev server: %s", err)
-			os.Exit(1)
+			return output.Fatalf("Failed to start dev server: %s", err)
 		}
 		output.Infof("Development server started at http://%s:%d", opts.host, opts.port)
 		output.Infof("Use \"kit dev stop\" to stop the development server")
+		return nil
 	}
 }
 
-func runStopCommand(opts *DevBaseOptions) func(cmd *cobra.Command, args []string) {
-	return func(cmd *cobra.Command, args []string) {
+func runStopCommand(opts *DevBaseOptions) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
-			output.Errorf("failed to complete options: %s", err)
-			return
+			return output.Fatalf("failed to complete options: %s", err)
 		}
 
 		output.Infoln("Stopping development server...")
 		err := stopDev(cmd.Context(), opts)
 		if err != nil {
-			output.Errorf("Failed to stop dev server: %s", err)
-			os.Exit(1)
+			return output.Fatalf("Failed to stop dev server: %s", err)
 		}
 		output.Infoln("Development server stopped")
+		return nil
 	}
 }
 
-func runLogsCommand(opts *DevLogsOptions) func(cmd *cobra.Command, args []string) {
-	return func(cmd *cobra.Command, args []string) {
+func runLogsCommand(opts *DevLogsOptions) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
-			output.Errorf("failed to complete options: %s", err)
-			return
+			return output.Fatalf("failed to complete options: %s", err)
 		}
 
 		err := harness.PrintLogs(opts.configHome, cmd.OutOrStdout(), opts.follow)
 		if err != nil {
-			output.Errorln(err)
-			os.Exit(1)
+			return output.Fatalln(err)
 		}
+		return nil
 	}
 }
 

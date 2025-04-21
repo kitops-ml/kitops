@@ -153,7 +153,7 @@ func writeLayerToTar(basePath string, ignore filesystem.IgnorePaths, tarWriter *
 		return true
 	}
 
-	filepath.Walk(".", func(file string, fi os.FileInfo, err error) error {
+	err = filepath.Walk(".", func(file string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -192,6 +192,9 @@ func writeLayerToTar(basePath string, ignore filesystem.IgnorePaths, tarWriter *
 		}
 		return writeFileToTar(file, fi, tarWriter, plog)
 	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
