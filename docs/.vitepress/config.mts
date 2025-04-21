@@ -124,9 +124,9 @@ export default defineConfig({
       {
         text: 'Integrations',
         items: [
-          { text: 'MLFlow', link: '/docs/pykitops/mlflow/' },
-          { text: 'CI/CD', link: '/docs/pykitops/cicd/' },
-          //{ text: 'Notebooks', link: '/docs/pykitops/notebooks/' },
+          { text: 'MLFlow', link: '/docs/integrations/mlflow/' },
+          { text: 'CI/CD', link: '/docs/integrations/cicd/' },
+          { text: 'KServe', link: '/docs/integrations/kserve/' },
         ]
       },
       {
