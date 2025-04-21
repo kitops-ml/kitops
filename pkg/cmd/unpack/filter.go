@@ -19,6 +19,7 @@ package unpack
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -35,6 +36,10 @@ func (fc *filterConf) matches(baseType, field string) bool {
 }
 
 func (fc *filterConf) matchesBaseType(baseType string) bool {
+	// Treat modelparts as covered by the 'model' filter
+	if baseType == constants.ModelPartType {
+		baseType = constants.ModelType
+	}
 	for _, t := range fc.baseTypes {
 		if t == baseType {
 			return true
@@ -48,12 +53,7 @@ func (fc *filterConf) matchesField(field string) bool {
 		// By default everything matches
 		return true
 	}
-	for _, filter := range fc.filters {
-		if filter == field {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(fc.filters, field)
 }
 
 func parseFilter(filter string) (*filterConf, error) {
@@ -99,10 +99,8 @@ func shouldUnpackLayer(layer any, filters []filterConf) bool {
 	switch l := layer.(type) {
 	case artifact.KitFile:
 		for _, filter := range filters {
-			for _, baseType := range filter.baseTypes {
-				if baseType == constants.ConfigType {
-					return true
-				}
+			if slices.Contains(filter.baseTypes, constants.ConfigType) {
+				return true
 			}
 		}
 		return false
@@ -124,10 +122,6 @@ func shouldUnpackLayer(layer any, filters []filterConf) bool {
 }
 
 func matchesFilters(field string, baseType string, filterConfs []filterConf) bool {
-	// Treat modelparts as covered by the 'model' filter
-	if baseType == constants.ModelPartType {
-		baseType = constants.ModelType
-	}
 	for _, filterConf := range filterConfs {
 		if filterConf.matches(baseType, field) {
 			return true
