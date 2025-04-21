@@ -46,18 +46,19 @@ func VersionCommand() *cobra.Command {
 		Use:   "version",
 		Short: shortDesc,
 		Long:  longDesc,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if cmd.Flags().Changed(versionNotifFlag) {
 				configHome, ok := cmd.Context().Value(constants.ConfigKey{}).(string)
 				if !ok {
-					output.Fatalln("default config path not set on command context")
+					return output.Fatalln("default config path not set on command context")
 				}
 				if err := update.SetShowNotifications(configHome, opts.shouldShowNotifications); err != nil {
-					output.Fatalln(err)
+					return output.Fatalln(err)
 				}
 			} else {
 				output.Infof("Version: %s\nCommit: %s\nBuilt: %s\nGo version: %s\n", constants.Version, constants.GitCommit, constants.BuildTime, constants.GoVersion)
 			}
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&opts.shouldShowNotifications, versionNotifFlag, false, "Enable or disable update notifications for the Kit CLI")

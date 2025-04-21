@@ -22,7 +22,6 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
-	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 type DevBaseOptions struct {
@@ -34,7 +33,7 @@ type DevLogsOptions struct {
 	follow bool
 }
 
-func (opts *DevBaseOptions) complete(ctx context.Context, args []string) error {
+func (opts *DevBaseOptions) complete(ctx context.Context, _ []string) error {
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
@@ -74,8 +73,7 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 	if opts.port == 0 {
 		availPort, err := findAvailablePort()
 		if err != nil {
-			output.Fatalf("Invalid arguments: %s", err)
-			return err
+			return fmt.Errorf("Invalid arguments: %s", err)
 		}
 		opts.port = availPort
 	}
