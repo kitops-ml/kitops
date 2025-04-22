@@ -60,8 +60,12 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 8.0.0
+
+      - name: Build dev-mode
+        run: |
+          cd frontend/dev-mode
+          pnpm install
+          pnpm build
 
       - name: Generate embeds
         run: |
