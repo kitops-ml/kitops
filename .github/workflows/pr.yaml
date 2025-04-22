@@ -147,7 +147,11 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          cd docs
+          pnpm install
 
       - name: Build the docs
-        run: pnpm docs:build
+        run: |
+          cd docs
+          pnpm docs:build
