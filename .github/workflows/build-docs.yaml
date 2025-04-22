@@ -1,8 +1,9 @@
 name: Build the docs
 
 on:
-  # Runs pull requests and only for the `docs/**` path.
+  # Runs on pull requests to the `main` branch and only for the `docs/**` path.
   pull_request:
+    branches: [ main ]
     paths:
       - 'docs/**'
 
