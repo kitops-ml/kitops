@@ -69,6 +69,8 @@
   --vp-c-danger-3: var(--vp-c-red-3);
   --vp-c-danger-soft: var(--vp-c-red-soft);
 
+  --vp-font-family-base: 'Atkinson Hyperlegible', sans-serif;
+
   --vp-c-bg: var(--color-night);
 
   /* Custom jozu branding colors */
