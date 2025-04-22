@@ -144,24 +144,40 @@ section {
 }
 
 .tag {
-  @apply px-3 py-2;
-  @apply text-xs text-ash;
-  @apply capitalize inline-block transition-colors;
-  @apply hocus:bg-ash hocus:text-night;
-
+  padding-inline: 0.75rem;
+  padding-block: 0.5rem;
+  color: var(--color-ash);
+  font-size: 0.875rem;
+  transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
+  text-transform: capitalize;
+  display: inline-block;
   border: 1px solid var(--color-ash);
 
+  &:hover,
+  &:focus-visible {
+    color: var(--color-night);
+    background-color: var(--color-ash);
+  }
+
   &.selected {
-    @apply bg-ash text-night;
+    background-color: var(--color-ash);
+    color: var(--color-night);
   }
 }
 
 .tag.tag1 {
-  @apply text-gold border-gold;
-  @apply hocus:!bg-gold hocus:text-night;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-night);
+    background-color: var(--color-gold);
+  }
 
   &.selected {
-    @apply bg-gold text-night;
+    background-color: var(--color-gold);
+    color: var(--color-night);
   }
 }
 </style>
