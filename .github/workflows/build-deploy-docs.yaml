@@ -1,4 +1,4 @@
-name: Buid and deploy the docs
+name: Build and deploy the docs
 
 on:
   # Runs on pushes targeting the `main` branch, and only for the `docs/**` path.
