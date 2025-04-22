@@ -1,22 +1,44 @@
 .VPHome h1 {
-  @apply font-heading text-off-white;
+  font-family: var(--font-heading);
+  color: var(--color-off-white);
 }
 
 .VPHome h2,
 .VPHome h3 {
-  @apply font-brand text-off-white;
+  font-family: var(--font-brand);
+  color: var(--color-off-white);
 }
 
 .VPHome h3 {
-  @apply text-gold;
+  color: var(--color-gold);
 }
 
 .VPHome h4,
 .VPHome .h4 {
-  @apply font-heading text-salmon;
+  font-family: var(--font-heading);
+  color: var(--color-salmon);
 }
 
 .marquee-gradients {
-  @apply before:absolute before:inset-y-0 before:-left-px before:w-16 before:z-10 before:bg-gradient-to-r before:from-night before:to-transparent;
-  @apply after:absolute after:inset-y-0 after:-right-px after:w-16 after:z-10 after:bg-gradient-to-l after:from-night after:to-transparent;
+  position: relative;
+}
+
+.marquee-gradients::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -1px;
+  width: 64px;
+  z-index: 10;
+  background-image: linear-gradient(to right, var(--color-night), transparent);
+}
+
+.marquee-gradients::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  right: -1px;
+  width: 64px;
+  z-index: 10;
+  background-image: linear-gradient(to left, var(--color-night), transparent);
 }

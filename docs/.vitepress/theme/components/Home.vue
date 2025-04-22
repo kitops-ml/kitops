@@ -111,11 +111,11 @@ onMounted(() => {
 <template>
 <div class="mt-32 md:mt-40  px-6 md:px-12 text-center content-container">
   <p class="h4 !font-normal !text-off-white">Simple, secure, and reproducible packaging for AI/ML projects</p>
-  <h1 class="mt-4">The missing link in your AI pipeline</h1>
+  <h1 class="!mt-4">The missing link in your AI pipeline</h1>
 
   <div class="flex flex-col lg:flex-row justify-center items-center gap-10 mt-10 md:mt-14 xl:mt-22">
     <div class="relative inline-block w-full max-w-48 lg:w-auto text-center lg:text-left group">
-      <a href="/docs/cli/installation/#%F0%9F%AA%9F-windows-install" class="kit-button flex justify-center lg:justify-start items-center gap-2">
+      <a href="/docs/cli/installation/#%F0%9F%AA%9F-windows-install" class="kit-button !flex justify-center lg:justify-start items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-white" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 19H21V21H3V19ZM13 13.1716L19.0711 7.1005L20.4853 8.51472L12 17L3.51472 8.51472L4.92893 7.1005L11 13.1716V2H13V13.1716Z"></path>
         </svg>
@@ -140,7 +140,7 @@ onMounted(() => {
     </div>
 
     <div class="relative inline-block w-full max-w-48 lg:w-auto text-center lg:text-left group">
-      <a href="/docs/cli/installation/#%F0%9F%8D%8E-macos-install" class="kit-button flex justify-center lg:justify-start items-center gap-2">
+      <a href="/docs/cli/installation/#%F0%9F%8D%8E-macos-install" class="kit-button !flex justify-center lg:justify-start items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-white" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 19H21V21H3V19ZM13 13.1716L19.0711 7.1005L20.4853 8.51472L12 17L3.51472 8.51472L4.92893 7.1005L11 13.1716V2H13V13.1716Z"></path>
         </svg>
@@ -161,7 +161,7 @@ onMounted(() => {
     </div>
 
     <div class="relative inline-block w-full max-w-48 lg:w-auto text-center lg:text-left group">
-      <a href="/docs/cli/installation/#%F0%9F%90%A7-linux-install" class="kit-button flex justify-center lg:justify-start items-center gap-2">
+      <a href="/docs/cli/installation/#%F0%9F%90%A7-linux-install" class="kit-button !flex justify-center lg:justify-start items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-white" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 19H21V21H3V19ZM13 13.1716L19.0711 7.1005L20.4853 8.51472L12 17L3.51472 8.51472L4.92893 7.1005L11 13.1716V2H13V13.1716Z"></path>
         </svg>
@@ -244,20 +244,20 @@ onMounted(() => {
 
   <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-4 md:gap-y-[4.5rem] xl:gap-22 max-w-[47.5rem] mx-auto">
     <div class="h4 !text-gold">Model handoffs are hard.</div>
-    <div class="p2 space-y-4">
+    <div class="p2 !space-y-4">
       <p>Moving a model from a Jupyter notebook to an ML tool or development server, then to a production server like Kubernetes is difficult because each tool uses its own packaging mechanism, and requires engineers to repackage the model multiple times. This slows down development and introduces risk.</p>
       <p>KitOps is an open source DevOps project built to standardize packaging, reproduction, deployment, and tracking of AI / ML models, so it can be run anywhere, just like application code</p>
       <p>KitOps solves multiple problems:</p>
     </div>
 
     <div class="h4 !text-gold xs:mt-12">Model traceability and reproducibility–</div>
-    <div class="p2 space-y-4">
+    <div class="p2 !space-y-4">
       <p>Unlike Dockerfiles, Kitfiles are a modular package - pull just a part of the ModelKit, like the model or dataset, or pull the whole package with one simple command.</p>
       <p>Storing ModelKits in your organization’s container registry provides a history of meaningful state changes for auditing. ModelKits are immutable so are perfect for a secure bill-of-materials (SBOM) initiative.</p>
     </div>
 
     <div class="h4 !text-gold xs:mt-12">Collaboration–</div>
-    <div class="p2 space-y-4">
+    <div class="p2 !space-y-4">
       <p>By building ModelKits on industry standards, anyone (not just data scientists) can participate in the model development lifecycle whether they’re integrating models with their application, experimenting with them locally, or deploying them to production.</p>
       <p>ModelKits can be stored in your existing container registry and work with the tools your team is already using, so you can use the same deployment pipelines and endpoints you’ve hardened with your application development process.</p>
     </div>
@@ -270,7 +270,7 @@ onMounted(() => {
 
   <div class="kit-cards mt-22 min-h-[32.5rem]">
     <div class="kit-card flex flex-col">
-      <div class="h4 font-bold !text-salmon">1</div>
+      <div class="h4 !font-bold !text-salmon">1</div>
       <div class="mt-8 flex flex-col flex-1 justify-between">
         <p class="p2">Download and install Kit CLI.</p>
         <a href="/docs/cli/installation/" v-ga-track="{ category: 'button', label: 'install', location: 'get started' }" class="kit-button kit-button-salmon md:w-fit mt-6">Install the CLI</a>
@@ -278,7 +278,7 @@ onMounted(() => {
     </div>
 
     <div class="kit-card flex flex-col">
-      <div class="h4 font-bold !text-cornflower">2</div>
+      <div class="h4 !font-bold !text-cornflower">2</div>
       <div class="mt-8 flex flex-col flex-1 justify-between">
         <p class="p2">Create a simple manifest file called a Kitfile with your model, dataset and code. Then build and push the ModelKit to a registry for sharing.</p>
         <a href="/docs/kitfile/kf-overview/" class="kit-button kit-button-cornflower md:w-fit mt-6">LEARN MORE</a>
@@ -286,7 +286,7 @@ onMounted(() => {
     </div>
 
     <div class="kit-card flex flex-col">
-      <div class="h4 font-bold !text-gold">3</div>
+      <div class="h4 !font-bold !text-gold">3</div>
       <div class="mt-8 flex flex-col flex-1 justify-between">
         <p class="p2">Pull the ModelKit into your pipeline, or use <span class="text-gold">kit dev</span> to start working with the model locally.</p>
         <a href="/docs/use-cases/" class="kit-button md:w-fit mt-6">USE CASES</a>
@@ -297,12 +297,12 @@ onMounted(() => {
 
 <div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 content-container">
   <h2 class="text-center">Key feAtuRes</h2>
-  <p class="p2 text-center mt-16">Visit our <a href="https://github.com/kitops-ml/kitops" target="_blank" class="underline">GitHub repo</a> for a list of all features and our roadmap.</p>
+  <p class="p2 text-center !mt-16">Visit our <a href="https://github.com/kitops-ml/kitops" target="_blank" class="!underline">GitHub repo</a> for a list of all features and our roadmap.</p>
 
-  <ol class="grid grid-cols-1 md:grid-cols-2 gap-x-22 gap-y-16 mt-16 max-w-[960px] mx-auto p1">
+  <ol class="grid grid-cols-1 md:grid-cols-2 gap-x-22 gap-y-16 !mt-16 max-w-[960px] !mx-auto p1">
     <li>
       <div class="text-off-white">🎁 Standards-based package</div>
-      <p class="p2 mb-4 text-gray-06">A ModelKit package includes models, datasets, configurations, and code in an OCI artifact. Add as much or as little as your project needs.</p>
+      <p class="p2 !mb-4 !text-gray-06">A ModelKit package includes models, datasets, configurations, and code in an OCI artifact. Add as much or as little as your project needs.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/modelkit/compatibility/">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -312,7 +312,7 @@ onMounted(() => {
     </li>
     <li>
       <div class="text-off-white">🔒 Tamper-proof</div>
-      <p class="p2 mb-4 text-gray-06">Each ModelKit package is immutable and includes a SHA digest for itself, and every artifact it holds.</p>
+      <p class="p2 !mb-4 !text-gray-06">Each ModelKit package is immutable and includes a SHA digest for itself, and every artifact it holds.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/modelkit/spec/">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -322,7 +322,7 @@ onMounted(() => {
     </li>
     <li>
       <div class="text-off-white">🏭 Tags and versions</div>
-      <p class="p2 mb-4 text-gray-06">Each ModelKit is tagged and versioned so everyone knows which dataset and model work together.</p>
+      <p class="p2 !mb-4 !text-gray-06">Each ModelKit is tagged and versioned so everyone knows which dataset and model work together.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/why-kitops/">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -332,7 +332,7 @@ onMounted(() => {
     </li>
     <li>
       <div class="text-off-white">🤗 Use with LLM, ML, or AI projects</div>
-      <p class="p2 mb-4 text-gray-06">ModelKits can be used with any AI, ML, or LLM project - even multi-modal models.</p>
+      <p class="p2 !mb-4 !text-gray-06">ModelKits can be used with any AI, ML, or LLM project - even multi-modal models.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/cli/cli-reference/#kit-tag">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -342,7 +342,7 @@ onMounted(() => {
     </li>
     <li>
       <div class="text-off-white">🤖 Automation for CI/CD</div>
-      <p class="p2 mb-4 text-gray-06">Pack or unpack a ModelKit locally or as part of your CI/CD workflow for testing, integration, or deployment.</p>
+      <p class="p2 !mb-4 !text-gray-06">Pack or unpack a ModelKit locally or as part of your CI/CD workflow for testing, integration, or deployment.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="https://github.com/marketplace/actions/setup-kit-cli" target="_blank">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -352,7 +352,7 @@ onMounted(() => {
     </li>
     <li>
       <div class="text-off-white">🏃‍♂️‍ Local dev mode</div>
-      <p class="p2 mb-4 text-gray-06">Kit's Dev Mode lets your run an LLM locally, configure it, and prompt/chat with it instantly</p>
+      <p class="p2 !mb-4 !text-gray-06">Kit's Dev Mode lets your run an LLM locally, configure it, and prompt/chat with it instantly</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/why-kitops/">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -369,10 +369,10 @@ onMounted(() => {
 
 <div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-10 lg:px-0 w-full max-w-[960px] mx-auto">
   <h2 class="text-center">tRy running youR fiRst Model with Kitops</h2>
-  <p class="p1 text-center mt-16">AI projects are more than just a model, you need a codebase, dataset, documentation too.</p>
-  <p class="p1 text-center mt-4">Our quickstart ModelKits have everything you need in one easy to find place.</p>
+  <p class="p1 text-center !mt-16">AI projects are more than just a model, you need a codebase, dataset, documentation too.</p>
+  <p class="p1 text-center !mt-4">Our quickstart ModelKits have everything you need in one easy to find place.</p>
 
-  <ul class="grid grid-cols-1 md:grid-cols-2 gap-6 my-22">
+  <ul class="grid grid-cols-1 md:grid-cols-2 gap-6 !my-22">
     <li class="border border-gray-02 hover:border-gold transition-colors">
       <a href="https://jozu.ml/repository/jozu/llama3.1-8b" class="flex items-center justify-between px-14 py-6">
         Meta Llama3.1
@@ -429,7 +429,7 @@ onMounted(() => {
     <div class="kit-card max-w-[370px] flex flex-col">
       <h3 class="!text-cornflower">ModelKit</h3>
 
-      <div class="flex-1 mt-8 space-y-4">
+      <div class="flex-1 mt-8 !space-y-4">
         <p class="p2">The ModelKit is an OCI compliant package (like a container, but more fully featured) that contains everything needed to integrate with a model, or deploy it to production.</p>
         <p class="p2">The ModelKit holds the serialized model, dataset, hyperparameters, input / output structure, and validation criteria. Kitfiles define a ModelKit in a modular and easy-to-understand way.</p>
       </div>
@@ -445,7 +445,7 @@ onMounted(() => {
     <div class="kit-card max-w-[370px] flex flex-col">
       <h3 class="!text-salmon">Kit cli</h3>
 
-      <div class="flex-1 mt-8 space-y-4">
+      <div class="flex-1 mt-8 !space-y-4">
         <p class="p2">The Kit CLI is a command line interface (CLI) that performs actions on ModelKits.</p>
         <p class="p2">You can: build and version ModelKits; push or pull them from a model registry; run them locally with a RESTful API we generate for your model automatically, and deploy them to staging or production.</p>
       </div>
@@ -464,9 +464,9 @@ onMounted(() => {
 
 <div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 text-center content-container">
   <h2>WhAt’s suppoRted<span class="font-heading font-extralight">?</span></h2>
-  <p class="p1 mt-8 mb-22">Kit was designed to work with the tools your team already uses.</p>
+  <p class="p1 !mt-8 !mb-22">Kit was designed to work with the tools your team already uses.</p>
 
-  <div class="space-y-12 relative marquee-gradients">
+  <div class="!space-y-12 relative marquee-gradients">
 
     <Vue3Marquee>
       <div class="flex justify-center items-center mx-10">
@@ -554,10 +554,10 @@ onMounted(() => {
   <div class="my-22 inline-flex items-center gap-0 md:gap-4 relative md:left-1/2 transition quotes-container">
     <button
       v-for="(quote, index) in quotes" :key="index"
-      class="quote-bg p-10 pt-24 md:pt-10 md:pl-32 border border-solid border-gray-02 hover:border-white
+      class="quote-bg !p-10 !pt-24 md:!pt-10 md:!pl-32 !border !border-solid !border-gray-02 hover:!border-white
         flex flex-col justify-between xs:items-center
-        text-left md:self-stretch min-h-[344px] lg:basis-auto max-w-[664px] space-y-10 opacity-50 cursor-pointer text-off-white hover:text-white
-        min-w-[calc(100vw-3rem)] md:min-w-[664px] mx-6 md:mx-0"
+        text-left md:self-stretch !min-h-[344px] lg:basis-auto !max-w-[664px] space-y-10 opacity-50 cursor-pointer !text-off-white hover:!text-white
+        !min-w-[calc(100vw-3rem)] md:!min-w-[664px] !mx-6 md:!mx-0"
       :class="{ '!opacity-100': activeQuote === index }"
       @click="activeQuote = index">
       <p class="p2">{{ quote.text }}</p>
@@ -580,22 +580,22 @@ onMounted(() => {
 </div>
 
 <div class="max-w-3xl mx-auto my-32 md:my-40 lg:my-60 faq-section content-container">
-  <h2 class="text-center mb-10 md:mb-14 lg:mb-22">fAq</h2>
+  <h2 class="text-center !mb-10 md:!mb-14 lg:!mb-22">fAq</h2>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Are ModelKits a versioning solution or a packaging solution?</template>
 
-    <p class="mt-6">
+    <p class="!mt-6">
       ModelKits do both. With a ModelKit, you can package all the parts of your AI project in one shareable asset, and tag them with a version.
       ModelKits were designed for the model development lifecycle, where projects are handed off from data science teams to application teams to deployment teams. Versioning and packaging makes it easy for team members to find the datasets and configurations that map to a specific model version.
       You can <a href="/docs/overview/" class="underline">read more details about KitOps in our overview</a>.
     </p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>How do I get started with Kit?</template>
 
-    <p class="mt-6">The easiest way to get started is to follow our <a href="/docs/get-started/" class="underline">Quick Start</a>, where you’ll learn how to:</p>
+    <p class="!mt-6">The easiest way to get started is to follow our <a href="/docs/get-started/" class="underline">Quick Start</a>, where you’ll learn how to:</p>
 
     <ul class="space-y-2 list-disc list-inside">
       <li>Package up a model, notebook, and datasets into a single ModelKit you can use with your existing tools</li>
@@ -605,66 +605,66 @@ onMounted(() => {
 
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Can I see if something changed between ModelKits?</template>
 
-    <p class="mt-6">Yes [choir sings hallelujah], each ModelKit includes SHA digests for the ModelKit and every artifact it holds so you can quickly see if something changed between ModelKit versions. </p>
+    <p class="!mt-6">Yes [choir sings hallelujah], each ModelKit includes SHA digests for the ModelKit and every artifact it holds so you can quickly see if something changed between ModelKit versions. </p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>What are the benefits of using Kit?</template>
 
-    <p class="mt-6">Increased speed: Teams can work faster with a centralized and versioned package for their AI project coordination. ModelKits eliminate hunting for datasets or code, and make it obvious which datasets and configurations are needed for each model. Handoffs can be automated and executed quickly and with confidence.</p>
+    <p class="!mt-6">Increased speed: Teams can work faster with a centralized and versioned package for their AI project coordination. ModelKits eliminate hunting for datasets or code, and make it obvious which datasets and configurations are needed for each model. Handoffs can be automated and executed quickly and with confidence.</p>
     <p>Reduced risk: ModelKits are self-verifying. Both the ModelKit itself and all the artifacts added to it are tamper-proof. Anyone can quickly and easily verify when something may have changed.</p>
     <p>Improved efficiency: Models stored in ModelKits can be run locally for experimentation or application integration, or packaged for deployment with a single command. Any artifact in a ModelKit can be separately pulled saving time and space on local or shared machines. This makes it easy for data scientists, application developers, and DevOps engineers to find and grab the pieces they need to do their job without being overwhelmed with unnecessary files.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>What tools are compatible with Kit?</template>
 
-    <p class="mt-6">ModelKits store their assets as OCI-compatible artifacts. This makes them compatible with nearly every development and deployment tool and registry in use today.</p>
+    <p class="!mt-6">ModelKits store their assets as OCI-compatible artifacts. This makes them compatible with nearly every development and deployment tool and registry in use today.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Where are ModelKits stored?</template>
-    <p class="mt-6">ModelKits can be stored in any OCI-compliant registry - for example in a container registry like Docker Hub or Jozu Hub, or your favorite cloud vendor’s container registry, they can even be stored in an artifact repository like Artifactory.</p>
+    <p class="!mt-6">ModelKits can be stored in any OCI-compliant registry - for example in a container registry like Docker Hub or Jozu Hub, or your favorite cloud vendor’s container registry, they can even be stored in an artifact repository like Artifactory.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Is KitOps open source and free to use?</template>
 
-    <p class="mt-6">Yes, it is licensed with the Apache 2.0 license and welcomes all users and contributors. If you’re <a href="https://github.com/kitops-ml/kitops/blob/main/CONTRIBUTING.md" class="underline">interested in contributing</a>, let us know.</p>
+    <p class="!mt-6">Yes, it is licensed with the Apache 2.0 license and welcomes all users and contributors. If you’re <a href="https://github.com/kitops-ml/kitops/blob/main/CONTRIBUTING.md" class="underline">interested in contributing</a>, let us know.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Are ModelKits a replacement for Docker containers?</template>
 
-    <p class="mt-6">No, ModelKits complement containers - in fact, KitOps can take a ModelKit and generate a container for the model automatically. However, not all models should be deployed inside containers - sometimes it’s more efficient and faster to deploy an init container linked to the model for deployment. Datasets may also not need to be in containers - many datasets are easier to read and manipulate for training and validation when they’re not in a container. Finally, each container is still separate so even if you do want to put everything in its own container it’s not clear to people outside the AI project which datasets go with which models and which configurations.</p>
+    <p class="!mt-6">No, ModelKits complement containers - in fact, KitOps can take a ModelKit and generate a container for the model automatically. However, not all models should be deployed inside containers - sometimes it’s more efficient and faster to deploy an init container linked to the model for deployment. Datasets may also not need to be in containers - many datasets are easier to read and manipulate for training and validation when they’re not in a container. Finally, each container is still separate so even if you do want to put everything in its own container it’s not clear to people outside the AI project which datasets go with which models and which configurations.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Why would I use KitOps for versioning instead of Git?</template>
 
-    <p class="mt-6">Models and datasets in AI projects are often 10s or 100s of GB in size. Git was designed to work with many small files that can be easily diff’ed between versions. Git treats models and datasets stored in LFS (large file storage) as atomic blobs and can’t differentiate between versions of them. This makes it both inefficient and dangerous since it’s easy for someone to tamper with the models and datasets in the LFS without Git knowing. Finally, once you use LFS, a clone is no longer guaranteed to be the same as the original repo, because the repo refers to an LFS server that is independent of the clone and can change independently.</p>
+    <p class="!mt-6">Models and datasets in AI projects are often 10s or 100s of GB in size. Git was designed to work with many small files that can be easily diff’ed between versions. Git treats models and datasets stored in LFS (large file storage) as atomic blobs and can’t differentiate between versions of them. This makes it both inefficient and dangerous since it’s easy for someone to tamper with the models and datasets in the LFS without Git knowing. Finally, once you use LFS, a clone is no longer guaranteed to be the same as the original repo, because the repo refers to an LFS server that is independent of the clone and can change independently.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>My MLOps tools do versioning, why do I need Kit?</template>
 
-    <p class="mt-6">KitOps is the only standards-based and open source solution for packaging and versioning AI project assets. Popular MLOps tools use proprietary and often closed formats to lock you into their ecosystem. This makes handoffs between MLOps tool users and non-MLOps tool users (like your application development and DevOps teams) unnecessarily hard. The future of MLOps tools is still being written, and it’s likely that many will be acquired or shut down and the cost of moving projects from one proprietary format to another is high. By using the OCI standard that’s already supported by nearly every tool on the planet, ModelKits give you a future-proofed solution for packaging and versioning that is compatible with both your MLOps tools and development / DevOps tools so everyone can collaborate regardless of the tools they use.</p>
+    <p class="!mt-6">KitOps is the only standards-based and open source solution for packaging and versioning AI project assets. Popular MLOps tools use proprietary and often closed formats to lock you into their ecosystem. This makes handoffs between MLOps tool users and non-MLOps tool users (like your application development and DevOps teams) unnecessarily hard. The future of MLOps tools is still being written, and it’s likely that many will be acquired or shut down and the cost of moving projects from one proprietary format to another is high. By using the OCI standard that’s already supported by nearly every tool on the planet, ModelKits give you a future-proofed solution for packaging and versioning that is compatible with both your MLOps tools and development / DevOps tools so everyone can collaborate regardless of the tools they use.</p>
   </Accordion>
 
-  <Accordion content-class="space-y-[1em]">
+  <Accordion content-class="!space-y-[1em]">
     <template #title>Is enterprise support available for Kit?</template>
 
-    <p class="mt-6">Enterprise support for ModelKits and the Kit CLI is available from <a href="https://www.jozu.com/" class="underline" target="_blank">Jozu</a>.</p>
+    <p class="!mt-6">Enterprise support for ModelKits and the Kit CLI is available from <a href="https://www.jozu.com/" class="underline" target="_blank">Jozu</a>.</p>
   </Accordion>
 </div>
 
-<div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 content-container">
+<div class="!mt-32 md:!mt-40 xl:!mt-60 px-6 md:!px-12 content-container">
   <h2 class="text-center">How to Get inVolVeD<span class="font-heading font-extralight">?</span></h2>
 
-  <div class="space-y-6 w-fit mx-auto mt-22">
+  <div class="!space-y-6 w-fit !mx-auto !mt-22">
     <a href="https://discord.gg/Tapeh8agYy" v-ga-track="{ category: 'button', label: 'join the kitops discord', location: 'how to get involved' }" class="border border-gray-02 p-8 md:px-14 md:py-10 flex justify-between gap-8 items-center hover:border-gold transition-colors">
       <div class="p1">Join the KitOps Discord</div>
 
@@ -713,11 +713,25 @@ onMounted(() => {
 
 <style scoped>
 .input {
-  @apply border border-off-white text-off-white;
-  @apply focus:border-gold;
-  @apply placeholder:text-gray-05 placeholder:opacity-100;
-  @apply block px-4 py-2 flex-1 bg-transparent w-full;
-  @apply outline-none focus:!outline-none;
+  display: block;
+  border: 1px solid var(--color-off-white);
+  color: var(--color-off-white);
+  outline: none;
+  padding-block: 8px;
+  padding-inline: 16px;
+  flex: 1;
+  background-color: transparent;
+  width: 100%;
+
+  &::placeholder {
+    color: var(--color-gray-05);
+    opacity: 1;
+  }
+
+  &:focus {
+    border-color: var(--color-gold);
+    outline: none !important;
+  }
 }
 
 .quote-bg {
@@ -730,7 +744,8 @@ onMounted(() => {
   transform: v-bind(quotesOffsetMobile);
 }
 
-@media screen(md) {
+/* screen(md) */
+@media screen and (min-width: 768px) {
   .quotes-container {
     transform: v-bind(quotesOffsetDesktop);
   }

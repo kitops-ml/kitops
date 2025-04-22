@@ -146,7 +146,8 @@ html.platform-linux .platform-snippet-linux {
 
 <style scoped>
 option {
-  @apply bg-night text-off-white;
+  background-color: var(--color-night);
+  color: var(--color-off-white);
 }
 
 .container {

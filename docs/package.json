@@ -1,13 +1,12 @@
 {
   "version": "v1.5.0",
   "peerDependencies": {
-    "vue": "^3.4"
+    "vue": "^3.5"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.1",
-    "tailwindcss": "^3.4.17",
-    "vitepress": "1.5.0",
+    "@tailwindcss/vite": "^4.1.4",
+    "tailwindcss": "^4.1.4",
+    "vitepress": "1.6.3",
     "vue": "^3.5.13",
     "vue-turnstile": "^1.0.11"
   },
@@ -17,8 +16,8 @@
     "docs:preview": "vitepress preview"
   },
   "dependencies": {
-    "@vueuse/core": "^12.4.0",
-    "axios": "^1.7.9",
+    "@vueuse/core": "^13.1.0",
+    "axios": "^1.8.4",
     "cheerio": "1.0.0",
     "vue3-marquee": "^4.2.2"
   }
