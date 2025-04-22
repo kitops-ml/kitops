@@ -20,5 +20,6 @@
     "axios": "^1.8.4",
     "cheerio": "1.0.0",
     "vue3-marquee": "^4.2.2"
-  }
+  },
+  "packageManager": "pnpm@10.0.0"
 }
