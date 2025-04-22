@@ -53,12 +53,6 @@ jobs:
             exit 1
           fi
 
-      - name: Build dev-mode
-        run: |
-          cd frontend/dev-mode
-          pnpm install
-          pnpm build
-
       - name: Generate embeds
         run: |
           go generate ./...
