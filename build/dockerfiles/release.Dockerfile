@@ -34,7 +34,7 @@ ENV USER_ID=1001 \
     HOME=/home/user/
 
 RUN apk --no-cache upgrade && \
-    apk add --no-cache git git-lfs && \
+    apk add --no-cache bash git git-lfs && \
     git-lfs install --system && \
     mkdir -p /home/user/ && \
     adduser -D $USER_NAME -h $HOME -u $USER_ID
