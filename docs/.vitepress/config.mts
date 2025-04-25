@@ -1,6 +1,8 @@
 import type MarkdownIt from 'markdown-it'
 import type StateBlock from 'markdown-it/lib/rules_block/state_block'
 
+import svgLoader from 'vite-svg-loader'
+
 import { URL, fileURLToPath } from 'node:url'
 import { resolve } from 'path'
 
@@ -171,7 +173,8 @@ export default defineConfig({
 
   vite: {
     plugins: [
-      tailwindcss()
+      tailwindcss(),
+      svgLoader()
     ],
     resolve: {
       alias: [

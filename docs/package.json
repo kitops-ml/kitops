@@ -1,11 +1,12 @@
 {
-  "version": "v1.5.1",
+  "version": "v1.5.0",
   "peerDependencies": {
     "vue": "^3.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.4",
     "tailwindcss": "^4.1.4",
+    "vite-svg-loader": "^5.1.0",
     "vitepress": "1.6.3",
     "vue": "^3.5.13",
     "vue-turnstile": "^1.0.11"
