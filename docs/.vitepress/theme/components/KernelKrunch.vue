@@ -36,19 +36,3 @@ import BunBottom from '../assets/css/images/kernel-krunch/bun-bottom.svg?compone
     <BunBottom class="absolute bottom-0 -left-1" />
   </div>
 </template>
-<!--
-<style>
-.kernel-krunch {
-  transform-origin: bottom left;
-  animation: breathe 1.5s ease-in-out infinite;
-}
-
-@keyframes breathe {
-  0%, 100% {
-    transform: scaleY(1) skewX(0deg);
-  }
-  50% {
-    transform: scaleY(1.05) skewX(-2deg);
-  }
-}
-</style> -->
