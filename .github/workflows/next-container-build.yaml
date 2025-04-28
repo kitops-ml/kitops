@@ -42,7 +42,7 @@ jobs:
 
       - name: Build and push base Kit container
         id: build-kit-container
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4    # v6.15.0
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1    # v6.16.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -59,7 +59,7 @@ jobs:
 
       - name: Build and push Kit init container
         id: build-kit-init-container
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4    # v6.15.0
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1    # v6.16.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -76,7 +76,7 @@ jobs:
      
       - name: Build and push Kit KServe container
         id: build-kit-serve-container
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4    # v6.15.0
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1    # v6.16.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
