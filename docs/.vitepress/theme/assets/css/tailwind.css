@@ -43,10 +43,6 @@ html {
   @apply font-sans;
 }
 
-a:hover {
-  @apply underline;
-}
-
 h1,
 h2,
 h3,

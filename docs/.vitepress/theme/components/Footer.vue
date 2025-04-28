@@ -42,7 +42,7 @@ const { hasSidebar } = useSidebar()
         <div class="text-gray-06">Install KitOps</div>
         <ul class="space-y-2">
           <li class="font-bold">
-            <a href="/docs/cli/installation/#🪟-windows-install" class="flex gap-4">
+            <a href="/docs/cli/installation/#🪟-windows-install" class="flex gap-4 hocus:!underline">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="21" viewBox="0 0 20 21" fill="none">
                 <path d="M2.5 16.3337H17.5V18.0003H2.5V16.3337ZM10.8333 11.477L15.8925 6.41699L17.0708 7.59533L10 14.667L2.92917 7.59616L4.1075 6.41699L9.16667 11.4753V2.16699H10.8333V11.477Z" fill="white"/>
               </svg>
@@ -50,7 +50,7 @@ const { hasSidebar } = useSidebar()
             </a>
           </li>
           <li class="font-bold">
-            <a href="/docs/cli/installation/#%F0%9F%8D%8E-macos-install" class="flex gap-4">
+            <a href="/docs/cli/installation/#%F0%9F%8D%8E-macos-install" class="flex gap-4 hocus:!underline">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="21" viewBox="0 0 20 21" fill="none">
                 <path d="M2.5 16.3337H17.5V18.0003H2.5V16.3337ZM10.8333 11.477L15.8925 6.41699L17.0708 7.59533L10 14.667L2.92917 7.59616L4.1075 6.41699L9.16667 11.4753V2.16699H10.8333V11.477Z" fill="white"/>
               </svg>
@@ -58,7 +58,7 @@ const { hasSidebar } = useSidebar()
             </a>
           </li>
           <li class="font-bold">
-            <a href="/docs/cli/installation/#%F0%9F%90%A7-linux-install" class="flex gap-4">
+            <a href="/docs/cli/installation/#%F0%9F%90%A7-linux-install" class="flex gap-4 hocus:!underline">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="21" viewBox="0 0 20 21" fill="none">
                 <path d="M2.5 16.3337H17.5V18.0003H2.5V16.3337ZM10.8333 11.477L15.8925 6.41699L17.0708 7.59533L10 14.667L2.92917 7.59616L4.1075 6.41699L9.16667 11.4753V2.16699H10.8333V11.477Z" fill="white"/>
               </svg>
@@ -71,12 +71,12 @@ const { hasSidebar } = useSidebar()
         <div class="text-gray-06">KitOps</div>
         <ul class="space-y-2">
           <li class="font-bold">
-            <a href="/docs/why-kitops/#why-use-kitops">
+            <a href="/docs/why-kitops/#why-use-kitops" class="hocus:!underline">
               Why Kit?
             </a>
           </li>
           <li class="font-bold">
-            <a href="/docs/use-cases/#how-kitops-is-used-%F0%9F%9B%A0%EF%B8%8F">
+            <a href="/docs/use-cases/#how-kitops-is-used-%F0%9F%9B%A0%EF%B8%8F" class="hocus:!underline">
               How does it work?
             </a>
           </li>
@@ -86,12 +86,12 @@ const { hasSidebar } = useSidebar()
         <div class="text-gray-06">Resources</div>
         <ul class="space-y-2">
           <li class="font-bold">
-            <a href="/docs/overview/">
+            <a href="/docs/overview/" class="hocus:!underline">
               Docs
             </a>
           </li>
           <li class="font-bold">
-            <a href="/blog/">
+            <a href="/blog/" class="hocus:!underline">
               Blog
             </a>
           </li>
@@ -141,12 +141,12 @@ const { hasSidebar } = useSidebar()
       </div>
 
       <ul class="!mt-6 flex justify-center lg:justify-start items-center text-sm font-bold flex-wrap lg:flex-nowrap gap-x-6">
-        <li><a href="https://jozu.com/privacy-policy" target="_blank">Privacy policy</a></li>
+        <li><a href="https://jozu.com/privacy-policy" target="_blank" class="hocus:!underline">Privacy policy</a></li>
         <li class="lg:hidden">
           <div class="w-px h-2.5 bg-gray-05"></div>
         </li>
-        <li><a href="https://jozu.com/terms-of-service" target="_blank">Terms of service</a></li>
-        <li><a href="https://jozu.com/acceptable-use" target="_blank">Acceptable use policy</a></li>
+        <li><a href="https://jozu.com/terms-of-service" target="_blank" class="hocus:!underline">Terms of service</a></li>
+        <li><a href="https://jozu.com/acceptable-use" target="_blank" class="hocus:!underline">Acceptable use policy</a></li>
       </ul>
 
       <div class="flex flex-col lg:flex-row gap-2">
@@ -164,7 +164,7 @@ const { hasSidebar } = useSidebar()
         </defs>
       </svg>
 
-      <p class="font-normal text-off-white !mt-2 text-xs lg:text-sm">Copyright © KitOps a Series of LF Projects, LLC For website terms of use, trademark policy and other project policies please see <a href="https://lfprojects.org/policies/" class="!text-gold hover:underline" target="_blank">lfprojects.org/policies/</a></p>
+      <p class="font-normal text-off-white !mt-2 text-xs lg:text-sm">Copyright © KitOps a Series of LF Projects, LLC For website terms of use, trademark policy and other project policies please see <a href="https://lfprojects.org/policies/" class="!text-gold hocus:!underline" target="_blank">lfprojects.org/policies/</a></p>
     </div>
   </div>
 </footer>
