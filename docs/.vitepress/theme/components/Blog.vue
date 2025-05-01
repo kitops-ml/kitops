@@ -25,11 +25,22 @@ const tagsColorsMap = [
 // There are custom acronyms that must go with custom capitalization or fully uppercase.
 // eg. AWS, AI, DevOps, etc.
 // Those are listed here and replaced as specified.
-const customCapitalTags = {
+const customCapitalTags: { [tag: string]: string } = {
   'ai': 'AI',
   'devops': 'DevOps',
   'mlops': 'MLOps',
-  'kitops': 'KitOps'
+  'kitops': 'KitOps',
+  'cncf': 'CNCF',
+  'llmops': 'LLMOps',
+  'sllm': 'SLLM',
+  'modelkits': 'ModelKits',
+  'rag': 'RAG',
+  'pydata': 'PyData',
+  'argocd': 'ArgoCD',
+  'aws': 'AWS',
+  'github actions': 'GitHub Actions',
+  'cicd': 'CI/CD',
+  'jozu': 'Jozu',
 }
 
 const formatDate = (raw: string) => {
@@ -49,8 +60,7 @@ const filterByTag = (tag: string | null) => {
 
 const allTags = computed(() => {
   const tagsOnly = props.posts.map(({ tags }) => tags).flat()
-  const uniqueTags = new Set(tagsOnly)
-
+  const uniqueTags = new Set(tagsOnly.map(tag => tag.toLowerCase()))
   return Array.from(uniqueTags)
 })
 
@@ -66,7 +76,7 @@ const filteredPostsByTag = computed(() => {
 
 const getColorForTag = (tag: string) => {
   return tagsColorsMap[
-    tagsByIndex[tag] % tagsColorsMap.length
+    tagsByIndex[tag.toLowerCase()] % tagsColorsMap.length
   ]
 }
 
@@ -82,7 +92,7 @@ watchEffect(() => {
   <div>
     <h1 class="text-center">Blog</h1>
 
-    <ul class="flex items-center md:justify-center gap-4 flex-wrap mt-10 md:mt-14 xl:mt-22">
+    <ul class="flex items-center md:justify-center gap-4 flex-wrap !mt-10 md:mt-14 xl:mt-22">
       <li>
         <button
           class="tag tag1"

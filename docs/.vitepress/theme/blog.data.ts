@@ -51,7 +51,7 @@ async function getPostData(post: Post) {
     } as Post
   }
   catch (e) {
-    console.error(e)
+    console.error(`failed to fetch: ${post.url}`, e)
   }
 }
 
@@ -61,6 +61,7 @@ export default {
 
     // Let's slow down these fetch's...
     for (const post of postsUrls) {
+      console.log(`fetching blog post ${post.url}`)
       const data = await getPostData(post)
 
        // Skip the post that has no url, which is probably a 404 page.
