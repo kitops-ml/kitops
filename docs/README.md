@@ -3,7 +3,7 @@
 
 # KitOps Documentation
 
-This is the documentation for [KitsOps](https://kitops.org). You can read the docs at https://kitops.org/docs/overview.html.
+This is the documentation for [KitsOps](https://kitops.org). You can read the docs at https://kitops.org/docs/overview/.
 
 ## Table of Contents
 

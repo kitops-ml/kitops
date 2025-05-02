@@ -15,7 +15,7 @@ In this guide, we'll use ModelKits and the kit CLI to easily:
 * Package the ModelKit as a container or Kubernetes deployment
 
 :::info
-If you're more interested in using KitOps with [MLFlow](../pykitops/mlflow.md) or [CI/CD pipelines](../pykitops/cicd.md) check out our integrations section.
+If you're more interested in using KitOps with [MLFlow](../integrations/mlflow.md) or [CI/CD pipelines](../integrations/cicd.md) check out our integrations section.
 :::
 
 ## Before we start...
@@ -151,8 +151,8 @@ If you'd like to learn more about using Kit, try our [Next Steps with Kit](../ne
 * Tagging ModelKits
 * Keeping your registry tidy
 
-Or, if you want to run an LLM-based ModelKit locally try our [dev mode](../dev-mode/).
+Or, if you want to run an LLM-based ModelKit locally try our [dev mode](../deploy/#running-llms-locally).
 
-Finally, if you're building workflows using Dagger you can use KitOps through our [Daggerverse modules](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit). Or get the [GitHub Action for Kit](https://github.com/marketplace/actions/setup-kit-cli).
+Finally, if you're building workflows using Dagger you can use KitOps through our [Daggerverse modules](https://github.com/kitops-ml/daggerverse). Or get the [GitHub Action for Kit](https://github.com/marketplace/actions/setup-kit-cli).
 
 Thanks for taking some time to play with Kit. We'd love to hear what you think. Feel free to drop us an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy).

@@ -32,7 +32,7 @@ The most fully-featured repository for ModelKits is the [Jozu Hub](https://jozu.
 
 ### Pre-Built Workflows
 
-* Dagger: see [Kit modules for Dagger](https://daggerverse.dev/mod/github.com/kitops-ml/daggerverse/kit) in the Daggerverse
+* Dagger: see [Kit modules for Dagger](https://github.com/kitops-ml/daggerverse) in the Daggerverse
 * GitHub Actions: Kit CLI for [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli)
 
 ## Other Compatible Tools
