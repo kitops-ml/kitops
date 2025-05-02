@@ -3,7 +3,7 @@ description: Use KitOps PyKitOps Python library to automate ModelKit creation wi
 ---
 # MLFlow and KitOps ModelKits
 
-Many KitOps users automate the creation of secure and tamper-proof [ModelKits](../modelkit/intro.md) for each experiment run in MLFlow. This gives the team and organization a library of models that they can reproduce on any infrastructure.
+Many KitOps users automate the creation of secure and tamper-proof [ModelKits](../../modelkit/intro.md) for each experiment run in MLFlow. This gives the team and organization a library of models that they can reproduce on any infrastructure.
 
 ::tip
 You can follow the instructions below, or in a [community-generated tutorial](https://jozu.com/blog/how-to-use-kitops-with-mlflow/)
@@ -33,7 +33,7 @@ The `ModelKitManager` is then used to pack and upload the artifacts as a ModelKi
 
 In the following code:
 `artifact_location` = the directory where the experiment run artifacts were saved
-`name` = the name of the ModelKit as it will be displayed in the [Kitfile](../kitfile/kf-overview.md)
+`name` = the name of the ModelKit as it will be displayed in the [Kitfile](../../kitfile/kf-overview.md)
 `modelkit_tag` = a name for the ModelKit, for example "latest"
 
 ```py
@@ -42,7 +42,7 @@ from kitops.modelkit.manager import ModelKitManager
 from kitops.modelkit.user import UserCredentials
 from kitops.cli import kit
 
-# A password can be read from Environment Variables or .env files: JOZU_PASSWORD=<secret password> 
+# A password can be read from Environment Variables or .env files: JOZU_PASSWORD=<secret password>
 # Add in your own username from the registry that you are accessing, e.g. username=bmicklea
 creds = UserCredentials(username=username, registry="jozu.ml")
 
