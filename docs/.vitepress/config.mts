@@ -2,6 +2,7 @@ import type MarkdownIt from 'markdown-it'
 import type StateBlock from 'markdown-it/lib/rules_block/state_block'
 
 import svgLoader from 'vite-svg-loader'
+import llmstxt from 'vitepress-plugin-llms'
 
 import { URL, fileURLToPath } from 'node:url'
 import { resolve } from 'path'
@@ -176,6 +177,18 @@ export default defineConfig({
       tailwindcss(),
       svgLoader({
         defaultImport: 'url'
+      }),
+      llmstxt({
+        ignoreFiles: [
+          'CONTRIBUTING.md',
+          'CODE-OF-CONDUCT.md',
+          'GOVERNANCE.md',
+          'SECURITY.md',
+          'SUPPORT.md',
+          'MAINTAINERS.md',
+          'contributing.md',
+          'index.md'
+        ]
       })
     ],
     resolve: {
@@ -199,7 +212,14 @@ export default defineConfig({
     }
   },
 
-  ignoreDeadLinks: true,
+  ignoreDeadLinks: [
+    './CONTRIBUTING',
+    './CODE-OF-CONDUCT',
+    './GOVERNANCE',
+    './SECURITY',
+    './SUPPORT',
+    './MAINTAINERS'
+  ],
 
   cleanUrls: true,
 
