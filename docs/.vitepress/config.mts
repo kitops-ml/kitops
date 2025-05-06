@@ -174,7 +174,9 @@ export default defineConfig({
   vite: {
     plugins: [
       tailwindcss(),
-      svgLoader()
+      svgLoader({
+        defaultImport: 'url'
+      })
     ],
     resolve: {
       alias: [
