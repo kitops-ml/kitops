@@ -4,6 +4,7 @@ import { resolve } from 'path'
 import type { DefaultTheme } from 'vitepress'
 
 type ScanOptions = {
+  format?: string,
   capitalize?: boolean,
   replacements?: Record<string, string>,
   textFormat: (text: string) => string
@@ -29,6 +30,8 @@ function capitalize(text: string) {
  */
 export function getSidebarItemsFromMdFiles(pathName: string, options: Partial<ScanOptions>) {
   const defaults: ScanOptions = {
+    // Only read .md files
+    format: 'md',
     capitalize: true,
     textFormat: (text) => text.replace(/[-_]/g, ' ')
   }
@@ -43,7 +46,8 @@ export function getSidebarItemsFromMdFiles(pathName: string, options: Partial<Sc
 
 // Read the folder and return the `{ text, items }` array.
 function getItems(path: string, options: Partial<ScanOptions>) {
-	let content = fs.readdirSync(path).filter((item: string) => !item.startsWith('.'))
+	let content = fs.readdirSync(path)
+    .filter((item: string) => !item.startsWith('.') && item.endsWith(options.format as string))
 
 	if (!content) {
     return;

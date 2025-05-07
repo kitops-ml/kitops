@@ -1,5 +1,6 @@
 ---
 layout: home
+title: KitOps
 markdownStyles: false
 ---
 
