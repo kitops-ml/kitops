@@ -1,3 +1,6 @@
+---
+title: UserCredentials Class
+---
 ## `UserCredentials` class
 
 You can import the `UserCredentials` class from `kitops.modelkit.user`:
