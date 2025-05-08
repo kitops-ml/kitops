@@ -1,3 +1,6 @@
+---
+title: Kit Commands
+---
 ## Kit Commands
 
 These functions provide programmatic access to the KitOps Command-Line Interface.

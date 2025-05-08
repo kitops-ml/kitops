@@ -1,3 +1,6 @@
+---
+title: Before you begin with PyKitOps
+---
 ## Before You Begin
 
 This project was created using Python v3.12, but works with Python versions >= 3.10.
@@ -23,11 +26,11 @@ To determine if the Kit CLI is installed in your environment:
     Go version: go1.22.6
     ```
 
-If you don't have the Kit CLI installed, follow the [Kit Installation Instructions](https://kitops.org/docs/cli/installation.html).
+If you don't have the Kit CLI installed, follow the [Kit Installation Instructions](https://kitops.org/docs/cli/installation/).
 
 ### 2/ Prepare Your Registry
 
-To get the most out of ModelKits we strongly suggest you [sign up for a free account at Jozu.ml](https://api.jozu.ml/signup).
+To get the most out of ModelKits we strongly suggest you [sign up for a free account at Jozu.ml](https://jozu.ml/signup).
 
 The [Jozu Hub](https://jozu.ml/) will:
 * Automatically generates a container from a ModelKit
@@ -58,7 +61,7 @@ Alternatively, ModelKits can be stored in any OCI 1.1-compliant container regist
       JOZU_NAMESPACE=brett
     ```
 
-    - The Kitops Manager uses the entries in the `.env` file to login to [Jozu.ml](https://www.jozu.ml).
+    - The Kitops Manager uses the entries in the `.env` file to login to [Jozu.ml](https://jozu.ml).
     - As an alternative to using a `.env` file, you can create Environment Variables for each of the entries above.
 3. Be sure to save the changes to your .env file before continuing.
 
