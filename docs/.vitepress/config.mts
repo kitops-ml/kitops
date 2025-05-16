@@ -131,6 +131,7 @@ export default defineConfig({
         items: [
           { text: 'MLFlow', link: '/docs/integrations/mlflow/' },
           { text: 'CI/CD', link: '/docs/integrations/cicd/' },
+          { text: 'Kubernetes - initContainer', link: '/docs/integrations/k8s-init-container/' },
           { text: 'KServe', link: '/docs/integrations/kserve/' },
         ]
       },
