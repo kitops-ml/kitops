@@ -28,6 +28,8 @@ volumes:
     emptyDir: {}
 ```
 
+`emptyDir` have some limitations especially with large models. See the Kubernetes [docs](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) for limitations and configuration of `emptyDir`.
+
 ## 2. Configure the Init Container
 
 Add an `initContainer` that:
