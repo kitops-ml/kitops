@@ -14,18 +14,16 @@ if [ -z "$MODELKIT_REF" ]; then
   exit 1
 fi
 
+FLAGS_HAS_DIR="false"
 read -r -a ADDITIONAL_UNPACK_FLAGS <<< "$EXTRA_FLAGS"
 for flag in "${ADDITIONAL_UNPACK_FLAGS[@]}"; do
-  if [ "$flag" == "--filter" ] || [ "$flag" == "-f" ] || [ "$flag" == "--dir" ] || [ "$flag" == "-d" ]; then
-    echo "Do not use \$EXTRA_FLAGS to specify '--filter' and '--dir' flags"
-    echo "Set environment variables \$UNPACK_PATH and \$UNPACK_FILTER instead"
-    exit 1
+  if [[ "$flag" == "-d"* ]] || [[ "$flag" == "--dir"* ]]; then
+    FLAGS_HAS_DIR="true"
   fi
 done
 if [ ${#ADDITIONAL_UNPACK_FLAGS[@]} == "0" ]; then
   ADDITIONAL_UNPACK_FLAGS[0]="--ignore-existing"
 fi
-
 
 # Variables for verifying signature via cosign. Can specify either a key to use for
 # verifying or an identity and oidc issuer for keyless verification
@@ -45,5 +43,10 @@ fi
 echo "Binary version info:"
 kit version
 
-echo "Unpacking modelkit $MODELKIT_REF to $UNPACK_PATH with filter '$UNPACK_FILTER'. Additional flags: ${ADDITIONAL_UNPACK_FLAGS[@]}"
-kit unpack "$MODELKIT_REF" --dir "$UNPACK_PATH" --filter="$UNPACK_FILTER" "${ADDITIONAL_UNPACK_FLAGS[@]}"
+if [ "$FLAGS_HAS_DIR" == "false" ]; then
+  echo "Unpacking modelkit $MODELKIT_REF to $UNPACK_PATH with filter '$UNPACK_FILTER'. Additional flags: ${ADDITIONAL_UNPACK_FLAGS[@]}"
+  kit unpack "$MODELKIT_REF" --dir "$UNPACK_PATH" --filter="$UNPACK_FILTER" "${ADDITIONAL_UNPACK_FLAGS[@]}"
+else
+  echo "Unpacking modelkit $MODELKIT_REF with flags '--filter=$UNPACK_FILTER ${ADDITIONAL_UNPACK_FLAGS[@]}'"
+  kit unpack "$MODELKIT_REF" --filter="$UNPACK_FILTER" "${ADDITIONAL_UNPACK_FLAGS[@]}"
+fi
