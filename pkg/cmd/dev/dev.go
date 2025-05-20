@@ -18,7 +18,10 @@ package dev
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
@@ -49,7 +52,11 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		kitfile.Model.Path = resolvedKitfile.Model.Path
 		kitfile.Model.Parts = append(kitfile.Model.Parts, resolvedKitfile.Model.Parts...)
 	}
-	modelPath, _, err := filesystem.VerifySubpath(options.contextDir, kitfile.Model.Path)
+	modelAbsPath, _, err := filesystem.VerifySubpath(options.contextDir, kitfile.Model.Path)
+	if err != nil {
+		return err
+	}
+	modelPath, err := findModelFile(modelAbsPath)
 	if err != nil {
 		return err
 	}
@@ -82,4 +89,38 @@ func stopDev(_ context.Context, options *DevBaseOptions) error {
 		return err
 	}
 	return nil
+}
+
+func findModelFile(absPath string) (string, error) {
+	stat, err := os.Lstat(absPath)
+	if err != nil {
+		return "", err
+	}
+	if stat.Mode().IsRegular() {
+		// model path refers to a regular file; assume it's fine to use
+		return absPath, nil
+	} else if !stat.IsDir() {
+		return "", fmt.Errorf("could not find model file in %s: path is not regular file or directory", absPath)
+	}
+
+	modelPath := ""
+	if err := filepath.WalkDir(absPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if strings.HasSuffix(path, ".gguf") && d.Type().IsRegular() {
+			if modelPath == "" {
+				modelPath = path
+			} else {
+				return fmt.Errorf("multiple model files found: %s and %s", modelPath, path)
+			}
+		}
+		return nil
+	}); err != nil {
+		return "", fmt.Errorf("error searching for model file in %s: %w", absPath, err)
+	} else if modelPath == "" {
+		return "", fmt.Errorf("could not find model file in %s", absPath)
+	}
+	output.Debugf("Found model path in directory %s at %s", absPath, modelPath)
+	return modelPath, nil
 }
