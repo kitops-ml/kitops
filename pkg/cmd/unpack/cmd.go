@@ -82,13 +82,14 @@ kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked`
 
 type unpackOptions struct {
 	options.NetworkOptions
-	configHome  string
-	unpackDir   string
-	filters     []string
-	filterConfs []filterConf
-	unpackConf  unpackConf
-	modelRef    *registry.Reference
-	overwrite   bool
+	configHome     string
+	unpackDir      string
+	filters        []string
+	filterConfs    []filterConf
+	unpackConf     unpackConf
+	modelRef       *registry.Reference
+	overwrite      bool
+	ignoreExisting bool
 }
 
 // unpackConf configures which elements of the modelkit should be unpacked.
@@ -160,6 +161,7 @@ func UnpackCommand() *cobra.Command {
 	cmd.Args = cobra.ExactArgs(1)
 	cmd.Flags().StringVarP(&opts.unpackDir, "dir", "d", "", "The target directory to unpack components into. This directory will be created if it does not exist")
 	cmd.Flags().BoolVarP(&opts.overwrite, "overwrite", "o", false, "Overwrites existing files and directories in the target unpack directory without prompting")
+	cmd.Flags().BoolVarP(&opts.ignoreExisting, "ignore-existing", "i", false, "Skip unpacking files if a file with that name already exists")
 	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackKitfile, "kitfile", false, "Unpack only Kitfile (deprecated: use --filter=kitfile)")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackModels, "model", false, "Unpack only model (deprecated: use --filter=model)")

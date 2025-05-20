@@ -25,6 +25,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -156,7 +157,7 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 			}
 		}
 
-		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.overwrite, mediaType.Compression); err != nil {
+		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.overwrite, opts.ignoreExisting, mediaType.Compression); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
@@ -209,18 +210,30 @@ func unpackParent(ctx context.Context, ref string, optsIn *unpackOptions, visite
 }
 
 func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) error {
-	configPath := filepath.Join(unpackDir, constants.DefaultKitfileName)
-	if fi, exists := filesystem.PathExists(configPath); exists {
-		if !overwrite {
-			return fmt.Errorf("failed to unpack config: path %s already exists", configPath)
-		} else if !fi.Mode().IsRegular() {
-			return fmt.Errorf("failed to unpack config: path %s exists and is not a regular file", configPath)
-		}
-	}
-
 	configBytes, err := config.MarshalToYAML()
 	if err != nil {
 		return fmt.Errorf("failed to unpack config: %w", err)
+	}
+
+	configPath := filepath.Join(unpackDir, constants.DefaultKitfileName)
+	if fi, exists := filesystem.PathExists(configPath); exists {
+		if !fi.Mode().IsRegular() {
+			return fmt.Errorf("failed to unpack config: path %s exists and is not a regular file", configPath)
+		}
+		if !overwrite {
+			if fi.Size() != int64(len(configBytes)) {
+				return fmt.Errorf("failed to unpack config: path %s already exists", configPath)
+			}
+			existingBytes, err := os.ReadFile(configPath)
+			if err != nil {
+				return fmt.Errorf("failed to read existing Kitfile: %w", err)
+			}
+			if slices.Equal(configBytes, existingBytes) {
+				output.Infof("Found existing Kitfile at %s", configPath)
+				return nil
+			}
+			return fmt.Errorf("failed to unpack: Kitfile exists and does not match model's Kitfile")
+		}
 	}
 
 	output.Infof("Unpacking config to %s", configPath)
@@ -230,7 +243,7 @@ func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) er
 	return nil
 }
 
-func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descriptor, unpackPath string, overwrite bool, compression string) error {
+func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, compression string) error {
 	rc, err := store.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed get layer %s: %w", desc.Digest, err)
@@ -260,14 +273,15 @@ func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descri
 		}
 	}
 
-	if err := extractTar(tr, unpackPath, overwrite, logger); err != nil {
+	if err := extractTar(tr, unpackPath, overwrite, ignoreExisting, logger); err != nil {
 		return err
 	}
+
 	logger.Wait()
 	return nil
 }
 
-func extractTar(tr *tar.Reader, extractDir string, overwrite bool, logger *output.ProgressLogger) (err error) {
+func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -301,6 +315,10 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite bool, logger *outpu
 
 		case tar.TypeReg:
 			if fi, exists := filesystem.PathExists(outPath); exists {
+				if ignoreExisting {
+					output.Debugf("File %s already exists; skipping", outPath)
+					continue
+				}
 				if !overwrite {
 					return fmt.Errorf("path '%s' already exists", outPath)
 				}
