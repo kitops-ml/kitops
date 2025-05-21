@@ -980,6 +980,7 @@ kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked
 ```
   -d, --dir string           The target directory to unpack components into. This directory will be created if it does not exist
   -o, --overwrite            Overwrites existing files and directories in the target unpack directory without prompting
+  -i, --ignore-existing      Skip unpacking files if a file with that name already exists
   -f, --filter stringArray   Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times
       --kitfile              Unpack only Kitfile (deprecated: use --filter=kitfile)
       --model                Unpack only model (deprecated: use --filter=model)
