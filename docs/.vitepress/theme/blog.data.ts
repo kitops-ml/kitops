@@ -39,9 +39,6 @@ function loadCache(digest: string): Post[] | null {
 
 // Save the given posts with the given digest to the cache
 function saveCache(digest: string, posts: Post[]) {
-  if (!fs.existsSync(POSTS_PATH)) {
-    fs.mkdirSync(POSTS_PATH)
-  }
   fs.writeFileSync(CACHE_PATH, JSON.stringify({ hash: digest, posts }, null, 2))
 }
 
