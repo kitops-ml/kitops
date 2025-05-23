@@ -64,15 +64,15 @@ const allTags = computed(() => {
   return Array.from(uniqueTags)
 })
 
-const filteredPostsByTag = computed(() => {
-  return props.posts.filter(({ tags }) => {
+const filteredPostsByTag = computed(() =>
+  props.posts.filter(({ tags }) => {
     if (!selectedTag.value) {
       return true
     }
 
-    return tags.includes(selectedTag.value)
+    return tags.map((tag: string) => tag.toLowerCase()).includes(selectedTag.value.toLowerCase())
   })
-})
+)
 
 const getColorForTag = (tag: string) => {
   return tagsColorsMap[
