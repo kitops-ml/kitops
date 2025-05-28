@@ -37,13 +37,13 @@ You'll see information about the version of Kit you're running. If you get an er
 
 ### 2/ Login to Your Registry
 
-You can use the [login command](../cli/cli-reference/#kit-login) to authenticate with any OCI v1.1-compatible container registry - local or remote (you can see our [list of compliant registries](../modelkit/compatibility/)). In this guide, we'll use the [Jozu Hub](https://jozu.ml/) because it's free to sign-up and provides more detail on what's inside each ModelKit like whether it's signed or has provenance. You can substitute your own repository if preferred.
+You can use the [login command](../cli/cli-reference/#kit-login) to authenticate with any OCI v1.1-compatible container registry - local or remote. In this guide, we'll use the [Jozu Hub](https://jozu.ml/) because it's free to sign-up and provides more detail on what's inside each ModelKit than other registries. You can substitute your own repository if preferred.
 
 ```sh
 kit login jozu.ml
 ```
 
-After entering your username and password, you'll see `Log in successful`. If you get an error it may be that you need an HTTP vs HTTPS (default) connection. Try the login command again but with `--plain-http`.
+When asked for your username type in the email you used to sign up for a Jozu Hub account. Then type in your password. You'll see `Log in successful`. If you get an error it may be that you need an HTTP vs HTTPS (default) connection. Try the login command again but with `--plain-http`. You can also use authentication from `stdin` or using tokens or keys (see the [login command](../cli/cli-reference/#kit-login) documentation).
 
 ### 3/ Get a Sample ModelKit
 
