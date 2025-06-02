@@ -154,7 +154,7 @@ const { hasSidebar } = useSidebar()
         <p class="font-normal text-off-white !mt-6 text-xs lg:text-sm">This site conforms to <strong class="block lg:inline">Web Content Accessibility Guidelines 2.1</strong></p>
       </div>
 
-      <svg xmlns="http://www.w3.org/2000/svg" width="131" height="36" class="!mt-6 mx-auto lg:mx-0" role="img" viewBox="-3.65 -3.40 358.80 85.80">
+      <svg xmlns="http://www.w3.org/2000/svg" aria-label="CNCF sandbox project logo" width="131" height="36" class="!mt-6 mx-auto lg:mx-0" role="img" viewBox="-3.65 -3.40 358.80 85.80">
         <path id="XMLID_207_" d="M96.9 24.5c2.7 0 4.9-1.1 6.5-3.2l3.5 3.6c-2.8 3.1-6 4.7-9.8 4.7-3.7 0-6.8-1.2-9.3-3.6-2.4-2.4-3.6-5.4-3.6-9 0-3.6 1.2-6.6 3.7-9 2.5-2.4 5.5-3.6 9.1-3.6 4 0 7.3 1.5 10 4.6l-3.4 3.8c-1.7-2.1-3.9-3.2-6.4-3.2-2 0-3.8.7-5.2 2-1.5 1.3-2.2 3.1-2.2 5.4s.7 4.1 2.1 5.4c1.4 1.5 3 2.1 5 2.1z" class="fill-white"/>
         <path id="XMLID_205_" d="M111.2 29.4V5h5.4v19.5H127v4.8h-15.8z" class="fill-white"/>
         <path id="XMLID_157_" d="M150.8 26c-2.5 2.4-5.5 3.6-9.1 3.6-3.6 0-6.6-1.2-9.1-3.6-2.5-2.4-3.7-5.4-3.7-9 0-3.6 1.2-6.6 3.7-9 2.5-2.4 5.5-3.6 9.1-3.6 3.6 0 6.6 1.2 9.1 3.6 2.5 2.4 3.7 5.4 3.7 9 0 3.6-1.3 6.6-3.7 9zm-1.9-9c0-2.2-.7-4-2.1-5.6-1.4-1.5-3.1-2.3-5.1-2.3-2 0-3.7.8-5.1 2.3-1.4 1.5-2.1 3.4-2.1 5.6 0 2.2.7 4 2.1 5.5 1.4 1.5 3.1 2.3 5.1 2.3 2 0 3.7-.8 5.1-2.3 1.4-1.4 2.1-3.3 2.1-5.5z" class="fill-white"/>
