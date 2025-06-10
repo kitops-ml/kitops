@@ -634,5 +634,105 @@
     ],
     "author": "Jesse Williams",
     "published_time": "2025-03-14"
+  },
+  {
+    "url": "http://northflank.com/blog/kube-con-europe-london-2025-27-open-source-projects-you-should-check-out",
+    "title": "KubeCon Europe London 2025 – 27 open-source projects you should check out",
+    "tags": [
+      "KitOps",
+      "KubeCon",
+      "Open Source"
+    ],
+    "author": "Daniel Adeboye",
+    "published_time": "2025-03-27"
+  },
+  {
+    "url": "https://www.gorkem-ercan.com/p/securing-mcp-applying-lessons-learned",
+    "title": "Securing MCP: Applying Lessons Learned from the Language Server Protocol",
+    "tags": [
+      "KitOps",
+      "MCP",
+      "Open Source"
+    ],
+    "author": "Gorkem Ercan",
+    "published_time": "2025-03-28"
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=eExvPkSqTCQ",
+    "title": "Tutorial–Maintaining ML Model Accuracy With Automated Drift Detection",
+    "description": "This tutorial demonstrates how to implement automated drift detection, triggers alerts, and automatically retrains models to maintain accuracy in production environments.",
+    "tags": [
+      "KitOps",
+      "Drift Detection",
+      "ML"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-04-09"
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=eExvPkSqTCQ",
+    "title": "PyData Global Talk–Streamlining AI development and Deployment with KitOps",
+    "tags": [
+      "KitOps",
+      "PyData",
+      "Event Talk"
+    ],
+    "author": "Shivay Lamba",
+    "published_time": "2025-04-09"
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=fP_OssMlnWI",
+    "title": "Machine Learning Packaging for Ops with KitOps",
+    "tags": [
+      "KitOps",
+      "Docker Captain",
+      "Podcast"
+    ],
+    "author": "Bret Fisher, Cloud Native DevOps",
+    "published_time": "2025-04-17"
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=BM9PcoK2Ik8",
+    "title": "Cloud Native Podcast–KitOps: An Open Standard For Packaging, Managing & Deploying Machine Learning Models",
+    "tags": [
+      "KitOps",
+      "Open Source",
+      "Podcast"
+    ],
+    "author": "Cloud Native Podcast",
+    "published_time": "2025-04-23"
+  },
+  {
+    "url": "https://dev.to/arindam_1729/stop-vibe-coding-make-your-ai-saas-production-ready-with-these-7-tools-2pam",
+    "title": "Stop Vibe Coding 🚫 Make Your AI SaaS Production-Ready with these 7 Tools ⚡️",
+    "tags": [
+      "KitOps",
+      "Open-Source",
+      "Vibe Coding"
+    ],
+    "author": "Arindam Majumder",
+    "published_time": "2025-05-01"
+  },
+  {
+    "url": "https://www.youtube.com/live/a4hJEFGv8uo?feature=shared&t=10812",
+    "title": "AI Crush 2025 Talk–Secure ML Packaging Using Open Source KitOps",
+    "tags": [
+      "KitOps",
+      "AI Crush",
+      "Event Talk"
+    ],
+    "author": "Shivay Lamba",
+    "published_time": "2025-05-09"
+  },
+  {
+    "url": "https://www.upgrad.com/blog/open-source-projects-for-beginners/",
+    "title": "Top Open Source Projects for Beginners",
+    "tags": [
+      "KitOps",
+      "Open Source",
+      "Beginners"
+    ],
+    "author": "Pavan Vadapalli",
+    "published_time": "2025-06-02"
   }
 ]
