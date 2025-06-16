@@ -45,6 +45,7 @@ type LocalRepo interface {
 	GetAllModels() []ocispec.Descriptor
 	GetTags(ocispec.Descriptor) []string
 	PullModel(context.Context, oras.ReadOnlyTarget, registry.Reference, *options.NetworkOptions) (ocispec.Descriptor, error)
+	EnsureDirs(ocispec.Descriptor) error
 	oras.Target
 	content.Deleter
 	content.Untagger
@@ -119,88 +120,95 @@ func GetAllLocalRepos(storagePath string) ([]LocalRepo, error) {
 	return repos, nil
 }
 
-// GetRepo returns the registry and repository for the current OCI store.
-func (r *localRepo) GetRepoName() string {
-	return r.nameRef
+// GetRepoName returns the string representation of <registry>/<repository> for the current local repo.
+func (lr *localRepo) GetRepoName() string {
+	return lr.nameRef
 }
 
-func (r *localRepo) BlobPath(desc ocispec.Descriptor) string {
-	return filepath.Join(r.storagePath, ocispec.ImageBlobsDir, desc.Digest.Algorithm().String(), desc.Digest.Encoded())
+func (lr *localRepo) BlobPath(desc ocispec.Descriptor) string {
+	return filepath.Join(lr.storagePath, ocispec.ImageBlobsDir, desc.Digest.Algorithm().String(), desc.Digest.Encoded())
 }
 
-func (l *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) error {
+func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) error {
 	if target.MediaType != ocispec.MediaTypeImageManifest {
-		return l.Store.Delete(ctx, target)
+		return lr.Store.Delete(ctx, target)
 	}
 
-	canDelete, err := canSafelyDeleteManifest(ctx, l.storagePath, target)
+	canDelete, err := canSafelyDeleteManifest(ctx, lr.storagePath, target)
 	if err != nil {
 		return fmt.Errorf("failed to check if manifest can be deleted: %w", err)
 	}
 	if canDelete {
-		if err := l.Store.Delete(ctx, target); err != nil {
+		if err := lr.Store.Delete(ctx, target); err != nil {
 			return err
 		}
 	}
-	return l.localIndex.delete(target)
+	return lr.localIndex.delete(target)
 }
 
-func (l *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (bool, error) {
+func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (bool, error) {
 	if target.MediaType == ocispec.MediaTypeImageManifest {
-		return l.localIndex.exists(target), nil
+		return lr.localIndex.exists(target), nil
 	} else {
-		return l.Store.Exists(ctx, target)
+		return lr.Store.Exists(ctx, target)
 	}
 }
 
-func (l *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
+func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
 	if target.MediaType == ocispec.MediaTypeImageManifest {
-		if exists := l.localIndex.exists(target); !exists {
+		if exists := lr.localIndex.exists(target); !exists {
 			return nil, errdef.ErrNotFound
 		}
 	}
-	return l.Store.Fetch(ctx, target)
+	return lr.Store.Fetch(ctx, target)
 }
 
-func (l *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
+func (lr *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
 	if expected.MediaType == ocispec.MediaTypeImageManifest {
 		// Attempting to push a manifest to oci.Store will return an error if it already exists.
 		// Normally, clients check before pushing, but in our case, the manifest may exist in the
 		// oci.Store but not the local index. As a result, we have to check if it exists before pushing.
-		exists, err := l.Store.Exists(ctx, expected)
+		exists, err := lr.Store.Exists(ctx, expected)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err := l.Store.Push(ctx, expected, content); err != nil {
+			if err := lr.Store.Push(ctx, expected, content); err != nil {
 				return err
 			}
 		}
-		return l.localIndex.addManifest(expected)
-	} else {
-		return l.Store.Push(ctx, expected, content)
+		return lr.localIndex.addManifest(expected)
 	}
+	return lr.Store.Push(ctx, expected, content)
 }
 
-func (l *localRepo) Resolve(_ context.Context, reference string) (ocispec.Descriptor, error) {
-	return l.localIndex.resolve(reference)
+func (lr *localRepo) Resolve(_ context.Context, reference string) (ocispec.Descriptor, error) {
+	return lr.localIndex.resolve(reference)
 }
 
-func (l *localRepo) Tag(_ context.Context, desc ocispec.Descriptor, reference string) error {
+func (lr *localRepo) Tag(_ context.Context, desc ocispec.Descriptor, reference string) error {
 	// TODO: should we tag it in the general index.json too?
-	return l.localIndex.tag(desc, reference)
+	return lr.localIndex.tag(desc, reference)
 }
 
-func (l *localRepo) Untag(_ context.Context, reference string) error {
-	return l.localIndex.untag(reference)
+func (lr *localRepo) Untag(_ context.Context, reference string) error {
+	return lr.localIndex.untag(reference)
 }
 
-func (l *localRepo) GetAllModels() []ocispec.Descriptor {
-	return l.localIndex.Manifests
+func (lr *localRepo) GetAllModels() []ocispec.Descriptor {
+	return lr.localIndex.Manifests
 }
 
-func (l *localRepo) GetTags(desc ocispec.Descriptor) []string {
-	return l.localIndex.listTags(desc)
+func (lr *localRepo) GetTags(desc ocispec.Descriptor) []string {
+	return lr.localIndex.listTags(desc)
+}
+
+func (lr *localRepo) EnsureDirs(desc ocispec.Descriptor) error {
+	path := filepath.Join(lr.storagePath, ocispec.ImageBlobsDir, desc.Digest.Algorithm().String())
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return fmt.Errorf("failed to set up directories for local storage: %w", err)
+	}
+	return nil
 }
 
 var _ LocalRepo = (*localRepo)(nil)
