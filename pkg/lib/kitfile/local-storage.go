@@ -186,6 +186,9 @@ func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path strin
 
 	// Workaround to avoid copying a potentially very large file: move it to the expected path
 	// and verify that it exists afterwards.
+	if err := localRepo.EnsureDirs(desc); err != nil {
+		return ocispec.DescriptorEmptyJSON, nil, err
+	}
 	blobPath := localRepo.BlobPath(desc)
 	if err := os.Rename(tempPath, blobPath); err != nil {
 		// This may fail on some systems (e.g. linux where / and /home are different partitions)
