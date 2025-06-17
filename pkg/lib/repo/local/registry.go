@@ -30,6 +30,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
@@ -130,6 +131,7 @@ func (lr *localRepo) BlobPath(desc ocispec.Descriptor) string {
 }
 
 func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) error {
+	output.SafeLogf(output.LogLevelTrace, "Deleting digest %s in local repository %s", target.Digest.String(), lr.nameRef)
 	if target.MediaType != ocispec.MediaTypeImageManifest {
 		return lr.Store.Delete(ctx, target)
 	}
@@ -146,15 +148,25 @@ func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) erro
 	return lr.localIndex.delete(target)
 }
 
-func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (bool, error) {
+func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (exists bool, err error) {
 	if target.MediaType == ocispec.MediaTypeImageManifest {
-		return lr.localIndex.exists(target), nil
+		exists, err = lr.localIndex.exists(target), nil
 	} else {
-		return lr.Store.Exists(ctx, target)
+		exists, err = lr.Store.Exists(ctx, target)
 	}
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		output.SafeLogf(output.LogLevelTrace, "Found digest %s in local repository %s", target.Digest.String(), lr.nameRef)
+	} else {
+		output.SafeLogf(output.LogLevelTrace, "Digest %s does not exist in local repository %s", target.Digest.String(), lr.nameRef)
+	}
+	return exists, nil
 }
 
 func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
+	output.SafeLogf(output.LogLevelTrace, "Fetching digest %s in local repository %s", target.Digest.String(), lr.nameRef)
 	if target.MediaType == ocispec.MediaTypeImageManifest {
 		if exists := lr.localIndex.exists(target); !exists {
 			return nil, errdef.ErrNotFound
@@ -164,6 +176,7 @@ func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.R
 }
 
 func (lr *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
+	output.SafeLogf(output.LogLevelTrace, "Pushing digest %s to local repository %s", expected.Digest.String(), lr.nameRef)
 	if expected.MediaType == ocispec.MediaTypeImageManifest {
 		// Attempting to push a manifest to oci.Store will return an error if it already exists.
 		// Normally, clients check before pushing, but in our case, the manifest may exist in the
@@ -183,15 +196,18 @@ func (lr *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, cont
 }
 
 func (lr *localRepo) Resolve(_ context.Context, reference string) (ocispec.Descriptor, error) {
+	output.SafeLogf(output.LogLevelTrace, "Resolving reference %s in local repository %s", reference, lr.nameRef)
 	return lr.localIndex.resolve(reference)
 }
 
 func (lr *localRepo) Tag(_ context.Context, desc ocispec.Descriptor, reference string) error {
+	output.SafeLogf(output.LogLevelTrace, "Tagging digest %s with %s in local repository %s", desc.Digest.String(), reference, lr.nameRef)
 	// TODO: should we tag it in the general index.json too?
 	return lr.localIndex.tag(desc, reference)
 }
 
 func (lr *localRepo) Untag(_ context.Context, reference string) error {
+	output.SafeLogf(output.LogLevelTrace, "Untagging reference %s in local repository %s", reference, lr.nameRef)
 	return lr.localIndex.untag(reference)
 }
 
