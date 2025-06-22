@@ -18,9 +18,12 @@ package list
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"text/tabwriter"
+	gotemplate "text/template"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -48,7 +51,21 @@ the same name or tags. Modelkits with multiple tags or repository names will
 appear multiple times in the list, distinguished by their DIGEST.
 
 The SIZE displayed for each modelkit represents the total storage space
-occupied by all its components.`
+occupied by all its components.
+
+Use the --format flag to change how results are printed. Valid values are
+"table", "json", or a Go template. When a value other than "table" or "json"
+is supplied, the flag contents are treated as a Go template executed once per
+listed modelkit.
+
+Template placeholders:
+
+  {{ .Repo }} - repository name
+  {{ .Tags }} - slice of tags for the modelkit
+  {{ .Digest }} - digest of the modelkit
+  {{ .ModelName }} - name defined in the Kitfile
+  {{ .Size }} - total size of the modelkit
+  {{ .Author }} - author from the Kitfile`
 
 	example = `# List local modelkits
 kit list
@@ -61,6 +78,8 @@ type listOptions struct {
 	options.NetworkOptions
 	configHome string
 	remoteRef  *registry.Reference
+	format     string
+	template   string
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
@@ -84,6 +103,16 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 		return err
 	}
 
+	switch opts.format {
+	case "", "table":
+		opts.format = "table"
+	case "json":
+		// valid format
+	default:
+		opts.template = opts.format
+		opts.format = "template"
+	}
+
 	printConfig(opts)
 	return nil
 }
@@ -101,6 +130,7 @@ func ListCommand() *cobra.Command {
 	}
 
 	cmd.Args = cobra.MaximumNArgs(1)
+	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table, json, or Go template string")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
@@ -113,26 +143,62 @@ func runCommand(opts *listOptions) func(*cobra.Command, []string) error {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		var allInfoLines []string
+		var infos []modelInfo
 		if opts.remoteRef == nil {
 			lines, err := listLocalKits(cmd.Context(), opts)
 			if err != nil {
 				return output.Fatalln(err)
 			}
-			allInfoLines = lines
+			infos = lines
 		} else {
 			lines, err := listRemoteKits(cmd.Context(), opts)
 			if err != nil {
 				return output.Fatalln(err)
 			}
-			allInfoLines = lines
+			infos = lines
 		}
-		printSummary(cmd.OutOrStdout(), allInfoLines)
-		return nil
+		return formatAndPrint(cmd.OutOrStdout(), infos, opts)
 	}
 }
 
-func printSummary(w io.Writer, lines []string) {
+// formatAndPrint writes the list of modelkits to w using the format specified in opts.
+func formatAndPrint(w io.Writer, infos []modelInfo, opts *listOptions) error {
+	if infos == nil {
+		infos = []modelInfo{}
+	}
+	switch opts.format {
+	case "table":
+		printSummary(w, infos)
+	case "json":
+		jsonBytes, err := json.MarshalIndent(infos, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(w, string(jsonBytes))
+	case "template":
+		tpl, err := gotemplate.New("list").Parse(opts.template)
+		if err != nil {
+			return err
+		}
+		for _, info := range infos {
+			if err := tpl.Execute(w, info); err != nil {
+				return err
+			}
+			if !strings.HasSuffix(opts.template, "\n") {
+				fmt.Fprintln(w)
+			}
+		}
+	default:
+		return fmt.Errorf("unsupported format %s", opts.format)
+	}
+	return nil
+}
+
+func printSummary(w io.Writer, infos []modelInfo) {
+	var lines []string
+	for _, info := range infos {
+		lines = append(lines, info.format()...)
+	}
 	tw := tabwriter.NewWriter(w, 0, 2, 3, ' ', 0)
 	fmt.Fprintln(tw, listTableHeader)
 	for _, line := range lines {

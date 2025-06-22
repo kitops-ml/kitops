@@ -26,27 +26,27 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 )
 
-func listLocalKits(ctx context.Context, opts *listOptions) ([]string, error) {
+func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) {
 	storageRoot := constants.StoragePath(opts.configHome)
 
 	localRepos, err := local.GetAllLocalRepos(storageRoot)
 	if err != nil {
 		return nil, err
 	}
-	var allInfoLines []string
+	var allInfo []modelInfo
 	for _, repo := range localRepos {
-		infolines, err := readInfoFromRepo(ctx, repo)
+		infos, err := readInfoFromRepo(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
-		allInfoLines = append(allInfoLines, infolines...)
+		allInfo = append(allInfo, infos...)
 	}
 
-	return allInfoLines, nil
+	return allInfo, nil
 }
 
-func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]string, error) {
-	var infolines []string
+func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]modelInfo, error) {
+	var infos []modelInfo
 	manifestDescs := repo.GetAllModels()
 	for _, manifestDesc := range manifestDescs {
 		manifest, config, err := util.GetManifestAndConfig(ctx, repo, manifestDesc)
@@ -60,15 +60,18 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]string, erro
 			repository = "<none>"
 		}
 		info := modelInfo{
-			repo:   repository,
-			digest: string(manifestDesc.Digest),
-			tags:   tags,
+			Repo:   repository,
+			Digest: string(manifestDesc.Digest),
+			Tags:   tags,
 		}
 		info.fill(manifest, config)
 
-		infolines = append(infolines, info.format()...)
+		infos = append(infos, info)
 	}
 
-	sort.Strings(infolines)
-	return infolines, nil
+	sort.Slice(infos, func(i, j int) bool {
+		return (infos[i].Repo < infos[j].Repo) ||
+			((infos[i].Repo == infos[j].Repo) && (infos[i].Digest < infos[j].Digest))
+	})
+	return infos, nil
 }
