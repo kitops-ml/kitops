@@ -55,7 +55,7 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tags on repostory: %w", err)
+		return nil, fmt.Errorf("failed to list tags on repository: %w", err)
 	}
 
 	var allInfos []modelInfo
