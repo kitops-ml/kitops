@@ -28,7 +28,7 @@ import (
 	"oras.land/oras-go/v2/registry"
 )
 
-func listRemoteKits(ctx context.Context, opts *listOptions) ([]string, error) {
+func listRemoteKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) {
 	remoteRegistry, err := remote.NewRegistry(opts.remoteRef.Registry, &opts.NetworkOptions)
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve registry %s: %w", opts.remoteRef.Registry, err)
@@ -39,12 +39,16 @@ func listRemoteKits(ctx context.Context, opts *listOptions) ([]string, error) {
 		return nil, fmt.Errorf("failed to read repository: %w", err)
 	}
 	if opts.remoteRef.Reference != "" {
-		return listImageTag(ctx, repo, opts.remoteRef)
+		info, err := listImageTag(ctx, repo, opts.remoteRef)
+		if info == nil || err != nil {
+			return nil, err
+		}
+		return []modelInfo{*info}, nil
 	}
 	return listTags(ctx, repo, opts.remoteRef)
 }
 
-func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference) ([]string, error) {
+func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference) ([]modelInfo, error) {
 	var tags []string
 	err := repo.Tags(ctx, "", func(tagsPage []string) error {
 		tags = append(tags, tagsPage...)
@@ -54,24 +58,26 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 		return nil, fmt.Errorf("failed to list tags on repostory: %w", err)
 	}
 
-	var allLines []string
+	var allInfos []modelInfo
 	for _, tag := range tags {
 		tagRef := &registry.Reference{
 			Registry:   ref.Registry,
 			Repository: ref.Repository,
 			Reference:  tag,
 		}
-		infoLines, err := listImageTag(ctx, repo, tagRef)
+		info, err := listImageTag(ctx, repo, tagRef)
 		if err != nil && !errors.Is(err, util.ErrNotAModelKit) {
 			return nil, err
 		}
-		allLines = append(allLines, infoLines...)
+		if info != nil {
+			allInfos = append(allInfos, *info)
+		}
 	}
 
-	return allLines, nil
+	return allInfos, nil
 }
 
-func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference) ([]string, error) {
+func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference) (*modelInfo, error) {
 	manifestDesc, err := repo.Resolve(ctx, ref.Reference)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve reference %s: %w", ref.Reference, err)
@@ -83,12 +89,12 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 	if manifest.Config.MediaType != constants.ModelConfigMediaType.String() {
 		return nil, nil
 	}
-	info := modelInfo{
-		repo:   ref.Repository,
-		digest: string(manifestDesc.Digest),
-		tags:   []string{ref.Reference},
+	info := &modelInfo{
+		Repo:   ref.Repository,
+		Digest: string(manifestDesc.Digest),
+		Tags:   []string{ref.Reference},
 	}
 	info.fill(manifest, config)
 
-	return info.format(), nil
+	return info, nil
 }

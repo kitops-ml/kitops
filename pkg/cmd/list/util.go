@@ -31,31 +31,31 @@ const (
 )
 
 type modelInfo struct {
-	repo      string
-	digest    string
-	tags      []string
-	modelName string
-	size      string
-	author    string
+	Repo      string   `json:"repo"`
+	Digest    string   `json:"digest"`
+	Tags      []string `json:"tags"`
+	ModelName string   `json:"modelName"`
+	Size      string   `json:"size"`
+	Author    string   `json:"author"`
 }
 
 func (m *modelInfo) format() []string {
-	if len(m.tags) == 0 {
-		line := fmt.Sprintf(listTableFmt, m.repo, "<none>", m.author, m.modelName, m.size, m.digest)
+	if len(m.Tags) == 0 {
+		line := fmt.Sprintf(listTableFmt, m.Repo, "<none>", m.Author, m.ModelName, m.Size, m.Digest)
 		return []string{line}
 	}
 	var lines []string
-	for _, tag := range m.tags {
-		line := fmt.Sprintf(listTableFmt, m.repo, tag, m.author, m.modelName, m.size, m.digest)
+	for _, tag := range m.Tags {
+		line := fmt.Sprintf(listTableFmt, m.Repo, tag, m.Author, m.ModelName, m.Size, m.Digest)
 		lines = append(lines, line)
 	}
 	return lines
 }
 
 func (m *modelInfo) fill(manifest *ocispec.Manifest, kitfile *artifact.KitFile) {
-	m.size = getModelSize(manifest)
-	m.author = getModelAuthor(kitfile)
-	m.modelName = getModelName(kitfile)
+	m.Size = getModelSize(manifest)
+	m.Author = getModelAuthor(kitfile)
+	m.ModelName = getModelName(kitfile)
 }
 
 func getModelSize(manifest *ocispec.Manifest) string {
