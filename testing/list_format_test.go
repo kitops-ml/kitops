@@ -106,7 +106,7 @@ func TestListFormatEmpty(t *testing.T) {
 	if start >= 0 && end > start {
 		jsonOut = jsonOut[start : end+1]
 	}
-	assert.JSONEq(t, "[]", jsonOut, "expected non-empty json output")
+	assert.JSONEq(t, "[]", jsonOut, "expected empty json output")
 }
 
 func filterNonDebugLines(out string) []string {
