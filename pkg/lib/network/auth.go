@@ -30,11 +30,23 @@ import (
 	"oras.land/oras-go/v2/registry/remote/retry"
 )
 
+// NewCredentialStore returns a credential store from @storePath and falls back to Docker's native store for reads only.
 func NewCredentialStore(storePath string) (credentials.Store, error) {
-	return credentials.NewStore(storePath, credentials.StoreOptions{
+	existingCredStore, err := credentials.NewStore(storePath, credentials.StoreOptions{
 		DetectDefaultNativeStore: true,
 		AllowPlaintextPut:        true,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	storeOpts := credentials.StoreOptions{}
+	dockerCredStore, err := credentials.NewStoreFromDocker(storeOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	return credentials.NewStoreWithFallbacks(existingCredStore, dockerCredStore), nil
 }
 
 // ClientWithAuth returns a default *auth.Client using the provided credentials
