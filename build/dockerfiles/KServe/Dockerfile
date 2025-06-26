@@ -2,20 +2,11 @@ ARG KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:next
 FROM $KIT_BASE_IMAGE
 
 USER 0
-
 RUN apk --no-cache upgrade && \
-    apk add --no-cache aws-cli curl
-
-RUN mkdir -p /usr/local/gcloud && \
-    curl -s https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz | tar -xz -C /usr/local/gcloud && \
-    /usr/local/gcloud/google-cloud-sdk/install.sh --quiet --usage-reporting false
-
-ENV PATH="$PATH://usr/local/gcloud/google-cloud-sdk/bin"
-ENV CLOUDSDK_CONFIG=/tmp/gcloud
-
+    apk add --no-cache aws-cli py3-requests py3-google-auth
 USER 1001
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY get_gcp_access_token.py entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 

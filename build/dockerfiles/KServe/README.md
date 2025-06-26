@@ -117,7 +117,7 @@ This example uses the `Secret` kit-secret but it can be modified to inject any s
 
 > **Tip:** The KitOps KServe container also supports AWS ECR login via IRSA. If `AWS_ROLE_ARN` is set on the service account, it takes effect—unless you have `KIT_USER` and `KIT_PASSWORD`, which take precedence.
 
-> **Tip:** The KitOps KServe container also supports GKE login via Workload Identity Federation. If `GCP_WIF` is set to `1` and `GCP_GAR_LOCATION` indicates the location of the GAR repository (e.g. europe or europe-west3), it takes effect—unless you have `KIT_USER` and `KIT_PASSWORD`, which take precedence.
+> **Tip:** The KitOps KServe container also supports GKE login via Workload Identity Federation. If `GCP_WIF` is set to `true` and `GCP_GAR_LOCATION` indicates the location of the GAR repository (e.g. europe or europe-west3), it takes effect—unless you have `KIT_USER` and `KIT_PASSWORD`, which take precedence.
 
 ## Additional links
 

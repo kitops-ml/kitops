@@ -23,13 +23,13 @@ elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] &&  [ -n "$AWS_ROLE_ARN" ]; th
   AWS_ACCOUNT_ID=$(echo "$AWS_ROLE_ARN" | cut -d: -f5)
   echo "Logging into AWS ECR $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com"
   aws ecr get-login-password --region $AWS_ECR_REGION | kit login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com
-elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] && [ "$GCP_WIF" == "1" ]; then
+elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] &&  [ "$GCP_WIF" == "true" ]; then
   if [ -z "$GCP_GAR_LOCATION" ]; then
     echo "GCP_GAR_LOCATION env should be set and indicate the location of the GAR repository"
     exit 1
   fi
   echo "Logging into GCP Artifact Registry in location $GCP_GAR_LOCATION"
-  gcloud auth print-access-token | kit login -u oauth2accesstoken --password-stdin $GCP_GAR_LOCATION-docker.pkg.dev
+  /usr/local/bin/get_gcp_access_token.py | kit login -u oauth2accesstoken --password-stdin $GCP_GAR_LOCATION-docker.pkg.dev
 fi
 
 echo "Unpacking $REPO_NAME to $OUTPUT_DIR"
