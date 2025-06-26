@@ -123,7 +123,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 	return nil
 }
 
-func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact.KitFile) ([]string, error) {
+func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact.KitFile) ([]kfgen.FileListing, error) {
 	// Repurpose the ignore implementation to find which files we need to download and which ones we can skip.
 	// This works because ignore is designed to _also_ ignore paths that are packed as part of another layer
 	// instead of the current one.
@@ -133,12 +133,12 @@ func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact
 	}
 
 	hasCatchall := kitfileHasCatchallLayer(kitfile)
-	var pathsToDownload []string
+	var pathsToDownload []kfgen.FileListing
 	var processDir func(dir *kfgen.DirectoryListing) error
 	processDir = func(dir *kfgen.DirectoryListing) error {
 		for _, file := range dir.Files {
 			if hasCatchall {
-				pathsToDownload = append(pathsToDownload, file.Path)
+				pathsToDownload = append(pathsToDownload, file)
 				continue
 			}
 			matches, err := ignore.Matches(file.Path, "")
@@ -146,7 +146,7 @@ func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact
 				return fmt.Errorf("failed to process path %s: %w", file.Path, err)
 			}
 			if matches {
-				pathsToDownload = append(pathsToDownload, file.Path)
+				pathsToDownload = append(pathsToDownload, file)
 			}
 		}
 		for _, subDir := range dir.Subdirs {
