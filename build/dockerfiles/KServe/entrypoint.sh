@@ -23,7 +23,7 @@ elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] &&  [ -n "$AWS_ROLE_ARN" ]; th
   AWS_ACCOUNT_ID=$(echo "$AWS_ROLE_ARN" | cut -d: -f5)
   echo "Logging into AWS ECR $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com"
   aws ecr get-login-password --region $AWS_ECR_REGION | kit login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com
-elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] &&  [ "$GCP_WIF" == "true" ]; then
+elif [ -z "$KIT_USER" ] && [ -z "$KIT_PASSWORD" ] && [ "$GCP_WIF" == "true" ]; then
   if [ -z "$GCP_GAR_LOCATION" ]; then
     echo "GCP_GAR_LOCATION env should be set and indicate the location of the GAR repository"
     exit 1
