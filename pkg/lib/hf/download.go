@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"time"
 
+	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"golang.org/x/sync/errgroup"
@@ -40,7 +41,7 @@ const (
 func DownloadFiles(
 	ctx context.Context,
 	modelRepo, repoRef, destDir string,
-	filepaths []string,
+	files []kfgen.FileListing,
 	token string,
 	maxConcurrency int) error {
 
@@ -54,19 +55,18 @@ func DownloadFiles(
 
 	progress, plog := output.NewDownloadProgress()
 
-	for _, f := range filepaths {
-		f := f
+	for _, f := range files {
 		if err := sem.Acquire(errCtx, 1); err != nil {
 			semErr = err
 			break
 		}
 
-		fileURL := fmt.Sprintf(resolveURLFmt, modelRepo, repoRef, f)
-		destPath := filepath.Join(destDir, f)
+		fileURL := fmt.Sprintf(resolveURLFmt, modelRepo, repoRef, f.Path)
+		destPath := filepath.Join(destDir, f.Path)
 		errs.Go(func() error {
 			defer sem.Release(1)
-			plog.Infof("Downloading file %s", f)
-			return downloadFile(errCtx, client, token, fileURL, destPath, f, progress, plog)
+			plog.Infof("Downloading file %s", f.Path)
+			return downloadFile(errCtx, client, token, fileURL, destPath, f.Path, f.Size, progress, plog)
 		})
 	}
 
@@ -85,6 +85,7 @@ func downloadFile(
 	ctx context.Context,
 	client *http.Client,
 	token, srcURL, destPath, filename string,
+	size int64,
 	progress *output.DownloadProgressBar,
 	plog *output.ProgressLogger) error {
 
@@ -110,7 +111,7 @@ func downloadFile(
 		return fmt.Errorf("received status code %d when downloading file %s from %s", resp.StatusCode, filename, srcURL)
 	}
 
-	contentRC := progress.TrackDownload(resp.Body, filename, resp.ContentLength)
+	contentRC := progress.TrackDownload(resp.Body, filename, size)
 	defer func() {
 		if err := contentRC.Close(); err != nil {
 			plog.Logf(output.LogLevelWarn, "TEMP: see if this is an issue: %s", err)
