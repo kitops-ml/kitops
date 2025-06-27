@@ -3,10 +3,10 @@ FROM $KIT_BASE_IMAGE
 
 USER 0
 RUN apk --no-cache upgrade && \
-    apk add --no-cache aws-cli
+    apk add --no-cache aws-cli py3-requests py3-google-auth
 USER 1001
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY get_gcp_access_token.py entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
