@@ -33,7 +33,6 @@ kit cache info
 
 # Clear files in cache
 kit cache clear
-		
 ```
 
 ### Options
@@ -538,12 +537,12 @@ listed modelkit.
 
 Template placeholders:
 
-  {{ .Repo }} - repository name
-  {{ .Tags }} - slice of tags for the modelkit
-  {{ .Digest }} - digest of the modelkit
-  {{ .ModelName }} - name defined in the Kitfile
-  {{ .Size }} - total size of the modelkit
-  {{ .Author }} - author from the Kitfile
+* <code v-pre>{{ .Repo }}</code> - repository name
+* <code v-pre>{{ .Tags }}</code> - slice of tags for the modelkit
+* <code v-pre>{{ .Digest }}</code> - digest of the modelkit
+* <code v-pre>{{ .ModelName }}</code> - name defined in the Kitfile
+* <code v-pre>{{ .Size }}</code> - total size of the modelkit
+* <code v-pre>{{ .Author }}</code> - author from the Kitfile
 
 ```
 kit list [flags] [REPOSITORY]

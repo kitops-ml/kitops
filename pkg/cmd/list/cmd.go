@@ -60,12 +60,12 @@ listed modelkit.
 
 Template placeholders:
 
-  {{ .Repo }} - repository name
-  {{ .Tags }} - slice of tags for the modelkit
-  {{ .Digest }} - digest of the modelkit
-  {{ .ModelName }} - name defined in the Kitfile
-  {{ .Size }} - total size of the modelkit
-  {{ .Author }} - author from the Kitfile`
+* {{ .Repo }} - repository name
+* {{ .Tags }} - slice of tags for the modelkit
+* {{ .Digest }} - digest of the modelkit
+* {{ .ModelName }} - name defined in the Kitfile
+* {{ .Size }} - total size of the modelkit
+* {{ .Author }} - author from the Kitfile`
 
 	example = `# List local modelkits
 kit list
