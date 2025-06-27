@@ -23,5 +23,5 @@
     "cheerio": "1.0.0",
     "vue3-marquee": "^4.2.2"
   },
-  "packageManager": "pnpm@10.0.0"
+  "packageManager": "pnpm@10.12.4"
 }

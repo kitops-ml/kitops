@@ -18,11 +18,12 @@ package kitcache
 
 import (
 	"fmt"
-	fscache "github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
-	"github.com/kitops-ml/kitops/pkg/output"
 	"io"
 	"sort"
 	"text/tabwriter"
+
+	fscache "github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
 )
@@ -45,8 +46,7 @@ The $KITOPS_HOME location is system dependent:
 kit cache info
 
 # Clear files in cache
-kit cache clear
-		`,
+kit cache clear`,
 	}
 	cmd.AddCommand(cacheInfoCommand())
 	cmd.AddCommand(cacheClearCommand())
