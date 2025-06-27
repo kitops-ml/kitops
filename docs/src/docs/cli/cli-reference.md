@@ -531,6 +531,20 @@ appear multiple times in the list, distinguished by their DIGEST.
 The SIZE displayed for each modelkit represents the total storage space
 occupied by all its components.
 
+Use the --format flag to change how results are printed. Valid values are
+"table", "json", or a Go template. When a value other than "table" or "json"
+is supplied, the flag contents are treated as a Go template executed once per
+listed modelkit.
+
+Template placeholders:
+
+  {{ .Repo }} - repository name
+  {{ .Tags }} - slice of tags for the modelkit
+  {{ .Digest }} - digest of the modelkit
+  {{ .ModelName }} - name defined in the Kitfile
+  {{ .Size }} - total size of the modelkit
+  {{ .Author }} - author from the Kitfile
+
 ```
 kit list [flags] [REPOSITORY]
 ```
@@ -548,6 +562,7 @@ kit list registry.example.com/my-namespace/my-model
 ### Options
 
 ```
+      --format string     Output format: table, json, or Go template string (default "table")
       --plain-http        Use plain HTTP when connecting to remote registries
       --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
       --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
