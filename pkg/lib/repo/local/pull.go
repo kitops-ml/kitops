@@ -20,15 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"io/fs"
-	"os"
-	"path/filepath"
-
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
+	"io"
+	"io/fs"
+	"math"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
@@ -36,6 +37,22 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
 )
+
+// Configuration constants for optimizing download performance.
+const (
+	// copyBufferSize is the size of the buffer used for io.CopyBuffer.
+	// A larger buffer can reduce the number of system calls and improve throughput.
+	copyBufferSize = 2 * 1024 * 1024 // 2 MB
+
+	// largeLayerThreshold is the file size above which parallel chunking is triggered.
+	largeLayerThreshold = 100 * 1024 * 1024 // 100 MB
+
+	// defaultChunkSize is the size of each chunk for parallel downloads.
+	defaultChunkSize = 20 * 1024 * 1024 // 20 MB
+)
+
+// defaultChunkConcurrency is the number of chunks to download in parallel.
+var defaultChunkConcurrency = int64(runtime.GOMAXPROCS(0))
 
 func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, ref registry.Reference, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
 	// Only support pulling image manifests
@@ -131,10 +148,23 @@ func (l *localRepo) pullNode(ctx context.Context, src oras.ReadOnlyTarget, desc 
 	if err != nil {
 		return fmt.Errorf("failed to fetch: %w", err)
 	}
+
 	if seekBlob, ok := blob.(io.ReadSeekCloser); ok {
+		// For large layers where the remote supports seeking (which implies support for
+		// HTTP Range requests), we use a new parallel chunking strategy to speed up
+		// the download of the single layer.
+		if desc.Size > largeLayerThreshold {
+			p.Logf(output.LogLevelTrace, "Layer %s is large (%d bytes), using parallel chunk download", desc.Digest, desc.Size)
+			// Close the initially fetched blob; the chunking function will manage its own fetches.
+			seekBlob.Close()
+			return l.downloadFileInChunks(ctx, src, desc, p)
+		}
+
+		// For smaller layers that support seeking, continue with the original resumable download logic.
 		p.Logf(output.LogLevelTrace, "Remote supports range requests, using resumable download")
 		return l.resumeAndDownloadFile(desc, seekBlob, p)
 	} else {
+		// If the remote does not support seeking, fall back to a simple, non-resumable download.
 		return l.downloadFile(desc, blob, p)
 	}
 }
@@ -171,7 +201,11 @@ func (l *localRepo) resumeAndDownloadFile(desc ocispec.Descriptor, blob io.ReadS
 
 	pwriter := p.ProxyWriter(ingestFile, desc.Digest.Encoded(), desc.Size, offset)
 	mw := io.MultiWriter(pwriter, verifier)
-	if _, err := io.Copy(mw, blob); err != nil {
+
+	// Use io.CopyBuffer with a larger buffer instead of io.Copy to reduce system
+	// calls and potentially increase throughput.
+	buf := make([]byte, copyBufferSize)
+	if _, err := io.CopyBuffer(mw, blob, buf); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 	if !verifier.Verified() {
@@ -213,7 +247,10 @@ func (l *localRepo) downloadFile(desc ocispec.Descriptor, blob io.ReadCloser, p 
 	verifier := desc.Digest.Verifier()
 	pwriter := p.ProxyWriter(ingestFile, desc.Digest.Encoded(), desc.Size, 0)
 	mw := io.MultiWriter(pwriter, verifier)
-	if _, err := io.Copy(mw, blob); err != nil {
+
+	// Use io.CopyBuffer for potentially better performance.
+	buf := make([]byte, copyBufferSize)
+	if _, err := io.CopyBuffer(mw, blob, buf); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 	if !verifier.Verified() {
@@ -259,6 +296,122 @@ func (l *localRepo) cleanupIngestDir() error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to clean up ingest directory: %w", err)
+	}
+	return nil
+}
+
+// offsetWriter is a helper that implements io.Writer but writes at a specific offset.
+type offsetWriter struct {
+	w      io.WriterAt
+	offset int64
+}
+
+func (ow *offsetWriter) Write(p []byte) (n int, err error) {
+	n, err = ow.w.WriteAt(p, ow.offset)
+	ow.offset += int64(n)
+	return
+}
+
+// downloadFileInChunks implements a parallel download strategy for large files. It splits
+// the file into chunks and downloads them concurrently. This is particularly effective
+// for maximizing bandwidth utilization on high-speed networks.
+func (l *localRepo) downloadFileInChunks(ctx context.Context, src oras.ReadOnlyTarget, desc ocispec.Descriptor, p *output.PullProgress) (err error) {
+	ingestDir := constants.IngestPath(l.storagePath)
+	ingestFile, err := os.CreateTemp(ingestDir, desc.Digest.Encoded()+"_chunked_*")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary ingest file: %w", err)
+	}
+	ingestFilename := ingestFile.Name()
+	defer func() {
+		ingestFile.Close()
+		if err != nil {
+			os.Remove(ingestFilename)
+		}
+	}()
+
+	// Pre-allocate the file to its full size. This is essential to allow
+	// concurrent goroutines to write to different parts of the file simultaneously
+	// without causing race conditions or file corruption.
+	if err := ingestFile.Truncate(desc.Size); err != nil {
+		return fmt.Errorf("failed to pre-allocate file space: %w", err)
+	}
+
+	numChunks := int(math.Ceil(float64(desc.Size) / float64(defaultChunkSize)))
+	p.Logf(output.LogLevelDebug, "Downloading layer %s in %d chunks", desc.Digest, numChunks)
+
+	g, gCtx := errgroup.WithContext(ctx)
+	sem := semaphore.NewWeighted(defaultChunkConcurrency)
+
+	// This ProxyWriter will be used concurrently to report progress. We assume its
+	// implementation is thread-safe. It writes to io.Discard as we handle the
+	// actual file writing via ingestFile.WriteAt.
+	pwriter := p.ProxyWriter(io.Discard, desc.Digest.Encoded(), desc.Size, 0)
+
+	for i := 0; i < numChunks; i++ {
+		if err := sem.Acquire(gCtx, 1); err != nil {
+			break // Context was cancelled
+		}
+
+		chunkIndex := i
+		g.Go(func() error {
+			defer sem.Release(1)
+
+			start := int64(chunkIndex) * defaultChunkSize
+			chunkLen := int64(defaultChunkSize)
+			if start+chunkLen > desc.Size {
+				chunkLen = desc.Size - start
+			}
+
+			// Fetch a new reader for each chunk. ORAS-Go handles creating new HTTP
+			// requests with the correct Range headers when we seek.
+			rc, fetchErr := src.Fetch(gCtx, desc)
+			if fetchErr != nil {
+				return fmt.Errorf("chunk %d: failed to fetch: %w", chunkIndex, fetchErr)
+			}
+			defer rc.Close()
+
+			seeker, ok := rc.(io.ReadSeeker)
+			if !ok {
+				return fmt.Errorf("chunk %d: remote does not support seek, cannot download in chunks", chunkIndex)
+			}
+			if _, seekErr := seeker.Seek(start, io.SeekStart); seekErr != nil {
+				return fmt.Errorf("chunk %d: failed to seek to offset %d: %w", chunkIndex, start, seekErr)
+			}
+
+			// Use a LimitedReader to ensure we don't read past the chunk boundary.
+			limitedReader := io.LimitReader(rc, chunkLen)
+			if _, err := io.Copy(pwriter, io.TeeReader(limitedReader, &offsetWriter{w: ingestFile, offset: start})); err != nil {
+				return fmt.Errorf("chunk %d: failed to write to file: %w", chunkIndex, err)
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+
+	// After all chunks are downloaded, verify the integrity of the complete file.
+	if _, err := ingestFile.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("failed to seek to start of ingest file for verification: %w", err)
+	}
+	verifier := desc.Digest.Verifier()
+	if _, err := io.Copy(verifier, ingestFile); err != nil {
+		return fmt.Errorf("failed to verify downloaded file: %w", err)
+	}
+	if !verifier.Verified() {
+		return fmt.Errorf("downloaded file hash does not match descriptor")
+	}
+
+	if err := ingestFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temporary ingest file: %w", err)
+	}
+	blobPath := l.BlobPath(desc)
+	if err := os.Rename(ingestFilename, blobPath); err != nil {
+		return fmt.Errorf("failed to move downloaded file into storage: %w", err)
+	}
+	if err := os.Chmod(blobPath, 0600); err != nil {
+		return fmt.Errorf("failed to set permissions on blob: %w", err)
 	}
 	return nil
 }
