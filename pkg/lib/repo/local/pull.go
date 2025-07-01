@@ -52,7 +52,7 @@ const (
 )
 
 // defaultChunkConcurrency is the number of chunks to download in parallel.
-var defaultChunkConcurrency = int64(runtime.GOMAXPROCS(0))
+var defaultChunkConcurrency = int64(runtime.GOMAXPROCS(runtime.NumCPU()))
 
 func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, ref registry.Reference, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
 	// Only support pulling image manifests
