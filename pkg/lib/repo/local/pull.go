@@ -127,7 +127,7 @@ func (l *localRepo) getNetworkAdjustedConfig(ctx context.Context, src oras.ReadO
 
 	// Create a test download to measure network speed
 	start := time.Now()
-	testSize := int64(1024 * 1024) // 1MB test download
+	testSize := int64(10 * 1024 * 1024) // 10MB test download for more accurate measurement
 
 	// Only run the test if the file is large enough
 	if desc.Size <= testSize*2 {
@@ -161,17 +161,23 @@ func (l *localRepo) getNetworkAdjustedConfig(ctx context.Context, src oras.ReadO
 	mbps := float64(n) / (1024 * 1024) / elapsed.Seconds()
 	p.Logf(output.LogLevelDebug, "Network speed test: %.2f MB/s", mbps)
 
-	// Adjust based on network speed
-	if mbps > 50 {
-		// Fast network - increase concurrency and chunk size
-		config.chunkConcurrency = minInt64(config.chunkConcurrency*2, 64)
-		config.layerConcurrency = minInt(config.layerConcurrency*2, 32)
-		config.chunkSize = minInt64(config.chunkSize*2, 400*1024*1024)
-	} else if mbps < 5 {
-		// Slow network - reduce overhead
-		config.chunkConcurrency = maxInt64(2, config.chunkConcurrency/2)
-		config.layerConcurrency = maxInt(1, config.layerConcurrency/2)
-		config.chunkSize = maxInt64(5*1024*1024, config.chunkSize/2)
+	// Adjust concurrency dynamically based on measured speed.
+	// Use 20 MB/s as a baseline for scaling. Speeds significantly higher
+	// than this will increase concurrency proportionally, while slower
+	// connections will decrease it a bit to reduce overhead.
+	baseline := 20.0
+	factor := mbps / baseline
+
+	if factor > 1 {
+		scale := math.Min(factor, 8) // don't grow unbounded
+		config.chunkConcurrency = minInt64(int64(float64(config.chunkConcurrency)*scale), 128)
+		config.layerConcurrency = minInt(int(float64(config.layerConcurrency)*scale), 64)
+		config.chunkSize = minInt64(int64(float64(config.chunkSize)*scale), 400*1024*1024)
+	} else if factor < 0.5 {
+		scale := math.Max(factor, 0.25)
+		config.chunkConcurrency = maxInt64(2, int64(float64(config.chunkConcurrency)*scale))
+		config.layerConcurrency = maxInt(1, int(float64(config.layerConcurrency)*scale))
+		config.chunkSize = maxInt64(5*1024*1024, int64(float64(config.chunkSize)*scale))
 	}
 
 	return config

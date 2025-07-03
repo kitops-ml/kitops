@@ -26,6 +26,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"runtime"
 	"strconv"
@@ -39,8 +40,10 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
-// uploadChunkConcurrency is the number of chunks to upload in parallel.
-var uploadChunkConcurrency = int64(runtime.GOMAXPROCS(runtime.NumCPU()))
+// uploadChunkConcurrency is the number of chunks to upload in parallel. It is
+// dynamically determined based on available CPU resources, but can be
+// overridden via the KITOPS_UPLOAD_CONCURRENCY environment variable.
+var uploadChunkConcurrency = defaultUploadConcurrency()
 
 type Repository struct {
 	registry.Repository
@@ -366,4 +369,26 @@ func buildRepositoryBlobUploadURL(plainHTTP bool, ref registry.Reference) string
 		scheme = "http"
 	}
 	return fmt.Sprintf("%s://%s/v2/%s/blobs/uploads/", scheme, ref.Host(), ref.Repository)
+}
+
+// defaultUploadConcurrency determines a reasonable default for parallel upload
+// operations. It scales with the number of CPUs but is capped to avoid spawning
+// excessive goroutines. Users can override this value by setting the
+// KITOPS_UPLOAD_CONCURRENCY environment variable.
+func defaultUploadConcurrency() int64 {
+	if val := os.Getenv("KITOPS_UPLOAD_CONCURRENCY"); val != "" {
+		if n, err := strconv.Atoi(val); err == nil && n > 0 {
+			return int64(n)
+		}
+	}
+
+	cpus := runtime.NumCPU()
+	conc := int64(cpus * 4)
+	if conc < 4 {
+		conc = 4
+	}
+	if conc > 64 {
+		conc = 64
+	}
+	return conc
 }
