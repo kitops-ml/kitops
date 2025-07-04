@@ -108,10 +108,6 @@ More phone numbers: [Phone Numbers](https://tel.meet/zfq-uprp-csd?pin=1283456375
 
 At KitOps, inclusivity, empathy, and responsibility are at our core. Please read our [Code of Conduct](./CODE-OF-CONDUCT.md) to understand the values guiding our community.
 
-## Roadmap
-
-We [share our roadmap openly](./ROADMAP.md) so anyone in the community can provide feedback and ideas. Let us know what you'd like to see by pinging us on Discord or creating an issue.
-
 ---
 
 <div align="center" style="align-items: center;">
