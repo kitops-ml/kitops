@@ -10,22 +10,22 @@
 
 ## 📚 Table of Contents
 - [What is KitOps?](#what-is-kitops)
-- [ModelKits](#modelkits-are-at-the-heart-of-kitops)
+- [KitOps Architecture](#kitops-architecture)
 - [Try KitOps](#try-kitops-in-under-15-minutes)
-- [Features](#features)
-- [Community & Support](#need-help)
+- [Benefits](#key-benefits)
+- [Community & Support](#join-kitops-community)
 
 ## What is KitOps?
 
-KitOps is a CNCF open standards project for packaging, versioning, and securely sharing AI/ML projects. Built on the OCI (Open Container Initiative) standard, it integrates seamlessly with your existing AI/ML, software development, and DevOps tools.
+KitOps is a CNCF open standards project for packaging, versioning, and securely sharing AI/ML projects. Built on the OCI ([Open Container Initiative](https://opencontainers.org/)) standard, it integrates seamlessly with your existing AI/ML, software development, and DevOps tools.
 
 It’s the preferred solution for packaging, versioning, and managing assets in security-conscious enterprises, governments, and cloud operators who need to self-host AI models and agents.
 
-#### KitOps and the CNCF
+### KitOps and the CNCF
 
-KitOps is a CNCF project, so it's governed by the same organization and policies that manage Kubernetes, OpenTelemetry, and Prometheus. [This video provides an outline of KitOps in the CNCF](https://youtu.be/iK9mnU0prRU?feature=shared).
+KitOps is a CNCF project, and is governed by the same organization and policies that manage Kubernetes, OpenTelemetry, and Prometheus. [This video provides an outline of KitOps in the CNCF](https://youtu.be/iK9mnU0prRU?feature=shared).
 
-KitOps is also the reference implementation of the [CNCF's ModelPack specification for a vendor-neutral AI/ML interchange format](https://github.com/modelpack/model-spec).
+KitOps is also the reference implementation of the [CNCF's ModelPack specification](https://github.com/modelpack/model-spec) for a vendor-neutral AI/ML interchange format.
 
 
 [![Official Website](<https://img.shields.io/badge/-Visit%20the%20Official%20Website%20%E2%86%92-rgb(255,175,82)?style=for-the-badge>)](https://kitops.org?utm_source=github&utm_medium=kitops-readme)
@@ -36,12 +36,14 @@ KitOps is also the reference implementation of the [CNCF's ModelPack specificati
 
 ### ModelKit
 
-KitOps packages your project into a [ModelKit](https://kitops.org/docs/modelkit/intro/) — a self-contained, immutable bundle that includes everything required to reproduce, test, or deploy your AI/ML model. This includes code, model weights, datasets, metadata, environment configurations, and more.
+KitOps packages your project into a [ModelKit](https://kitops.org/docs/modelkit/intro/) — a self-contained, immutable bundle that includes everything required to reproduce, test, or deploy your AI/ML model.
+
+ModelKits can include code, model weights, datasets, prompts, experiment run results and hyperparameters, metadata, environment configurations, and more.
 
 ModelKits are:
 * Tamper-proof – Ensuring consistency and traceability
 * Signable – Enabling trust and verification
-* Registry-native – Stored and retrieved like containers
+* Compatible – Natively stored and retrieved in all major container registries
 
 > *ModelKits elevate AI artifacts to first-class, governed assets — just like application code.*
 
@@ -50,7 +52,7 @@ A [Kitfile](https://kitops.org/docs/kitfile/kf-overview/) defines your ModelKit.
 
 ### Kit CLI
 
-Finally, the [Kit CLI](https://kitops.org/docs/cli/cli-reference/) not only enables you to create, manage, run, and deploy ModelKits -- it lets you pull only the pieces you need.
+The [Kit CLI](https://kitops.org/docs/cli/cli-reference/) not only enables you to create, manage, run, and deploy ModelKits -- it lets you pull only the pieces you need.
 
 ### 🎥 Watch KitOps in Action
 
@@ -58,7 +60,27 @@ Finally, the [Kit CLI](https://kitops.org/docs/cli/cli-reference/) not only enab
 
 This video shows how KitOps streamlines collaboration between data scientists, developers, and SREs using ModelKits.
 
-## Simplify Team Collaboration
+## 🚀 Try KitOps in under 15 Minutes
+
+1. **Install the CLI**: [for MacOS, Windows, and Linux](https://kitops.org/docs/cli/installation/).
+2. **Pack your first ModelKit**: Learn how to pack, push, and pull using our [Getting Started](...) guide.
+3. **Explore a Quick Start**: [Try pre-built ModelKits](https://jozu.ml/organization/jozu-quickstarts) for LLMs, CVs, and more.
+
+For those who prefer to build from the source, follow [these steps](https://kitops.org/docs/cli/installation/#🛠️-install-from-source) to get the latest version from our repository.
+
+## Key Benefits
+
+KitOps was built to bring discipline to productizing AI/ML projects, with:
+* 📦 Unified packaging and versioning of AI/ML assets
+* 🔐 Secure, signed distribution
+* 🛠️ Toolchain compatibility via OCI
+* ⚙️ Production-ready for enterprise ML workflows
+* 🚢 Create runnable containers for Kubernetes or docker
+* 📈 Audit-ready lineage tracking
+
+To get the most out of KitOps' ModelKits, use them with the **[Jozu Hub](https://jozu.com/)**. Jozu Hub can be installed behind your firewall and use your existing OCI registry in a private cloud, datacenter, or even in an air-gapped environment.
+
+### Simplify Team Collaboration
 
 ModelKits streamline handoffs between:
 * Data scientists preparing and training models
@@ -67,7 +89,7 @@ ModelKits streamline handoffs between:
 
 This ensures reliable, repeatable workflows for both development and operations.
 
-## Use KitOps to Speed Up and De-risk AI/ML Projects
+### Use KitOps to Speed Up and De-risk AI/ML Projects
 
 KitOps supports packaging for a wide variety of models:
 * Large language models
@@ -81,26 +103,7 @@ KitOps supports packaging for a wide variety of models:
 >
 > For our friends in the EU - ModelKits are the perfect way to create a library of model versions for EU AI Act compliance because they're tamper-proof, signable, and auditable.
 
-## 🚀 Try KitOps in under 15 Minutes
-
-1. **Install the CLI**: [for MacOS, Windows, and Linux](https://kitops.org/docs/cli/installation/).
-2. **Pack your first ModelKit**: Learn how to pack, push, and pull using our [Getting Started](...) guide.
-3. **Explore a Quick Start**: [Try pre-built ModelKits](https://jozu.ml/organization/jozu-quickstarts) for LLMs, CVs, and more.
-
-For those who prefer to build from the source, follow [these steps](https://kitops.org/docs/cli/installation/#🛠️-install-from-source) to get the latest version from our repository.
-
-### Key Benefits
-
-* 📦 Unified packaging and versioning of AI/ML assets
-* 🔐 Secure, signed distribution
-* 🛠️ Toolchain compatibility via OCI
-* ⚙️ Production-ready for enterprise ML workflows
-* 🚢 Create runnable containers for Kubernetes or docker
-* 📈 Audit-ready lineage tracking
-
-🥂 Get the most out of KitOps' ModelKits by using them with the **[Jozu Hub](https://jozu.ml/)** repository (the Jozu Hub can even work with your existing OCI registry on-premises and even air-gapped).
-
-## Join KitOps community
+## Join KitOps Community
 
 For support, release updates, and general KitOps discussion, please join the [KitOps Discord](https://discord.gg/Tapeh8agYy). Follow [KitOps on X](https://twitter.com/Kit_Ops) for daily updates.
 
