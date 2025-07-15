@@ -24,7 +24,7 @@ You can:
 - Automate packaging and deployment in CI/CD pipelines
 - Run or test a model anywhere — without fragile setup steps
 
-➡️ [Get started](./get-started.md) in minutes
+➡️ [Get started](../get-started.md) in minutes
 
 ## What’s Included
 
@@ -34,7 +34,7 @@ The KitOps ModelKit is a packaging format that bundles all the artifacts of your
 
 This means ModelKits can be stored in your existing image registry, deployed to Kubernetes (or anywhere else containers run), and managed just like any container image.
 
-See how to [deploy ModelKits](./deploy.md)
+See how to [deploy ModelKits](../deploy.md)
 
 ### 📄 Kitfile: Config Made Easy
 
@@ -57,9 +57,9 @@ KitOps helps bridge the gap between experimentation and production for AI/ML wor
 - Store and manage models in your current container registry
 - Build golden paths for secure AI/ML deployment
 
-➡️ Integrate with [CI/CD](./integrations/cicd.md)
+➡️ Integrate with [CI/CD](../integrations/cicd.md)
 
-➡️ Add KitOps to [experiment trackers](./integrations/mlflow.md)
+➡️ Add KitOps to [experiment trackers](../integrations/mlflow.md)
 
 ➡️ [Build a better golden path](../use-cases/) for AI/ML projects.
 
@@ -70,14 +70,14 @@ KitOps helps bridge the gap between experimentation and production for AI/ML wor
 
 📺 [See how to use KitOps with Jupyter Notebooks](https://www.youtube.com/watch?v=OQPp7QEvk7Q).
 
-➡️ Use the [PyKitOps Python SDK in your notebooks](./pykitops/index.md)
+➡️ Use the [PyKitOps Python SDK in your notebooks](../pykitops/index.md)
 
 ### For Developers
 - Use AI/ML models like any dependency — no deep ML knowledge required
 - Drop into apps using standard tools and APIs
 - Let your team innovate without breaking your pipeline
 
-➡️ [Get started](./get-started.md)
+➡️ [Get started](../get-started.md)
 
 ## A Standards-Based Approach
 

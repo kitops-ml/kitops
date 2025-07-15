@@ -143,7 +143,7 @@ You’re ready to go. Head to our Quick Start guide to:
 - Pack a model
 - Push to a registry
 
-➡️ [Get Started tutorial](../get-started.md)
+➡️ [Get Started tutorial](../../get-started.md)
 
 ## Build KitOps from Source
 

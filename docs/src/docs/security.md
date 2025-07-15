@@ -56,7 +56,7 @@ Cosign supports OIDC-based keyless signing, eliminating key file management. Sig
 
 ## Build it Into Your Pipeline
 
-Combine KitOps + Cosign in [any pipeline](./integrations/cicd.md) with KitOps - that's the easiest and safest way to keep things signed and secure.
+Combine KitOps + Cosign in [any pipeline](../integrations/cicd.md) with KitOps - that's the easiest and safest way to keep things signed and secure.
 
 Then, use policies to block deployments of ModelKits that are missing required signatures or transparency log entries.
 
@@ -80,6 +80,6 @@ For organizations needing detailed, queryable audit history, [Jozu Hub](https://
 - UI and API access to historical metadata
 
 ## Learn More or Get Help
-- [KitOps CLI](./cli/cli-reference.md) Reference
-- [Deploy Secure ModelKits](./deploy.md)
+- [KitOps CLI](../cli/cli-reference.md) Reference
+- [Deploy Secure ModelKits](../deploy.md)
 - Join the [KitOps Community](https://discord.gg/Tapeh8agYy)

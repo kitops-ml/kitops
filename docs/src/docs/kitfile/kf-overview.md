@@ -95,7 +95,7 @@ datasets:
 
 ## Learn More
 
-➡️ Explore the [Kitfile structure](./format.md) in detail
+➡️ Explore the [Kitfile structure](../format.md) in detail
 
 ---
 

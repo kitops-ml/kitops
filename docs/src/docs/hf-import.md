@@ -47,6 +47,6 @@ kit list
 You should see a listing for `HuggingFaceTB/SmolLM-135M-Instruct:latest`.
 
 ## Next Steps
-- [Push the ModelKit](./cli/cli-reference.md#kit-push) to a private registry
-- Learn more about the [import command](./cli/cli-reference.md#kit-import)
-- [Customize the Kitfile](./kitfile/format.md)
+- [Push the ModelKit](../cli/cli-reference.md#kit-push) to a private registry
+- Learn more about the [import command](../cli/cli-reference.md#kit-import)
+- [Customize the Kitfile](../kitfile/format.md)
