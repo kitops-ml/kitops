@@ -1,5 +1,5 @@
 {
-  "hash": "f709e602127decaf8c6c389273114d103919d54e",
+  "hash": "c1bbea1a0a34fb131a594e7580b36c4c3e0c381c",
   "posts": [
     {
       "url": "https://www.gorkem-ercan.com/p/do-data-scientists-really-like-git",
@@ -10,7 +10,7 @@
       "title": "Do data scientists really like Git?",
       "description": "I have a theory: data scientists do not like Git.",
       "published_time": "2024-02-27",
-      "image": "https://substackcdn.com/image/fetch/w_1200,h_600,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe73b7356-60c8-438a-9442-d91aa193b238_1024x1024.webp",
+      "image": "https://substackcdn.com/image/fetch/$s_!02WU!,w_1200,h_600,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe73b7356-60c8-438a-9442-d91aa193b238_1024x1024.webp",
       "icon": "https://substackcdn.com/icons/substack/icon.svg"
     },
     {
@@ -136,7 +136,8 @@
       "description": "From Jupyter Notebook to production-ready artifact: explore our guide to using KitOps and ModelKit for seamless deployment.",
       "published_time": "2024-07-08",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/07/HMB-18-Jupyter-Notebook.png",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/a-step-by-step-guide-to-building-an-mlops-pipeline/",
@@ -150,7 +151,7 @@
       "description": "Exploring the steps and processes of building an MLOps pipeline.",
       "published_time": "2024-06-04",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://www.youtube.com/watch?v=jRi3wmaHQBQ",
@@ -166,7 +167,7 @@
       "published_time": "2024-04-26",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/jRi3wmaHQBQ/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/fc303b88/img/logos/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
     },
     {
       "url": "https://jozu.com/blog/how-to-turn-a-jupyter-notebook-into-a-deployable-artifact/",
@@ -180,7 +181,8 @@
       "description": "How to turn a Jupyter Notebook into a deployable artifact.",
       "published_time": "2024-07-08",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/07/HMB-18-Jupyter-Notebook.png",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://www.codeproject.com/Articles/5384392/A-Step-by-Step-Guide-to-Building-and-Distributing",
@@ -208,7 +210,8 @@
       "description": "25 Open Source AI Tools to Cut Your Development Time in Half.",
       "published_time": "2024-07-11",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/07/HMB-15-June-25-Kitops-6.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/tools-to-ease-collaboration-between-data-scientists-and-application-developers/",
@@ -222,7 +225,8 @@
       "description": "Tools to ease collaboration between data scientists and application developers.",
       "published_time": "2024-07-16",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/07/HMB-13-May-Kitops-4.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/how-to-tune-and-deploy-your-first-small-language-model-sllm/",
@@ -236,7 +240,8 @@
       "description": "How to Tune and Deploy Your First Small Language Model (sLLM).",
       "published_time": "2024-07-30",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/07/HMB-14-June-sLLM.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/10-open-source-mlops-projects-you-didnt-know-about/",
@@ -250,7 +255,8 @@
       "description": "10 Open Source MLOps Projects You Didn’t Know About.",
       "published_time": "2024-08-01",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/08/HMB-19-Open-Source-MLOps.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/from-jupyter-notebook-to-deployed-application-in-4-steps/",
@@ -264,7 +270,8 @@
       "description": "From Jupyter Notebook to deployed application in 4 steps.",
       "published_time": "2024-08-14",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/08/Jupyter-to-deployed-app-in-4-steps.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/turn-your-existing-devops-pipeline-into-an-mlops-pipeline-with-modelkits/",
@@ -278,7 +285,8 @@
       "description": "Turn Your Existing DevOps Pipeline Into an MLOps Pipeline With ModelKits",
       "published_time": "2024-08-27",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/08/MLOps-Pipeline-ModelKits.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/turn-devops-to-mlops-pipelines-with-this-open-source-tool/",
@@ -292,7 +300,8 @@
       "description": "Turn DevOps to MLOps Pipelines With This Open-Source Tool",
       "published_time": "2024-09-04",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/09/Turn-DevOps-to-MLOps-Pipeline.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://developers.redhat.com/articles/2024/09/16/enhance-llms-instructlab-kitops",
@@ -322,7 +331,8 @@
       "description": "Critical LLM Security Risks and Best Practices for Teams",
       "published_time": "2024-09-17",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/09/HMB-23-Where-data-is-safely-stored.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/from-proprietary-data-to-expert-ai-with-lamini-and-kitops/",
@@ -336,7 +346,8 @@
       "description": "From Proprietary Data to Expert AI with Lamini and KitOps",
       "published_time": "2024-09-24",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/09/HMB-24-Aug-Lamini-KitOps.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/top-5-production-ready-open-source-ai-libraries-for-engineering-teams",
@@ -350,7 +361,8 @@
       "description": "Top 5 Production-Ready Open Source AI Libraries for Engineering Teams",
       "published_time": "2024-10-04",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/10/Open-source-AI-libraries-HMB-22.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/free-online-tutorials-to-help-you-develop-machine-learning-applications",
@@ -364,7 +376,8 @@
       "description": "Free Online Tutorials to Help You Develop Machine Learning Applications",
       "published_time": "2024-10-08",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/10/Free-Tutorials-for-ML.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/building-an-mlops-pipeline-with-dagger-io-and-kitops/",
@@ -378,7 +391,8 @@
       "description": "Building an MLOps pipeline with Dagger.io and KitOps",
       "published_time": "2024-10-11",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/10/Building-MLOps-with-Dagger-KitOps.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/10-mlops-tools-that-comply-with-the-eu-ai-act/",
@@ -393,7 +407,8 @@
       "description": "10 MLOps Tools That Comply With the EU AI Act",
       "published_time": "2024-10-15",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/10/MLOps-Tools-EU-AI-Act.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://testguildperf.libsyn.com/simplifying-the-aiml-to-production-pipeline-with-grkem-ercan",
@@ -454,7 +469,7 @@
       "description": "Top 5 open-source MLOps tool to boost your production",
       "published_time": "2024-10-23",
       "site_name": "DEV Community",
-      "image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Ff2bkn706hrjbx27ppjc2.gif",
+      "image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fyigmfkkl0un5q87bypu9.png",
       "icon": "https://media2.dev.to/dynamic/image/width=32,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png"
     },
     {
@@ -470,7 +485,8 @@
       "description": "AI Security: How to Protect Your Projects with Hardened ModelKits",
       "published_time": "2024-11-05",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/AI-Security-Protect-Projects.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/start-your-ai-project-in-minutes-with-jozu-quickstart-modelkits/",
@@ -484,7 +500,8 @@
       "description": "The Fastest Way to Start Your AI Project–Quickstart ModelKits",
       "published_time": "2024-11-07",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/Jozu-Quickstart-ModelKits.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/20-open-source-tools-i-recommend-to-build-share-and-run-ai-projects/",
@@ -499,7 +516,8 @@
       "description": "20 Open Source Tools I Recommend to Build, Share, and Run AI Projects",
       "published_time": "2024-11-13",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/20-Open-Source-AI-Tools.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/were-submitting-kitops-to-the-cncf/",
@@ -514,7 +532,7 @@
       "description": "We’re submitting KitOps to the CNCF",
       "published_time": "2024-11-18",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/deploying-ai-projects-through-a-jenkins-pipeline/",
@@ -529,7 +547,8 @@
       "description": "Deploying AI Projects Through a Jenkins Pipeline",
       "published_time": "2024-11-20",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/HMB-35-Deploying-AI-Projects-Jenkins-Pipeline.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/jozu-hub-vs-docker-hub-which-one-works-best-for-ai-ml/",
@@ -544,7 +563,8 @@
       "description": "Jozu Hub vs. Docker Hub? Which One Works Best for AI/ML?",
       "published_time": "2024-11-22",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/Jozu-Hub-vs-Docker-Hub.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/how-to-use-kitops-with-mlflow/",
@@ -559,7 +579,8 @@
       "description": "How to Use KitOps with MLflow",
       "published_time": "2024-11-29",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/How-to-Use-KitOps-with-MLFlow-1.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://www.youtube.com/watch?v=0JjVHSPmxp4",
@@ -575,7 +596,7 @@
       "published_time": "2024-11-29",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/0JjVHSPmxp4/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/fc303b88/img/logos/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
     },
     {
       "url": "https://jozu.com/blog/how-to-use-kitops-with-mlflow/",
@@ -590,7 +611,8 @@
       "description": "How to Use KitOps with MLflow",
       "published_time": "2024-11-29",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/11/How-to-Use-KitOps-with-MLFlow-1.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/how-to-turn-your-openshift-pipelines-into-an-mlops-pipeline",
@@ -605,7 +627,8 @@
       "description": "How to Turn Your OpenShift Pipelines Into an MLOps Pipeline",
       "published_time": "2024-12-03",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/12/Building-an-MLOps-pipeline-with-KitOps-OpenShift-Pipelines-and-Quay.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/platform-engineering-vs-mlops-key-comparisons",
@@ -620,7 +643,8 @@
       "description": "Platform Engineering vs. MLOps: Key Comparisons",
       "published_time": "2024-12-06",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/12/Platform-Engineering-vs-MLOps.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/understanding-the-mlops-lifecycle/",
@@ -635,7 +659,8 @@
       "description": "Understanding the MLOps Lifecycle",
       "published_time": "2024-12-17",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2024/12/MLOps-Lifecycle-Understanding.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/kitops-v1-0-0-release-announcement/",
@@ -650,7 +675,8 @@
       "description": "KitOps v1.0.0 is Now Generally Available, Featuring Hugging Face to ModelKit Import",
       "published_time": "2025-01-22",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2025/01/Social-Media-Template-Release-Note-3.png",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://www.devopsparadox.com/episodes/managing-your-ai-workloads-with-kitops-299/",
@@ -680,7 +706,7 @@
       "description": "What’s Next for the KitOps Project",
       "published_time": "2025-01-23",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://medium.com/gitconnected/secure-your-model-development-lifecycle-9bd81fb40bf6",
@@ -711,7 +737,8 @@
       "description": "Accelerating ML Development with DevPods and ModelKits",
       "published_time": "2025-01-28",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2025/01/Fast-Tracking-ML-Development-1.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/deploying-ml-projects-with-argo-cd/",
@@ -726,7 +753,8 @@
       "description": "Deploying ML projects with Argo CD",
       "published_time": "2025-02-03",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2025/02/Deploying-ML-Projects-with-Argo-CD-Jan-25.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://jozu.com/blog/10-must-know-open-source-platform-engineering-tools-for-ai-ml-workflows/",
@@ -741,7 +769,8 @@
       "description": "10 Must-Know Open Source Platform Engineering Tools for AI/ML Workflows",
       "published_time": "2025-02-06",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2025/02/Open-Source-Platform-Engineering-AI-ML.png",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://medium.com/data-science-collective/how-to-build-a-secure-hugging-face-deployment-pipeline-with-dagger-io-kitops-and-jozu-hub-2da214a0bfb0",
@@ -788,7 +817,8 @@
       "description": "Automating ML Pipeline with ModelKits + GitHub Actions",
       "published_time": "2025-02-18",
       "site_name": "Jozu MLOps - Simplified cross-team ML development and deployment",
-      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2023/06/cropped-Jozu-Primary-turq654x654-1.png?fit=32%2C32&ssl=1"
+      "image": "https://jozu.com/wp-content/uploads/2025/02/HMB-55-ModelKits-GitHub-Actions-Feb.jpg",
+      "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
     },
     {
       "url": "https://medium.com/data-science-collective/open-source-tools-for-scaling-ml-workloads-e49cd3fe41cd",
@@ -820,6 +850,139 @@
       "site_name": "Medium",
       "image": "https://miro.medium.com/v2/resize:fit:1200/1*vBd9haW7rjqAHd8DyP5tSw.jpeg",
       "icon": "https://miro.medium.com/v2/resize:fill:256:256/1*eyBo28diDZRnmhFfYCtlug.jpeg"
+    },
+    {
+      "url": "http://northflank.com/blog/kube-con-europe-london-2025-27-open-source-projects-you-should-check-out",
+      "tags": [
+        "KitOps",
+        "KubeCon",
+        "Open Source"
+      ],
+      "author": "Daniel Adeboye",
+      "title": "KubeCon Europe London 2025 – 27 open-source projects you should check out",
+      "description": "KubeCon 2025 highlights 27 open-source projects tackling key challenges in Kubernetes, from security to cluster management. Tools like Shipwright, Koordinator, and LoxiLB simplify deployment, networking, and scaling.",
+      "published_time": "2025-03-27",
+      "site_name": "Northflank — Deploy any project in seconds, in our cloud or yours.",
+      "image": "https://assets.northflank.com/20_oss_projects_to_check_out_at_Kube_Con_blog_post_ca666839a3.png"
+    },
+    {
+      "url": "https://www.gorkem-ercan.com/p/securing-mcp-applying-lessons-learned",
+      "tags": [
+        "KitOps",
+        "MCP",
+        "Open Source"
+      ],
+      "author": "Gorkem Ercan",
+      "title": "Securing MCP: Applying Lessons Learned from the Language Server Protocol",
+      "description": "Given my experience with LSP, I’m enthusiastic about the growing interest in the Model Context Protocol (MCP). However, I am concerned that the valuable lessons learned from LSP are not being effectively applied to MCP.",
+      "published_time": "2025-03-28",
+      "image": "https://substackcdn.com/image/fetch/$s_!3e8u!,w_1200,h_600,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F785116db-d978-4838-899e-b6dd1203a368_320x320.png",
+      "icon": "https://substackcdn.com/icons/substack/icon.svg"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=eExvPkSqTCQ",
+      "tags": [
+        "KitOps",
+        "Drift Detection",
+        "ML"
+      ],
+      "author": "Jesse Williams",
+      "title": "Tutorial–Maintaining ML Model Accuracy With Automated Drift Detection",
+      "description": "This tutorial demonstrates how to implement automated drift detection, triggers alerts, and automatically retrains models to maintain accuracy in production environments.",
+      "published_time": "2025-04-09",
+      "site_name": "YouTube",
+      "image": "https://i.ytimg.com/vi/eExvPkSqTCQ/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGDogXyhyMA8=&rs=AOn4CLAou9wYrJZ3byJeec--9wP9tBXVxQ",
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=eExvPkSqTCQ",
+      "tags": [
+        "KitOps",
+        "PyData",
+        "Event Talk"
+      ],
+      "author": "Shivay Lamba",
+      "title": "PyData Global Talk–Streamlining AI development and Deployment with KitOps",
+      "description": "www.pydata.orgAs organizations increasingly integrate and adopt AI and machine learning internally, the challenge of maintaining separate pipelines for ML-po...",
+      "published_time": "2025-04-09",
+      "site_name": "YouTube",
+      "image": "https://i.ytimg.com/vi/eExvPkSqTCQ/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGDogXyhyMA8=&rs=AOn4CLAou9wYrJZ3byJeec--9wP9tBXVxQ",
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=fP_OssMlnWI",
+      "tags": [
+        "KitOps",
+        "Docker Captain",
+        "Podcast"
+      ],
+      "author": "Bret Fisher, Cloud Native DevOps",
+      "title": "Machine Learning Packaging for Ops with KitOps",
+      "description": "Manage your AI and ML files, git repos, containers, and artifacts with YAML and the KitOps ModelKit proposed standard. A CNCF Sandbox project to standardize ...",
+      "published_time": "2025-04-17",
+      "site_name": "YouTube",
+      "image": "https://i.ytimg.com/vi/fP_OssMlnWI/maxresdefault.jpg",
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=BM9PcoK2Ik8",
+      "tags": [
+        "KitOps",
+        "Open Source",
+        "Podcast"
+      ],
+      "author": "Cloud Native Podcast",
+      "title": "Cloud Native Podcast–KitOps: An Open Standard For Packaging, Managing & Deploying Machine Learning Models",
+      "description": "Deploying machine learning models from Jupyter notebooks to production is a complex and fragmented process. Engineers often struggle with inconsistent packag...",
+      "published_time": "2025-04-23",
+      "site_name": "YouTube",
+      "image": "https://i.ytimg.com/vi/BM9PcoK2Ik8/maxresdefault.jpg",
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
+    },
+    {
+      "url": "https://dev.to/arindam_1729/stop-vibe-coding-make-your-ai-saas-production-ready-with-these-7-tools-2pam",
+      "tags": [
+        "KitOps",
+        "Open-Source",
+        "Vibe Coding"
+      ],
+      "author": "Arindam Majumder",
+      "title": "Stop Vibe Coding 🚫 Make Your AI SaaS Production-Ready with these 7 Tools ⚡️",
+      "description": "Vibe Coding is Fun, but It's Not Production Ready!  If you’re building an AI SaaS that’s actually... Tagged with ai, webdev, opensource, api.",
+      "published_time": "2025-05-01",
+      "site_name": "DEV Community",
+      "image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fot4iwsi1uuu6q42oo8hv.png",
+      "icon": "https://media2.dev.to/dynamic/image/width=32,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png"
+    },
+    {
+      "url": "https://www.youtube.com/live/a4hJEFGv8uo?feature=shared&t=10812",
+      "tags": [
+        "KitOps",
+        "AI Crush",
+        "Event Talk"
+      ],
+      "author": "Shivay Lamba",
+      "title": "AI Crush 2025 Talk–Secure ML Packaging Using Open Source KitOps",
+      "description": "Join our free global online conference and learn directly from practitioners who are scaling AI solutions today. Whether you're leading strategy or engineeri...",
+      "published_time": "2025-05-09",
+      "site_name": "YouTube",
+      "image": "https://i.ytimg.com/vi/a4hJEFGv8uo/maxresdefault.jpg",
+      "icon": "https://www.youtube.com/s/desktop/fba944d3/img/logos/favicon_32x32.png"
+    },
+    {
+      "url": "https://www.upgrad.com/blog/open-source-projects-for-beginners/",
+      "tags": [
+        "KitOps",
+        "Open Source",
+        "Beginners"
+      ],
+      "author": "Pavan Vadapalli",
+      "title": "Top Open Source Projects for Beginners",
+      "description": "Discover top open source projects perfect for beginners. Start contributing, learn real-world coding skills, and grow your developer portfolio today.\n",
+      "published_time": "2025-06-02",
+      "site_name": "upGrad blog",
+      "image": "https://ik.imagekit.io/upgrad1/abroad-images/blog/-1/-1/open-source-projects-for-beginners/images/1409DK2NR2.png",
+      "icon": "/favicon.ico"
     }
   ]
 }

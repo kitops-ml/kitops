@@ -10,7 +10,7 @@ import vGaTrack from '@theme/directives/ga'
 
 # KitOps Getting Started Tutorial
 
-KitOps is the open-source CLI tool for packaging and sharing complete AI/ML projects using the [ModelKit](./modelkit/intro.md) format.
+KitOps is the open-source CLI tool for packaging and sharing complete AI/ML projects using the [ModelKit](../modelkit/intro.md) format.
 
 In this guide, you'll:
 
@@ -18,11 +18,11 @@ In this guide, you'll:
 1. Package your own model and data
 1. Push it to a remote registry for collaboration or deployment
 
-> Prefer to use KitOps with your favorite MLOps or other tool? [Check out our integrations](./integrations/integrations.md)
+> Prefer to use KitOps with your favorite MLOps or other tool? [Check out our integrations](../integrations/integrations.md)
 
 ## Prerequisites
 
-- [Install the Kit CLI](./cli/installation.md)
+- [Install the Kit CLI](../cli/installation.md)
 - Verify it by typing `kit version` in a new terminal
   - If you get an error check your PATH
 - Create and navigate to a new folder (e.g., `KitStart`)
@@ -37,7 +37,7 @@ kit login jozu.ml
 
 Use the email and password you signed up to your registry with.
 
-Trouble? See the [kit login docs](./cli/cli-reference.md#kit-login).
+Trouble? See the [kit login docs](../cli/cli-reference.md#kit-login).
 
 ## Step 2: Unpack a Sample ModelKit
 
@@ -64,7 +64,7 @@ This unpacks all files to the current directory:
 
 ## Step 3: Pack your ModelKit
 
-Use the [kit pack command](./cli/cli-reference.md#kit-pack):
+Use the [kit pack command](../cli/cli-reference.md#kit-pack):
 
 ```sh
 // Replace <your-name> with your Jozu.ml user

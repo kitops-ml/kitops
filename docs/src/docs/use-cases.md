@@ -13,7 +13,7 @@ Teams around the world are using KitOps for:
 - Security and compliance (including EU AI Act, NIST AI, ISO 42001)
 - Organizing all model versions in one standard system
 
-➡️ See [compatible tools](./integrations/integrations.md)
+➡️ See [compatible tools](../integrations/integrations.md)
 
 ## Level 1: Production Handoff
 
@@ -38,7 +38,7 @@ CI/CD pipelines using GitHub Actions, Dagger, or other systems can:
 3.	Package project artifacts as a signed, versioned ModelKit
 4.	Push the ModelKit to a private OCI registry
 
-➡️ See [how CI/CD with KitOps works](./integrations/cicd.md)
+➡️ See [how CI/CD with KitOps works](../integrations/cicd.md)
 
 ## Level 2: Model Security
 
@@ -48,7 +48,7 @@ Teams working in regulated industries or secure environments use KitOps to enfor
 
 ### In Practice
 
-1. Build a ModelKit for each experiment run in [MLFlow](./integrations/mlflow.md) / Weights & Biases
+1. Build a ModelKit for each experiment run in [MLFlow](../integrations/mlflow.md) / Weights & Biases
 1. Sign the ModelKit
 1. Scan the ModelKit using your preferred security scanning tools
 1. Attach the security report as a signed attestation to the ModelKit
@@ -70,14 +70,14 @@ Benefits:
 
 ### In Practice
 
-1. Build a set of approved ModelKits by [importing from Hugging Face](./hf-import.md) or adding your own internal artifacts
+1. Build a set of approved ModelKits by [importing from Hugging Face](../hf-import.md) or adding your own internal artifacts
 1. Push ModelKits to your OCI registry
 1. Eliminate duplicate work by starting projects from approved ModelKits
 1. Version datasets as ModelKits and link them from project ModelKits
 1. Perform signing, security testing and attestations as projects progress
 1. Enforce policies using [OPA](https://www.openpolicyagent.org/) or similar technologies
 
-➡️ [Get started](./get-started.md) with KitOps in your team.
+➡️ [Get started](../get-started.md) with KitOps in your team.
 
 ---
 

@@ -41,17 +41,17 @@ Using KitOps, you can:
 
 KitOps is designed for speed, security, and interoperability.
 
-➡️ See [compatible tools](./integrations/integrations.md)
+➡️ See [compatible tools](../integrations/integrations.md)
 
 ## How It Works
-- Write a [Kitfile](./kitfile/kf-overview.md) to describe your project contents
+- Write a [Kitfile](../kitfile/kf-overview.md) to describe your project contents
 - Run `kit pack` to create a ModelKit
 - Use `kit push` to upload to any OCI registry
 - Share and deploy across teams using `kit pull` or `kit unpack`
 
 Built with standards from the Open Container Initiative (OCI), KitOps is compatible with the registries, pipelines, and serving infrastructure your organization already uses.
 
-➡️ Install the [CLI](./cli/installation.md)
+➡️ Install the [CLI](../cli/installation.md)
 
 ## Trusted by Teams
 
@@ -63,7 +63,7 @@ Teams use it to:
 1. Track changes and approvals for compliance and audits
 1. Enforce consistency across environments
 
-➡️ Try our simple [Get Started](./get-started.md)
+➡️ Try our simple [Get Started](../get-started.md)
 
 ## KitOps Helps You Answer:
 
@@ -72,7 +72,7 @@ Teams use it to:
 - Who signed off on it — and when?
 - What changed between model version 3 and 4?
 
-➡️ See how [security is built-in](./security.md)
+➡️ See how [security is built-in](../security.md)
 
 ## How KitOps Compares
 
@@ -88,7 +88,7 @@ KitOps:
 - Integrates with any DevOps or MLOps tool
 - Is free, open source, and governed by the independent CNCF organization
 
-➡️ Integrate [KitOps with experiment trackers](./integrations/mlflow.md)
+➡️ Integrate [KitOps with experiment trackers](../integrations/mlflow.md)
 
 ### KitOps and Jupyter Notebooks
 
@@ -113,7 +113,7 @@ ModelKits:
 - Provide a clean handoff point between DS and DevOps teams
 - Can be turned into containers when deployment is needed
 
-➡️ Learn about [deployments with KitOps](./deploy.md)
+➡️ Learn about [deployments with KitOps](../deploy.md)
 
 ### KitOps and Git
 
@@ -145,7 +145,7 @@ ModelKits:
 1. Designed for team collaboration and governance
 
 ## Try It Today
-- [Get Started](./get-started.md)
-- [Explore CLI commands](./cli/cli-reference.md)
-- [Learn about ModelKits](./modelkit/intro.md)
-- [Contribute to the community](../../../CONTRIBUTING.md)
+- [Get Started](../get-started.md)
+- [Explore CLI commands](../cli/cli-reference.md)
+- [Learn about ModelKits](../modelkit/intro.md)
+- [Contribute to the community](../../contributing.md)

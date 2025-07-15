@@ -7,7 +7,7 @@ To get the most out of KitOps secure ModelKits, many teams and organizations cre
 
 Simply install the Kit CLI and run `kit` commands as tasks in the pipeline.
 
-KitOps supports [all major CI/CD pipelines](./integrations.md#️-kitops-compatible-pipeline--storage-tools-a-z).
+KitOps supports [all major CI/CD pipelines](../integrations.md#️-kitops-compatible-pipeline--storage-tools-a-z).
 
 The KitOps community has shared some of their CI/CD tool integrations:
 * GitHub Actions: [Tutorial](https://jozu.com/blog/automating-ml-pipeline-with-modelkits-github-actions/), and [Action](https://github.com/marketplace/actions/setup-kit-cli)

@@ -13,11 +13,11 @@ Built on Open Container Initiative ([OCI](https://opencontainers.org/)) standard
 **⚡ KitOps is trusted by teams using GitLab, MLFlow, Weights & Biases, Jupyter, Hugging Face, Kubernetes, KServe, Red Hat OpenShift, and more!**
 
 The KitOps community has built some great integrations:
-- [Import directly from Hugging Face](../cli/cli-reference.md#kit-import)
-- Example workflows for [CI/CD platforms](./cicd.md)
-- Outputting ModelKits directly from [MLFlow](./mlflow.md)
-- Deploying to any [Kubernetes distribution](./k8s-init-container.md)
-- Working with ML in [KServe](./kserve.md)
+- [Import directly from Hugging Face](../../cli/cli-reference.md#kit-import)
+- Example workflows for [CI/CD platforms](../cicd.md)
+- Outputting ModelKits directly from [MLFlow](../mlflow.md)
+- Deploying to any [Kubernetes distribution](../k8s-init-container.md)
+- Working with ML in [KServe](../kserve.md)
 
 ## 🗄️ KitOps Compliant OCI Registries (A-Z)
 
