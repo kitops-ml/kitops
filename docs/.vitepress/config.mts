@@ -83,12 +83,11 @@ export default defineConfig({
         text: 'Getting started',
         items: [
           { text: 'Overview', link: '/docs/overview/' },
+          { text: 'How it is Used', link: '/docs/use-cases/' },
           { text: 'Get Started', link: '/docs/get-started/' },
-          { text: 'Next Steps', link: '/docs/next-steps/' },
           { text: 'HuggingFace Import', link: '/docs/hf-import/' },
           { text: 'Deploy ModelKits', link: '/docs/deploy/' },
           { text: 'Why KitOps?', link: '/docs/why-kitops/' },
-          { text: 'How it is Used', link: '/docs/use-cases/' },
         ]
       },
       {
@@ -129,6 +128,7 @@ export default defineConfig({
       {
         text: 'Integrations',
         items: [
+          { text: 'Integration List', link: '/docs/integrations/integrations/' },
           { text: 'MLFlow', link: '/docs/integrations/mlflow/' },
           { text: 'CI/CD', link: '/docs/integrations/cicd/' },
           { text: 'Kubernetes - initContainer', link: '/docs/integrations/k8s-init-container/' },

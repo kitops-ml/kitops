@@ -1,142 +1,85 @@
 ---
-description: Explore real-world use cases for KitOps. See how organizations are leveraging ModelKits for AI/ML efficiency.
+title: KitOps Use Cases - Secure Model Delivery & Versioning
+description: Learn how organizations use KitOps to securely package, track, and deploy AI/ML models through CI/CD, with security scanning, tagging, and rollback.
+keywords: kitops use cases, ai model deployment workflow, mlops handoff, versioning ai models, secure ai pipelines, eu ai act compliance, ai model governance, mlflow handoff, reproducible ml deployment
 ---
-# How KitOps Is Used 🛠️
 
-KitOps is the market's only open source, standards-based packaging and versioning system designed for AI/ML projects. Using the OCI standard allows KitOps to be painlessly adopted by any organization using containers and enterprise registries today (see a partial list of [compatible tools](../modelkit/compatibility/)).
+# How Teams Use KitOps 🛠️
 
-Organizations around the world are using KitOps as a "gate" in the [handoff between development and production](#level-1-handoff-from-development-to-production-). This is often part of establishing golden paths and platform engineering around AI/ML projects.
+KitOps helps organizations package, share, and deploy AI/ML models securely and reproducibly — using the same tools they already use for containers.
 
-Those who are concerned about end-to-end auditing of their model development - like those in regulated industries, or under the jurisdiction of the [EU AI Act](https://artificialintelligenceact.eu/) extend KitOps usage to security and development use cases (see [Level 2](#level-2-adding-security-️) and [Level 3](#level-3-storage-for-all-ai-project-versions-) use cases below.
+Teams around the world are using KitOps for:
+- Reproducible handoff from development to production
+- Security and compliance (including EU AI Act, NIST AI, ISO 42001)
+- Organizing all model versions in one standard system
 
-[ discord banner ]
+➡️ See [compatible tools](../integrations/integrations.md)
 
-## Level 1: Handoff From Development to Production 🤝
+## Level 1: Production Handoff
 
-Organizations are having AI teams build a [ModelKit](../modelkit/intro/) for each version of the AI project that is going to staging, user acceptance testing (UAT), or production.
+> Use Case: Reproducible, secure model handoff across teams using CI/CD
 
-KitOps is ideally suited to CI/CD pipelines (e.g., using KitOps in a GitHub Action, Dagger module, or other CI/CD pipeline flow) either triggered manually by the model development team when they're ready to send the model to production, or automatically when a model or its artifacts are updated in their respective repositories.
+Most teams start by using KitOps to version a model when it’s ready for staging, UAT, or production. ModelKits serve as immutable, self-contained packages that simplify:
+- CI/CD deployment of AI models
+- Artifact signing and traceability
+- App integration testing
+- Secure, consistent model handoffs across teams
 
-Security conscious organizations often can't allow internal teams to use any publicly available model off of Hugging Face because:
-* Their licenses would put the organization at risk
-* They don't match the organization's security testing requirements
-* Their provenance isn't understood
+Organizations that are self-hosting models ❤️ KitOps because it:
+- Prevents unknown models from entering production
+- Enforces licensing and provenance checks (e.g. for Hugging Face imports)
+- Keeps datasets, model, and code synced and trackable
 
-In these cases teams may use a pipeline (with [GitHub Actions](https://github.com/marketplace/actions/setup-kit-cli), [Dagger](https://github.com/kitops-ml/daggerverse), or [another tool](../modelkit/compatibility/)) to pull models or sample datasets from Hugging Face, run them through a battery of tests, then publish them in tamper-proof and signed ModelKits to their private container registry.
+### In Practice
 
-This ensures that:
-* __Everyone has a library of safe, immutable, and signed ModelKits__ speeding development without compromising security
-* __[Safe models can be deployed](../deploy/)__ for development or production use cases
-* __Operations teams have all the assets and information they need__ for testing, deploying, auditing, and managing AI/ML projects
-* __AI versioned packages are held in the same enterprise registry__ as other production assets like containers making them easier to find, secure, and audit
-* __Compliance teams have a catalogue of versioned models__ that can be used for [EU AI Act](https://artificialintelligenceact.eu/) or other regulatory reporting
-* __Organizations are protected against vendor shifts__ in their MLOps and Serving Infrastructure domains (this also gives them negotiating leverage with vendors)
+CI/CD pipelines using GitHub Actions, Dagger, or other systems can:
+1.	Pull models or data
+2.	Run compliance / security tests
+3.	Package project artifacts as a signed, versioned ModelKit
+4.	Push the ModelKit to a private OCI registry
 
-**Get Started:**
-* [Kit Dagger Modules](https://github.com/kitops-ml/daggerverse): Kit Dagger modules make it easy to pack and selectively unpack ModelKits to speed pipelines.
-* [Kit GitHub Action](https://github.com/marketplace/actions/setup-kit-cli): Our Kit GitHub Action is used to build hundreds of ModelKits every day as part of pipelines.
-* [Learn to pack and unpack ModelKits](../get-started/)
-* [Create containers or Kubernetes deployments directly from ModelKits](../deploy/)
+➡️ See [how CI/CD with KitOps works](../integrations/cicd.md)
 
-This is where most organizations start their usage of KitOps, but once they start most continue on...
+## Level 2: Model Security
 
-## Level 2: Adding Security 🛡️
+> Use Case: Scan and gate models during development or before release
 
-Some organizations want to scan their models either before they enter the development phase (ideal), or before they are promoted beyond development. The open source [ModelScan project](https://github.com/protectai/modelscan) can help here.
+Teams working in regulated industries or secure environments use KitOps to enforce security and integrity before a model is accepted into production.
 
-After model development has been completed, the resulting ModelKit and its artifacts can again by scanned by something like ModelScan and only allowed to move forward if it passes. Using ModelKits here again ensures that a model that passes the scan is packaged and signed so that it cannot be tampered with on its way to production.
+### In Practice
 
-Even with this level of scrutiny, however, there remain some risks since the varying repositories and versioning of artifacts during development can invite accidental or malicious tampering. This leads us to Level 3 adoption...
+1. Build a ModelKit for each experiment run in [MLFlow](../integrations/mlflow.md) / Weights & Biases
+1. Sign the ModelKit
+1. Scan the ModelKit using your preferred security scanning tools
+1. Attach the security report as a signed attestation to the ModelKit
+1. Only allow signed and attested ModelKits to move into forward environments
+1. Track which model passed, which failed, and prevent risky surprises
 
-## Level 3: Storage for all AI Project Versions 💾
+Even when using other tools (MLFlow, Hugging Face, notebooks), KitOps provides a reliable security and auditing layer that protects environments from unsecure, or mistaken deployments.
 
-Organizations that are more mature in their handling of AI projects, or are subject to extra scrutiny or regulations extend the use of ModelKits to the development phase as well. This solves the currently scattered storage of artifacts.
+## Level 3: Versioning Everything
 
-This ensures that:
-* The organization uses a standards-based storage (OCI 1.1 artifacts) for all their AI/ML project work
-* Data and AI teams who don't work closely together can share artifacts even if they're using different development tools
-* Development artifacts can't be accidentally or maliciously tampered with
+> Use Case: Full model, code, and dataset lifecycle tracking
 
-This can be a lightweight process automated with ModelKit packing via the Kit [CLI](../cli/cli-reference/).
+Mature teams — especially those under compliance scrutiny — extend KitOps to development. Every milestone (new dataset, tuning checkpoint, retraining event) is stored as a versioned ModelKit.
 
-The beauty of KitOps' ModelKits is their flexibility and the fact that they fit into the already standard tools and processes that organizations have built around OCI artifacts and registries.
+Benefits:
+- One standard system (OCI) for every model version
+- Tamper-evident and content-addressable storage
+- Eliminates confusion over which assets belong together
 
-Below are details on how we have used KitOps internally from development to production.
+### In Practice
 
-### Using Tags 🏷️
+1. Build a set of approved ModelKits by [importing from Hugging Face](../hf-import.md) or adding your own internal artifacts
+1. Push ModelKits to your OCI registry
+1. Eliminate duplicate work by starting projects from approved ModelKits
+1. Version datasets as ModelKits and link them from project ModelKits
+1. Perform signing, security testing and attestations as projects progress
+1. Enforce policies using [OPA](https://www.openpolicyagent.org/) or similar technologies
 
-We used ModelKit tag names to give team members a quick way to determine where an AI project was in its lifecycle and whether they needed to get involved. Since ModelKits are immutable but use content-addressable storage, two ModelKits with the same contents but different tags only result in one ModelKit in storage (with two tag "pointers").
+➡️ [Get started](../get-started.md) with KitOps in your team.
 
-* **_tuning_**: dataset is designed for model tuning
-  * Used for ModelKits that contained only datasets. These were used almost exclusively by the data science team.
-* **_validating_**: dataset is designed for model validation [1]
-  * Used for ModelKits that contained only datasets. These were used almost exclusively by the data science team.
-* **_trained_**: model has completed training phase [2]
-  * ModelKit would include the model, plus training and validation datasets. Other assets were optional depending on the project.
-* **_tuned_**: model has completed fine-tuning phase [2]
-  * ModelKit would include the model, plus training and validation datasets. Other assets were optional depending on the project.
-* **_challenger_**: model should be prepared to replace the current champion model
-  * ModelKit would include any codebases and datasets that need to be deployed to production with the model. The idea was to create a package that could be deployed via our existing CI/CD pipelines (one for code, one for serialized models, one for datasets).
-* **_champion_**: model is deployed in production
-  * This is the same ModelKit as the `challenger` tagged one, but with an updated tag to show what's in production. This just creates a second reference to the same ModelKit, not 2x the ModelKit storage.
-* **_rollback_**: the model was the previous "champion" model, before it was replaced by the "challenger"
-  * This is the same ModelKit as the `champion` tagged one. We kept it so that we could quickly deploy it to production if there was a catastrophic failure with the current `champion` model.
-* **_retired_**: the model is no longer appropriate for production usage
-  * We kept old ModelKits so we could trace the history of development. When they were too old to be informative we used `kit remove` to get rid of them.
+---
 
-Here's how we implemented those tags and changes in our repo throughout the AI project development lifecycle.
-
-### Development 🧪
-
-Our data scientists developed models in Jupyter notebooks, but saved their work as a ModelKit at each development milestone to facilitate collaboration across our teams. This was simple by using the `kit pack` and `kit push` commands in their notebook:
-
-For example, if the data scientist had completed fine-tuning of the model and our enterprise registry was GitLab (`registry.gitlab.com`), our repository was “chatbot” and the model was called “legalchat” then the commands would be:
-
-``` shell
-kit pack . -t registry.gitlab.com/chatbot/legalchat:tuned
-kit push registry.gitlab.com/chatbot/legalchat:tuned
-```
-
-Now everyone knew that the Legal Chat model had completed fine-tuning and they could quickly pull, run, or inspect the updated model, datasets, or code.
-
-### Integration 🧑‍🍳
-
-Once a new ModelKit completed training or tuning, our app team would pull the updated ModelKit:
-
-`kit pull registry.gitlab.com/chatbot/legalchat:tuned`
-
-The team would test their service integration with the updated model, paying special attention to the performance characteristics and watching for features that may have changed between model versions.
-
-### Testing 🍽️
-
-Once the application team had confirmed the new model didn’t change the behavior of the application, an engineer from outside the data science team would validate the model. To do this they would run the new model with the validation dataset included in the ModelKit, and compare their results with the results from the data science team. This engineer generally didn't need the codebases in the ModelKit so they would just unpack the model and datasets.
-
-`kit unpack registry.gitlab.com/chatbot/legalchat:tuned --model --datasets`
-
-This guaranteed that they were using the same dataset as the data science team to replicate the results, which is otherwise difficult because at most organizations, datasets aren’t housed in a versioned repository and can easily (and silently) change during the course of model development.
-
-If the model passed validation the QA team would retag it from `tuned` to `challenger` to alert the SRE team that it should be readied for deployment.
-
-```shell
-kit tag registry.gitlab.com/chatbot/legalchat:tuned registry.gitlab.com/chatbot/legalchat:challenger
-
-kit push registry.gitlab.com/chatbot/legalchat:challenger
-```
-
-### Deployment 🚢
-
-Adding the `challenger` tag to a ModelKit was a trigger in our team for the DevOps group to know that it was ready to deploy to production. They would take the serialized model from the ModelKit and ready it for deployment via our pipelines. This may mean putting the model into a container, but it may mean using an init container, a sidecar, entrypoint, or post-start hooks.
-
-Once the model was deployed and validated in production the ModelKit for the model that was previously tagged `champion` would be retagged to `rollback`, and the ModelKit for the `challenger` would be retagged to `champion`. These changes were part of our deployment automation and ensured that we were always ready to quickly redeploy the `rollback` model in case something catastrophic happened in production with the current `champion`.
-
-```shell
-kit tag registry.gitlab.com/chatbot/legalchat:champion registry.gitlab.com/chatbot/legalchat:rollback
-
-kit push registry.gitlab.com/chatbot/legalchat:rollback
-
-kit tag registry.gitlab.com/chatbot/legalchat:challenger registry.gitlab.com/chatbot/legalchat:champion
-
-kit push registry.gitlab.com/chatbot/legalchat:champion
-```
-
-If you use KitOps differently and want to share it go ahead - we'd love to hear about it!
+**Have feedback or questions?**
+Open an [issue on GitHub](https://github.com/kitops-ml/kitops/issues) or [join us on Discord](https://discord.gg/Tapeh8agYy).

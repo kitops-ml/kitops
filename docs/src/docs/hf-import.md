@@ -1,28 +1,52 @@
 ---
-description: Import models from Hugging Face into KitOps effortlessly. Follow our guide to integrate your existing AI models seamlessly.
+title: Import Hugging Face Models into ModelKits
+description: Learn how to use the KitOps CLI to import Hugging Face models into ModelKits. Use KitOps to create a curated, private model registry behind your firewall.
+keywords: kitops hugging face, import huggingface model, huggingface oci, huggingface kitfile, modelkit huggingface import, kit import cli, package hf model, hugging face model registry, share huggingface model
 ---
-# Importing a ModelKit from Hugging Face
 
-You can automatically generate a ModelKit from a Hugging Face repository using the `kit import` command. This speeds and simplifies the job of getting started with ModelKits.
+# Import Hugging Face Models into ModelKits
 
-::: tip
-To customize the editor used for editing the Kitfile during import, set the `EDITOR` environment variable
-:::
+KitOps makes it easy to turn any Hugging Face repository into a versioned ModelKit.
+Just use the `kit import` command to:
+* Download the model and metadata
+* Generate a Kitfile
+* Build and store the ModelKit in your local registry
 
-You can read more about the `import` command in our [CLI reference](../cli/cli-reference/#kit-import).
+You can then push it to a private OCI registry, or use it in your development and deployment pipelines behind your firewall.
 
-## Importing a Hugging Face repository
+### Step 1: Get the Hugging Face Model URL
 
-1. **Get the HF URL**: On the Hugging Face site, copy the URL from the repository you want to create a ModelKit from (e.g., https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct). You can also customize the name or add a tag name if desired.
+Visit [huggingface.co](https://huggingface.co) and copy the model URL you want to import. For example, `https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct`
 
-2. **Kit import**: In a terminal window running Kit version 1.0.0 at least, type `kit import https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct`. This will download and build a [Kitfile](../kitfile/kf-overview/) based on the Hugging Face model and give you an opportunity to edit it before the ModelKit is packed.
+### Step 2: Run `kit import`
 
-::: tip
-If you have a [Huggingface Access Token](https://huggingface.co/docs/hub/security-tokens) you can specify it using the `--token` flag for `kit import`.
-:::
+Use the CLI to import the Hugging Face repo and auto-generate a Kitfile:
 
-3. **Auto-generate the ModelKit**: Once the Kitfile is accepted a ModelKit will be built and saved to your local registry using the name you selected. If you didn't specify a tag name the ModelKit will be tagged `latest`.
+```sh
+kit import https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct
+```
 
-4. **Admire your new ModelKit**: Typing `kit list` will show you the list of ModelKits on your system and you'll see the newly imported tag (e.g., `HuggingFaceTB/SmolLM-135M-Instruct:latest`).
+KitOps will:
+- Download the Hugging Face model and files
+- Generate a Kitfile
+- Launch your text editor for optional edits
+- Pack and store the ModelKit locally
 
-That's it! So easy! Now go out there and start sharing your favourite Hugging Face models through your OCI registry!
+If the model requires authentication, use the `--token` flag to add your Hugging Face access token.
+
+> 💡 Customize your Kitfile editor by setting the `EDITOR` environment variable.
+
+### Step 3: Verify Your ModelKit
+
+List your local ModelKits:
+
+```sh
+kit list
+```
+
+You should see a listing for `HuggingFaceTB/SmolLM-135M-Instruct:latest`.
+
+## Next Steps
+- [Push the ModelKit](../cli/cli-reference.md#kit-push) to a private registry
+- Learn more about the [import command](../cli/cli-reference.md#kit-import)
+- [Customize the Kitfile](../kitfile/format.md)
