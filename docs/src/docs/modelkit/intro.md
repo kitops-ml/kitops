@@ -1,27 +1,49 @@
+---
+title: ModelKit Overview - OCI Packaging for AI/ML Projects
+description: Learn how ModelKit standardizes the packaging of models, datasets, and code for AI/ML workflows. OCI-compliant, versioned, and easy to use across registries and tools.
+keywords: modelkit, modelkit overview, oci ai packaging, ml model registry, share ai model, package machine learning model, reproducible ml model, versioned ai artifact, docker for ai models
+---
+
 # ModelKit Overview
 
 ![ModelKit](./ModelKit_chart.svg)
 
-ModelKit revolutionizes the way AI/ML artifacts are shared and managed throughout the lifecycle of AI/ML projects. As an OCI-compliant packaging format, ModelKit encapsulates datasets, code, configurations, and models into a single, standardized unit. This approach not only streamlines the development process but also ensures broad compatibility and integration with a vast array of tools and platforms.
+>**ModelKit is a standardized, OCI-compliant packaging format for AI/ML projects.**  
 
-[Get started with ModelKits](../../get-started/) in less than 15 minutes.
+It bundles everything your model needs — datasets, training code, config files, documentation, and the model itself — into a single shareable artifact.
 
-[See how security-conscious organization are using ModelKits](../../use-cases/) with their existing tools to develop AI/ML projects faster and safer than ever before.
+Use ModelKits to version, share, and deploy AI models across teams and environments using familiar DevOps tools like DockerHub, GitHub Packages, or private registries.
 
-## Key Features of ModelKit:
+➡️ [Get started with ModelKits](../get-started.md) in under 15 minutes  
+➡️ [See how security-focused teams use ModelKits](../use-cases.md)
 
-**Seamless Sharing and Collaboration:** ModelKit's standardized format fosters a collaborative environment, enabling teams to share and manage AI/ML artifacts effortlessly across different stages of development.
+## 🔑 Key Features
 
-**Wide Compatibility:** Being OCI-compliant, ModelKits can be stored, versioned, and tagged using existing infrastructure like DockerHub or GitHub Packages, leveraging familiar workflows for AI/ML artifacts and streamlining infrastructure costs.
+* **OCI-compliant and tool-friendly**  
+  Store, tag, and version ModelKits in any container registry — no custom infrastructure needed.
 
-**Efficient Artifact Management:**  Unlike traditional container images, ModelKits allow for direct addressing of included artifacts. This means tools can selectively unpack only the required datasets or code at any given stage, optimizing resource usage and speeding up development.
+* **Selective unpacking**  
+  Unpack only the parts you need (e.g. just the dataset or model weights) to speed up pipelines and reduce compute overhead.
 
-**Enhanced Efficiency for Shared Artifacts:** ModelKits are designed to efficiently handle shared artifacts across multiple versions. When the same dataset, for instance, are used by several ModelKits, this approach significantly reduces duplication and storage overhead.
+* **No duplication for shared assets**  
+  Reuse datasets or configs across multiple kits without bloating storage.
 
-**Built-in Versioning and Tagging:** Leveraging existing container registry infrastructure, ModelKits support sophisticated versioning and tagging strategies out of the box, something that requires additional tooling or manual management with traditional storage.
+* **Familiar versioning and tagging**  
+  Use registry-native tags (e.g. `:latest`, `:prod`, `:rollback`) to track model state and history.
 
-**Optimized for AI/ML Workflows:** ModelKits are tailor-made for AI/ML projects, addressing specific needs such as versioning and environment configuration.
+* **Built for ML workflows**  
+  Supports AI-specific needs like serialized model handling, reproducible training snapshots, and data lineage.
 
-ModelKit is not just a packaging format; it's a building block for innovation, simplifying the complexities of AI/ML development and deployment. By adopting ModelKit, teams can focus more on creating value and less on managing the intricacies of artifact storage and sharing.
+* **Streamlined collaboration**  
+  Teams can pull, inspect, and repack models just like container images — making it easier to collaborate across roles and environments.
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+## ⚡ Why It Matters
+
+ModelKit simplifies the messy handoff between data scientists, engineers, and operations. It gives teams a common, versioned package that works across clouds, registries, and deployment setups — without reinventing storage or delivery.
+
+It’s more than a format — it’s a building block for secure, reproducible AI.
+
+---
+
+**Have feedback or questions?**  
+Open an [issue on GitHub](https://github.com/kitops-ml/kitops/issues) or [join us on Discord](https://discord.gg/Tapeh8agYy).

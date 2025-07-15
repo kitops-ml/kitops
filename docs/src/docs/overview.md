@@ -1,78 +1,92 @@
+---
+title: What is KitOps? | Open-Source AI/ML Packaging and Deployment
+description: KitOps is an open-source standard for packaging, versioning, and deploying AI/ML models. Built on OCI, it simplifies collaboration across data science, DevOps, and software teams.
+keywords: kitops, what is kitops, modelkit, ai model packaging, machine learning deployment, mlops packaging, OCI AI tools, AI reproducibility, AI CI/CD, open source ml packaging
+---
+
 # What is KitOps?
 
-KitOps is an innovative open-source project designed to enhance collaboration among data scientists, application developers, and SREs working on integrating or managing self-hosted AI/ML models.
+KitOps is an open-source tool that helps teams securely package, version, and deploy AI/ML models using familiar DevOps practices.
 
-## What's Inside KitOps?
+It’s built for data scientists, developers, and platform engineers working together on self-hosted AI/ML models — and it makes sharing, automating, and deploying those models as simple as managing containerized apps.
 
-### 🎁 ModelKit
+Just like PDFs standardized document sharing, KitOps standardizes how AI/ML projects are packaged, shared, and deployed.
 
-At the heart of KitOps is the ModelKit, an OCI-compliant packaging format that enables the seamless sharing of all necessary artifacts involved in the AI/ML model lifecycle. This includes datasets, code, doc, configurations, and the models themselves. By standardizing the way these components are packaged, ModelKit facilitates a more streamlined and collaborative development process that is compatible with nearly any tool. You can even [deploy ModelKits to containers or Kubernetes](../deploy/).
+It’s a format your tools can understand, your teams can trust, and your pipelines can automate.
 
-### 📄 Kitfile
+## Why Use KitOps?
 
-Complementing the ModelKit is the Kitfile, a YAML-based configuration file that simplifies the sharing of model, dataset, doc, code and configurations. The Kitfile is designed with both ease of use and security in mind, ensuring that configurations can be efficiently packaged and shared without compromising on safety or governance.
+AI/ML models involve more than just code — datasets, configuration, documentation, and model weights all need to be versioned and delivered reliably. KitOps provides a standard, OCI-compliant way to package everything your model needs for development or production.
 
-### 🖥️ Kit CLI
+You can:
+- Package models into deployable artifacts
+- Share datasets and code securely between teams
+- Automate packaging and deployment in CI/CD pipelines
+- Run or test a model anywhere — without fragile setup steps
 
-Bringing everything together is the Kit Command Line Interface (CLI). The Kit CLI is a powerful tool that enables users to create, manage, run, and deploy ModelKits using Kitfiles. Whether you are packaging a new model for development or deploying an existing model into production, the Kit CLI provides the necessary commands and functionalities to streamline your workflow.
+➡️ [Get started](./get-started.md) in minutes
 
-## How KitOps is Used
+## What’s Included
 
-KitOps is a key element in a platform engineering solution for AI/ML projects.
+### 🎁 ModelKit: Standardized Model Packaging
 
-[See how security-conscious organization are using ModelKits](../use-cases/) with their existing tools to develop AI/ML projects faster and safer than ever before.
+The KitOps ModelKit is a packaging format that bundles all the artifacts of your AI/ML project — including datasets, code, configs, documentation, and the model itself — into an OCI-compliant Artifact.
 
-## The Goal of KitOps
+This means ModelKits can be stored in your existing image registry, deployed to Kubernetes (or anywhere else containers run), and managed just like any container image.
 
-The primary goal of KitOps is to become an open, vendor-neutral standard that simplifies and secures the packaging and versioning of AI/ML projects. In the same way that PDFs have helped people share documents, images, and diagrams between tools, KitOps makes it easy for teams to use the tools they prefer, but share the results safely and securely.
+See how to [deploy ModelKits](./deploy.md)
 
-KitOps drives greater speed, security, and collaboration for teams working with models.
+### 📄 Kitfile: Config Made Easy
 
-### 👩‍💻 For application developers
+The Kitfile is a YAML configuration that describes what goes into a KitOps ModelKit. It’s designed for clarity and security — making it easy to track what’s included, and to share AI/ML projects across environments and teams.
 
-KitOps clears the path to use AI/ML with your existing tools and applications. No need to be an AI/ML expert, KitOps lets you concentrate on integrating AI/ML models into your applications, while Kit handles the packaging and sharing.
+### 🖥️ Kit CLI: Create, Run, Automate
 
-[Get Started](../get-started/).
+The Kit CLI is the command-line tool that ties everything together. Use it to:
+- Create ModelKits from your local project
+- Unpack and inspect existing kits
+- Run models locally or in test environments
+- Automate packaging in CI/CD pipelines
 
-### 👷 For DevOps teams
+## Who Uses KitOps?
 
-ModelKits fit into your existing processes and the Kit CLI lets you pack or unpack ModelKit artifacts in the pipelines and automation you have proven over the last decade.
+KitOps helps bridge the gap between experimentation and production for AI/ML workflows. Whether you’re running in the cloud, on-prem, or at the edge, KitOps makes it easier to collaborate across roles:
 
-[Build a better golden path for AI/ML projects](../use-cases/).
-[Get Started](../get-started/).
+### For DevOps & Platform Engineers
+- Use ModelKits in existing automation pipelines
+- Store and manage models in your current container registry
+- Build golden paths for secure AI/ML deployment
 
+➡️ Integrate with [CI/CD](./integrations/cicd.md)
 
-### 👩‍🔬 For data scientists
+➡️ Add KitOps to [experiment trackers](./integrations/mlflow.md)
 
-KitOps enables you to innovate in AI/ML without the usual infrastructure distractions. It simplifies dataset and model management and sharing, fostering closer collaboration with developers. With KitOps, you can spend more time experimenting and less time grappling with traditional software development tools.
+➡️ [Build a better golden path](../use-cases/) for AI/ML projects.
 
-[See how to use KitOps with Jupyter Notebooks](https://www.youtube.com/watch?v=OQPp7QEvk7Q).
-[Get Started](../get-started/).
+### For Data Scientists
+- Package datasets and models without infrastructure hassle
+- Share your work with developers without “it works on my machine” issues
+- Keep code and data versions aligned
 
-## Benefits of KitOps
+📺 [See how to use KitOps with Jupyter Notebooks](https://www.youtube.com/watch?v=OQPp7QEvk7Q).
 
-KitOps is not just another tool; it's a comprehensive CLI and packaging system specifically designed for the AI/ML workflow. It acknowledges the nuanced needs of AI/ML projects, such as:
+➡️ Use the [PyKitOps Python SDK in your notebooks](./pykitops/index.md)
 
-### 📊 Management of Unstructured Datasets
+### For Developers
+- Use AI/ML models like any dependency — no deep ML knowledge required
+- Drop into apps using standard tools and APIs
+- Let your team innovate without breaking your pipeline
 
-AI/ML projects often deal with large, unstructured datasets, such as images, videos, and audio files. KitOps simplifies the versioning and sharing of these datasets, making them as manageable as traditional code.
+➡️ [Get started](./get-started.md)
 
-### 🤝 Synchronized Data and Code Versioning
+## A Standards-Based Approach
 
-One of the core strengths of KitOps is its ability to keep data and code versions in sync. This crucial feature solves the reproducibility issues that frequently arise in AI/ML development, ensuring consistency and reliability across project stages.
+The goal of KitOps is to become the open, vendor-neutral standard that simplifies and secures the packaging and versioning of AI/ML projects. In the same way that PDFs have helped people share documents, images, and diagrams between tools, KitOps makes it easy for teams to use the tools they prefer, but share the results safely and securely.
 
-[ discord banner ]
+KitOps is governed by the CNCF and supported by contributors from across the AI and DevOps ecosystem.
 
-### 🚀 Deployment Ready
-
-Designed with a focus on deployment, ModelKits package assets in standard formats so you can deploy them as [containers or to Kubernetes](../deploy/). They're also [compatible with nearly any tool](../modelkit/compatibility/) - helping you get your model to production faster and more efficiently.
-
-### 🏭 Standards-Based Approach
-
-KitOps champions openness and interoperability through its core components, ensuring seamless integration into your existing workflows:
-
-ModelKits are designed as OCI (Open Container Initiative) artifacts, making them fully compatible with the Docker image registries and other OCI-compliant storage solutions you already use. This compatibility allows for an easy and familiar integration process. By adhering to widely accepted standards, KitOps ensures you're not tied to a single vendor or platform. This flexibility gives you the freedom to choose the best tools and services for your needs without being restricted by proprietary formats.
-
-Kitfiles leverage the simplicity and ubiquity of YAML for configuration, offering an accessible and straightforward way to specify the details of your AI/ML projects.
-
-The Kit CLI is an open-source tool, developed and supported by a community passionate about advancing AI/ML collaboration. Its open-source nature not only fosters innovation and continuous improvement but also allows you to customize and extend its capabilities to meet your unique project requirements.
+### Join the Community!
+- Get help and share ideas in the [KitOps Discord](https://discord.gg/Tapeh8agYy)
+- [Open an issue](https://github.com/kitops-ml/kitops/issues) on GitHub
+- [Contribute](https://github.com/kitops-ml/kitops/blob/main/CONTRIBUTING.md) to the project
+- Help shape the [ModelPack standards specification](https://github.com/modelpack/model-spec) for AI project packaging

@@ -1,7 +1,9 @@
 ---
-description: Deploy your ModelKits with ease. Learn how to package, distribute, and run your AI/ML models in production or local environments.
+title: Deploying AI with KitOps - Kubernetes, Containers, and Local LLMs
+description: Learn how to securely deploy AI/ML models to Kubernetes, container runtimes, or run LLMs. Includes init containers, custom Dockerfiles, and dev workflows.
+keywords: deploy modelkit, kitops deployment, run ml model in kubernetes, init container ml model, containerized ai model, kitops docker, run llm locally, gguf llm deploy, kit dev start, oci model deployment, ml model runtime, mlops deployment cli
 ---
-# Deploying ModelKits
+# Deploying KitOps ModelKits
 
 This page outlines how to deploy models stored in KitOps ModelKits either:
 1. To [Kubernetes or other shared container runtimes](#deploying-to-kubernetes-or-containers) (compatible with all model types)
@@ -162,4 +164,7 @@ When you're done don't forget to stop the Kit dev server:
 kit dev stop
 ```
 
-**Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
+---
+
+**Have feedback or questions?**  
+Open an [issue on GitHub](https://github.com/kitops-ml/kitops/issues) or [join us on Discord](https://discord.gg/Tapeh8agYy).
