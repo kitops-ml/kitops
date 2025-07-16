@@ -52,6 +52,7 @@ KitOps works with nearly all ML pipeline tools, AI model deployment tools, and o
 * Google Container Platform (GCP)
 * Hugging Face
 * Jupyter notebooks
+* Kubeflow
 * Marimo
 * MLFlow
 * ModelScan
@@ -94,6 +95,7 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 * GitHub Actions
 * GitLab Pipelines
 * Jenkins CI/CD
+* Kubeflow
 
 ## 🤩 Community Feedback
 
