@@ -24,19 +24,16 @@ import (
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
 )
 
 func PushModel(ctx context.Context, localRepo local.LocalRepo, repo registry.Repository, opts *pushOptions) (ocispec.Descriptor, error) {
 	trackedRepo, logger := output.WrapTarget(repo)
-	srcTag := opts.srcModelRef.Reference
-	destTag := opts.destModelRef.Reference
-	copyOpts := oras.CopyOptions{}
-	copyOpts.Concurrency = opts.Concurrency
-	desc, err := oras.Copy(ctx, localRepo, srcTag, trackedRepo, destTag, copyOpts)
+
+	// Use the optimized PushModel implementation
+	desc, err := localRepo.PushModel(ctx, trackedRepo, *opts.destModelRef, &opts.NetworkOptions)
 	if err != nil {
-		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to copy to remote: %w", err)
+		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to push model: %w", err)
 	}
 	logger.Wait()
 

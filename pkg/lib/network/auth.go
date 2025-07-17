@@ -64,21 +64,30 @@ func ClientWithAuth(store credentials.Store, opts *options.NetworkOptions) (*aut
 // DefaultClient returns an *auth.Client with a default User-Agent header and TLS
 // configured from opts (optionally disabling TLS verification)
 func DefaultClient(opts *options.NetworkOptions) (*auth.Client, error) {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig.InsecureSkipVerify = !opts.TLSVerify
+	// Create TLS config
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: !opts.TLSVerify,
+	}
+
+	// Add client certificates if provided
+	if opts.ClientCertKeyPath != "" && opts.ClientCertPath != "" {
+		cert, err := tls.LoadX509KeyPair(opts.ClientCertPath, opts.ClientCertKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read certificate: %w", err)
+		}
+		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
+	}
+
+	// Use optimized transport with Docker CLI-inspired settings
+	transport := OptimizedTransport(tlsConfig)
+
+	// Configure proxy if provided
 	if opts.Proxy != "" {
 		proxyURL, err := url.Parse(opts.Proxy)
 		if err != nil {
 			return nil, fmt.Errorf("invalid proxy URL: %w", err)
 		}
 		transport.Proxy = http.ProxyURL(proxyURL)
-	}
-	if opts.ClientCertKeyPath != "" && opts.ClientCertPath != "" {
-		cert, err := tls.LoadX509KeyPair(opts.ClientCertPath, opts.ClientCertKeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read certificate: %w", err)
-		}
-		transport.TLSClientConfig.Certificates = append(transport.TLSClientConfig.Certificates, cert)
 	}
 
 	client := &auth.Client{
