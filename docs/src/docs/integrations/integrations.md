@@ -88,14 +88,19 @@ KitOps works perfectly with any serving platform that accepts containers:
 Thanks to its OCI-compatibility, KitOps works nearly any tool:
 * Amazon S3
 * Argo CD
+* BitBucket Pipelines
 * Circle CI
 * Dagger
+* Flux CI/CD
 * Git
 * Git LFS
 * GitHub Actions
 * GitLab Pipelines
 * Jenkins CI/CD
 * Kubeflow
+* Spinnaker
+* Tekton
+* Travis CI
 
 ## 🤩 Community Feedback
 
