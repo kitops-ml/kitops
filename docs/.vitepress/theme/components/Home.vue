@@ -303,7 +303,7 @@ onMounted(() => {
     <li>
       <div class="text-off-white">🎁 Standards-based package</div>
       <p class="p2 !mb-4 !text-gray-06">A ModelKit package includes models, datasets, configurations, and code in an OCI artifact. Add as much or as little as your project needs.</p>
-      <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/modelkit/compatibility/">
+      <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/integrations/integrations/#kitops-compatible-tools">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" fill="#ECECEC"/>
@@ -545,7 +545,7 @@ onMounted(() => {
     </Vue3Marquee>
   </div>
 
-  <a href="/docs/modelkit/compatibility/" class="kit-button mt-22">SEE FULL LIST</a>
+  <a href="/docs/integrations/integrations/#kitops-compatible-tools" class="kit-button mt-22">SEE FULL LIST</a>
 </div>
 
 <div class="mt-32 md:mt-40 xl:mt-60 overflow-x-hidden">
