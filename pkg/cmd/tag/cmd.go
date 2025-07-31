@@ -20,7 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/completions"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -75,12 +76,6 @@ type tagOptions struct {
 }
 
 func (opts *tagOptions) complete(ctx context.Context, args []string) error {
-
-	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
-	if !ok {
-		return fmt.Errorf("default config path not set on command context")
-	}
-	opts.configHome = configHome
 	modelRef, _, err := util.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
@@ -95,17 +90,22 @@ func (opts *tagOptions) complete(ctx context.Context, args []string) error {
 	return nil
 }
 
-func TagCommand() *cobra.Command {
-
+func TagCommand(configHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "tag SOURCE_MODELKIT[:TAG] TARGET_MODELKIT[:TAG]",
 		Short:   shortDesc,
 		Long:    longDesc,
 		Example: example,
-		RunE:    runCommand(&tagOptions{}),
+		RunE:    runCommand(&tagOptions{configHome: configHome}),
 	}
 
 	cmd.Args = cobra.ExactArgs(2)
+
+	repos, err := local.GetAllLocalReposWithTags(configHome)
+	if err != nil {
+		return cmd
+	}
+	completions.WithStaticArgCompletions(cmd, repos, 2)
 	return cmd
 }
 
