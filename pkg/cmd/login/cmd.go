@@ -120,7 +120,11 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 		// Prompt for password (and username, if necessary)
 		var err error
 		if username == "" {
-			username, err = util.PromptForInput("Username: ", false)
+			usernamePrompt := "Username: "
+			if opts.registry == "jozu.ml" {
+				usernamePrompt = "Email: "
+			}
+			username, err = util.PromptForInput(usernamePrompt, false)
 			if err != nil {
 				return err
 			}
