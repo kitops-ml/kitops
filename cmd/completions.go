@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
+//go:build !windows
 
 package cmd
 
@@ -21,7 +22,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -31,10 +31,6 @@ import (
 )
 
 func installShellCompletions(rootCmd *cobra.Command, opts *rootOptions) error {
-	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-		return nil
-	}
-
 	configHome, err := getConfigHome(opts)
 	if err != nil {
 		return err
