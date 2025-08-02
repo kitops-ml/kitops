@@ -95,9 +95,7 @@ func RunCommand() *cobra.Command {
 
 			configHome, err := getConfigHome(opts)
 			if err != nil {
-				output.Errorf("Failed to read base config directory")
-				output.Infof("Use the --config flag or set the $%s environment variable to provide a default", constants.KitopsHomeEnvVar)
-				output.Debugf("Error: %s", err)
+				onConfigHomeError(err)
 				return errors.New("exit")
 			}
 			ctx := context.WithValue(cmd.Context(), constants.ConfigKey{}, configHome)
@@ -125,7 +123,7 @@ func RunCommand() *cobra.Command {
 			return nil
 		},
 	}
-	addSubcommands(cmd)
+	addSubcommands(cmd, opts)
 	cmd.PersistentFlags().StringVar(&opts.loglevel, "log-level", "info", "Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info')")
 	cmd.PersistentFlags().StringVar(&opts.progressBars, "progress", "plain", "Configure progress bars for longer operations (options: none, plain, fancy)")
 	cmd.PersistentFlags().StringVar(&opts.configHome, "config", "", "Alternate path to root storage directory for CLI")
@@ -138,19 +136,28 @@ func RunCommand() *cobra.Command {
 	cobra.AddTemplateFunc("indent", indentBlock)
 	cobra.AddTemplateFunc("sectionHead", sectionHead)
 	cobra.AddTemplateFunc("ensureTrailingNewline", ensureTrailingNewline)
+	err := installShellCompletions(cmd, opts)
+	if err != nil {
+		output.Debugf("Failed to install shell completions: %s", err)
+	}
 	return cmd
 }
 
-func addSubcommands(rootCmd *cobra.Command) {
+func addSubcommands(rootCmd *cobra.Command, opts *rootOptions) {
+	configHome, err := getConfigHome(opts)
+	if err != nil {
+		onConfigHomeError(err)
+		return
+	}
 	rootCmd.AddCommand(pack.PackCommand())
-	rootCmd.AddCommand(unpack.UnpackCommand())
-	rootCmd.AddCommand(push.PushCommand())
+	rootCmd.AddCommand(unpack.UnpackCommand(configHome))
+	rootCmd.AddCommand(push.PushCommand(configHome))
 	rootCmd.AddCommand(pull.PullCommand())
-	rootCmd.AddCommand(tag.TagCommand())
-	rootCmd.AddCommand(list.ListCommand())
+	rootCmd.AddCommand(tag.TagCommand(configHome))
+	rootCmd.AddCommand(list.ListCommand(configHome))
 	rootCmd.AddCommand(inspect.InspectCommand())
 	rootCmd.AddCommand(info.InfoCommand())
-	rootCmd.AddCommand(remove.RemoveCommand())
+	rootCmd.AddCommand(remove.RemoveCommand(configHome))
 	rootCmd.AddCommand(login.LoginCommand())
 	rootCmd.AddCommand(logout.LogoutCommand())
 	rootCmd.AddCommand(version.VersionCommand())
@@ -168,6 +175,13 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+func onConfigHomeError(err error) {
+	output.Fatalf("Failed to read base config directory")
+	output.Infof("Use the --config flag or set the $%s environment variable to provide a default", constants.KitopsHomeEnvVar)
+	output.Debugf("Error: %s", err)
+	os.Exit(1) // output.Fatalf won't terminate the process, so we can just manually exit
 }
 
 func getConfigHome(opts *rootOptions) (string, error) {
