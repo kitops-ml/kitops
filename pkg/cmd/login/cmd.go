@@ -45,15 +45,15 @@ kit login docker.io --password-stdin -u docker_user`
 )
 
 type registryPrompt struct {
-	usernamePrompt string
-	passwordPrompt string
+	username string
+	password string
 }
 
 // registryPrompts maps registries to their default prompts for username and password.
 // If a registry is not in this map, default prompts are used.
 var registryPrompts map[string]registryPrompt = map[string]registryPrompt{
 	"jozu.ml": {
-		usernamePrompt: "Email: ",
+		username: "Email: ",
 	},
 }
 
@@ -134,12 +134,12 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 		// Prompt for password (and username, if necessary)
 		var err error
 		if username == "" {
-			username, err = util.PromptForInput(registryPrompt.usernamePrompt, false)
+			username, err = util.PromptForInput(registryPrompt.username, false)
 			if err != nil {
 				return err
 			}
 		}
-		password, err = util.PromptForInput(registryPrompt.passwordPrompt, true)
+		password, err = util.PromptForInput(registryPrompt.password, true)
 		if err != nil {
 			return err
 		}
@@ -175,15 +175,15 @@ func getRegistryPrompt(registry string) registryPrompt {
 	prompts, ok := registryPrompts[registry]
 	if !ok {
 		return registryPrompt{
-			usernamePrompt: defaultUsernamePrompt,
-			passwordPrompt: defaultPasswordPrompt,
+			username: defaultUsernamePrompt,
+			password: defaultPasswordPrompt,
 		}
 	}
-	if prompts.passwordPrompt == "" {
-		prompts.passwordPrompt = defaultPasswordPrompt
+	if prompts.password == "" {
+		prompts.password = defaultPasswordPrompt
 	}
-	if prompts.usernamePrompt == "" {
-		prompts.usernamePrompt = defaultUsernamePrompt
+	if prompts.username == "" {
+		prompts.username = defaultUsernamePrompt
 	}
 	return prompts
 }
