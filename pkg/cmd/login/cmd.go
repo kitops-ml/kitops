@@ -44,6 +44,19 @@ kit login ghcr.io -u github_user -p personal_token
 kit login docker.io --password-stdin -u docker_user`
 )
 
+type registryPrompt struct {
+	username string
+	password string
+}
+
+// registryPrompts maps registries to their default prompts for username and password.
+// If a registry is not in this map, default prompts are used.
+var registryPrompts map[string]registryPrompt = map[string]registryPrompt{
+	"jozu.ml": {
+		username: "Email: ",
+	},
+}
+
 type loginOptions struct {
 	options.NetworkOptions
 	registry          string
@@ -116,16 +129,17 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 		password = readPass
 	}
 
+	registryPrompt := getRegistryPrompt(opts.registry)
 	if password == "" {
 		// Prompt for password (and username, if necessary)
 		var err error
 		if username == "" {
-			username, err = util.PromptForInput("Username: ", false)
+			username, err = util.PromptForInput(registryPrompt.username, false)
 			if err != nil {
 				return err
 			}
 		}
-		password, err = util.PromptForInput("Password: ", true)
+		password, err = util.PromptForInput(registryPrompt.password, true)
 		if err != nil {
 			return err
 		}
@@ -152,6 +166,26 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 	}
 
 	return nil
+}
+
+func getRegistryPrompt(registry string) registryPrompt {
+	defaultUsernamePrompt := "Username: "
+	defaultPasswordPrompt := "Password: "
+
+	prompts, ok := registryPrompts[registry]
+	if !ok {
+		return registryPrompt{
+			username: defaultUsernamePrompt,
+			password: defaultPasswordPrompt,
+		}
+	}
+	if prompts.password == "" {
+		prompts.password = defaultPasswordPrompt
+	}
+	if prompts.username == "" {
+		prompts.username = defaultUsernamePrompt
+	}
+	return prompts
 }
 
 func readPasswordFromStdin() (string, error) {
