@@ -18,10 +18,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 	"github.com/spf13/cobra"
@@ -84,27 +87,35 @@ func installShellCompletions(rootCmd *cobra.Command, opts *rootOptions) error {
 }
 
 func writeActivationScriptIfMissing(pathOfShellRC, pathOfCompletionFile string) error {
-	content, err := os.ReadFile(pathOfShellRC)
+	quotedPath := strconv.Quote(pathOfCompletionFile)
+	sourceCmd := "source " + quotedPath
+
+	file, err := os.OpenFile(pathOfShellRC, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
-	sourceCmd := "source " + pathOfCompletionFile
+	defer file.Close()
+
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
+		return err
+	}
+	defer syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
 	if strings.Contains(string(content), sourceCmd) {
 		return nil // already present
 	}
 
-	shellRC, err := os.OpenFile(pathOfShellRC, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
+	if _, err := file.WriteString("\n# Kitops completions\n" + sourceCmd + "\n"); err != nil {
 		return err
 	}
-	defer shellRC.Close()
 
-	_, err = shellRC.WriteString("\n# Kitops completions\nsource " + pathOfCompletionFile + "\n")
-
-	if err == nil {
-		output.Infof("Shell completions for Kitops have been installed. To activate them in your current session, run:\n\n\tsource %s\n\nOr restart your shell.\n", pathOfCompletionFile)
-	}
-	return err
+	output.Infof("Shell completions installed. Run 'source %s' or restart your shell.", pathOfCompletionFile)
+	return nil
 }
 
 func detectShell() string {

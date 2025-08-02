@@ -181,6 +181,7 @@ func onConfigHomeError(err error) {
 	output.Fatalf("Failed to read base config directory")
 	output.Infof("Use the --config flag or set the $%s environment variable to provide a default", constants.KitopsHomeEnvVar)
 	output.Debugf("Error: %s", err)
+	os.Exit(1) // output.Fatalf won't terminate the process, so we can just manually exit
 }
 
 func getConfigHome(opts *rootOptions) (string, error) {

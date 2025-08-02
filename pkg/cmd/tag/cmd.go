@@ -101,11 +101,10 @@ func TagCommand(configHome string) *cobra.Command {
 
 	cmd.Args = cobra.ExactArgs(2)
 
-	repos, err := local.GetAllLocalReposWithTags(configHome)
-	if err != nil {
-		return cmd
+	lazyLoadedCompletions := func() ([]string, error) {
+		return local.GetAllLocalReposWithTags(configHome)
 	}
-	completions.WithStaticArgCompletions(cmd, repos, 2)
+	completions.WithStaticArgCompletions(cmd, lazyLoadedCompletions, 2)
 	return cmd
 }
 

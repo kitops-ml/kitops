@@ -122,11 +122,10 @@ func RemoveCommand(configHome string) *cobra.Command {
 		}
 	}
 
-	localRepos, err := local.GetAllLocalReposWithTags(configHome)
-	if err != nil {
-		return cmd
+	lazyLoadedCompletions := func() ([]string, error) {
+		return local.GetAllLocalReposWithTags(configHome)
 	}
-	completions.WithStaticArgCompletions(cmd, localRepos, 1)
+	completions.WithStaticArgCompletions(cmd, lazyLoadedCompletions, 1)
 	return cmd
 }
 
