@@ -134,14 +134,12 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 		// Prompt for password (and username, if necessary)
 		var err error
 		if username == "" {
-			usernamePrompt := registryPrompt.usernamePrompt
-			username, err = util.PromptForInput(usernamePrompt, false)
+			username, err = util.PromptForInput(registryPrompt.usernamePrompt, false)
 			if err != nil {
 				return err
 			}
 		}
-		passwordPrompt := registryPrompt.passwordPrompt
-		password, err = util.PromptForInput(passwordPrompt, true)
+		password, err = util.PromptForInput(registryPrompt.passwordPrompt, true)
 		if err != nil {
 			return err
 		}
