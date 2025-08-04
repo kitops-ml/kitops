@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@vueuse/core": "^13.6.0",
-    "axios": "^1.8.4",
+    "axios": "^1.11.0",
     "cheerio": "1.0.0",
     "vue3-marquee": "^4.2.2"
   },
