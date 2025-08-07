@@ -26,7 +26,8 @@ import (
 	gotemplate "text/template"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/completions"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -83,11 +84,6 @@ type listOptions struct {
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
-	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
-	if !ok {
-		return fmt.Errorf("default config path not set on command context")
-	}
-	opts.configHome = configHome
 	if len(args) > 0 {
 		remoteRef, extraTags, err := util.ParseReference(args[0])
 		if err != nil {
@@ -118,8 +114,10 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 }
 
 // ListCommand represents the models command
-func ListCommand() *cobra.Command {
-	opts := &listOptions{}
+func ListCommand(configHome string) *cobra.Command {
+	opts := &listOptions{
+		configHome: configHome,
+	}
 
 	cmd := &cobra.Command{
 		Use:     "list [flags] [REPOSITORY]",
@@ -134,6 +132,10 @@ func ListCommand() *cobra.Command {
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
+	lazyLoadedCompletions := func() ([]string, error) {
+		return local.GetAllLocalReposWithTags(configHome)
+	}
+	completions.WithStaticArgCompletions(cmd, lazyLoadedCompletions, 1)
 	return cmd
 }
 
