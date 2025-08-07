@@ -66,12 +66,12 @@ func TestParseReference(t *testing.T) {
 		},
 		{
 			input:        "a/b/c/d",
-			expectedRef:  reference("localhost", "a/b/c/d", ""),
+			expectedRef:  reference("localhost", "a/b/c/d", "latest"),
 			expectedTags: []string{},
 		},
 		{
 			input:        "test.io/a/b/c/d",
-			expectedRef:  reference("test.io", "a/b/c/d", ""),
+			expectedRef:  reference("test.io", "a/b/c/d", "latest"),
 			expectedTags: []string{},
 		},
 		{
