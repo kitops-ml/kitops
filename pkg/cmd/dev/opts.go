@@ -55,7 +55,7 @@ type DevStartOptions struct {
 	modelFile  string
 	contextDir string
 	modelRef   *registry.Reference // For ModelKit references
-	tempDir    string              // Directory for extraction (now accessible location)
+	tempDir    string              // Cache directory for extraction
 }
 
 func (opts *DevStartOptions) complete(ctx context.Context, args []string) error {
@@ -78,8 +78,8 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 
 	// If we have a ModelKit reference but no explicit modelFile flag, we'll extract to temp
 	if opts.modelRef != nil && opts.modelFile == "" {
-		// We'll set contextDir to temp directory after extraction
-		output.Debugf("Will extract ModelKit reference to temporary directory")
+		// We'll set contextDir to cache directory after extraction
+		output.Debugf("Will extract ModelKit reference to cache directory")
 	} else {
 		// Original directory-based logic
 		if opts.modelFile == "" {

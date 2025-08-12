@@ -43,12 +43,12 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 	cleanupDone := make(chan bool, 1)
 	signalChan := make(chan os.Signal, 1)
 
-	// If we have a ModelKit reference, extract it to temporary directory first
+	// If we have a ModelKit reference, extract it to cache directory first
 	if options.modelRef != nil {
 		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 		defer signal.Stop(signalChan)
 
-		if err := extractModelKitToTemp(ctx, options); err != nil {
+		if err := extractModelKitToCache(ctx, options); err != nil {
 			return fmt.Errorf("failed to extract ModelKit: %w", err)
 		}
 
@@ -58,7 +58,7 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 			case <-signalChan:
 				output.Infof("Received interrupt signal, cleaning up...")
 				if cleanupErr := options.cleanup(); cleanupErr != nil {
-					output.Debugf("Failed to cleanup temporary directory: %v", cleanupErr)
+					output.Debugf("Failed to cleanup cache directory: %v", cleanupErr)
 				}
 				cleanupDone <- true
 			case <-cleanupDone:
@@ -75,7 +75,7 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 				// Cleanup already in progress
 			}
 			if cleanupErr := options.cleanup(); cleanupErr != nil {
-				output.Debugf("Failed to cleanup temporary directory: %v", cleanupErr)
+				output.Debugf("Failed to cleanup cache directory: %v", cleanupErr)
 			}
 		}()
 	}
@@ -191,15 +191,15 @@ func findModelFile(absPath string) (string, error) {
 	return modelPath, nil
 }
 
-// extractModelKitToTemp extracts a ModelKit reference to an accessible directory
+// extractModelKitToCache extracts a ModelKit reference to a cache directory
 // using the unpack library with model filter
-func extractModelKitToTemp(ctx context.Context, options *DevStartOptions) error {
-	output.Infof("Extracting ModelKit %s to accessible directory...", options.modelRef.String())
+func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error {
+	output.Infof("Extracting ModelKit %s to cache directory...", options.modelRef.String())
 
-	// Create accessible directory in cache (instead of temp directory)
+	// Create cache directory for extraction
 	extractDir := filepath.Join(options.configHome, "dev-models", fmt.Sprintf("kitops-dev-%d", time.Now().UnixNano()))
 	if err := os.MkdirAll(extractDir, 0755); err != nil {
-		return fmt.Errorf("failed to create extraction directory: %w", err)
+		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 	options.tempDir = extractDir // Reuse tempDir field for cleanup
 	options.contextDir = extractDir
@@ -220,13 +220,13 @@ func extractModelKitToTemp(ctx context.Context, options *DevStartOptions) error 
 	}
 	libOpts.FilterConfs = []unpack.FilterConf{*modelFilter}
 
-	// Change working directory to extraction directory (like unpack command does)
+	// Change working directory to cache directory (like unpack command does)
 	originalWd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current working directory: %w", err)
 	}
 	if err := os.Chdir(extractDir); err != nil {
-		return fmt.Errorf("failed to change to extraction directory %s: %w", extractDir, err)
+		return fmt.Errorf("failed to change to cache directory %s: %w", extractDir, err)
 	}
 	// Restore original working directory when done
 	defer func() {
@@ -241,7 +241,7 @@ func extractModelKitToTemp(ctx context.Context, options *DevStartOptions) error 
 		if cleanUpErr != nil {
 			return errors.Join(
 				fmt.Errorf("failed to extract ModelKit: %w", err),
-				fmt.Errorf("failed to clean up extraction directory: %w", cleanUpErr),
+				fmt.Errorf("failed to cleanup cache directory: %w", cleanUpErr),
 			)
 		}
 		return fmt.Errorf("failed to extract ModelKit: %w", err)
