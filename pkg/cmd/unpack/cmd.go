@@ -25,6 +25,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/unpack"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -85,7 +86,6 @@ type unpackOptions struct {
 	configHome     string
 	unpackDir      string
 	filters        []string
-	filterConfs    []filterConf
 	unpackConf     unpackConf
 	modelRef       *registry.Reference
 	overwrite      bool
@@ -116,22 +116,6 @@ func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("can not unpack multiple tags")
 	}
 	opts.modelRef = modelRef
-
-	if len(opts.filters) > 0 {
-		for _, filter := range opts.filters {
-			filterConf, err := parseFilter(filter)
-			if err != nil {
-				return err
-			}
-			opts.filterConfs = append(opts.filterConfs, *filterConf)
-		}
-	} else {
-		// Deprecated, but handle original filtering flags as well for now
-		conf := opts.unpackConf
-		if conf.unpackKitfile || conf.unpackModels || conf.unpackCode || conf.unpackDatasets || conf.unpackDocs {
-			opts.filterConfs = filtersFromUnpackConf(conf)
-		}
-	}
 
 	absDir, err := filepath.Abs(opts.unpackDir)
 	if err != nil {
@@ -199,7 +183,37 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		}
 
 		output.Infof("Unpacking to %s", unpackTo)
-		err := runUnpack(cmd.Context(), opts)
+
+		// Convert command options to library options
+		libOpts := &unpack.UnpackOptions{
+			ModelRef:       opts.modelRef,
+			UnpackDir:      opts.unpackDir,
+			ConfigHome:     opts.configHome,
+			Filters:        opts.filters,
+			Overwrite:      opts.overwrite,
+			IgnoreExisting: opts.ignoreExisting,
+			NetworkOptions: opts.NetworkOptions,
+		}
+
+		// Handle deprecated flags by converting to filters
+		conf := opts.unpackConf
+		if conf.unpackKitfile || conf.unpackModels || conf.unpackCode || conf.unpackDatasets || conf.unpackDocs {
+			deprecatedFilters := unpack.FiltersFromUnpackConf(
+				conf.unpackKitfile, conf.unpackModels, conf.unpackCode,
+				conf.unpackDatasets, conf.unpackDocs)
+			libOpts.FilterConfs = deprecatedFilters
+		} else if len(opts.filters) > 0 {
+			// Parse filters using library functionality
+			for _, filter := range opts.filters {
+				filterConf, err := unpack.ParseFilter(filter)
+				if err != nil {
+					return output.Fatalf("Invalid filter %q: %s", filter, err)
+				}
+				libOpts.FilterConfs = append(libOpts.FilterConfs, *filterConf)
+			}
+		}
+
+		err := unpack.UnpackModelKit(cmd.Context(), libOpts)
 		if err != nil {
 			return output.Fatalln(err)
 		}

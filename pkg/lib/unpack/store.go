@@ -30,34 +30,35 @@ import (
 	"oras.land/oras-go/v2/errdef"
 )
 
-func getStoreForRef(ctx context.Context, opts *unpackOptions) (oras.Target, error) {
-	storageHome := constants.StoragePath(opts.configHome)
-	localRepo, err := local.NewLocalRepo(storageHome, opts.modelRef)
+// getStoreForRef returns the appropriate store (local or remote) for a ModelKit reference.
+func getStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, error) {
+	storageHome := constants.StoragePath(opts.ConfigHome)
+	localRepo, err := local.NewLocalRepo(storageHome, opts.ModelRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read local storage: %s\n", err)
 	}
 
-	if _, err := localRepo.Resolve(ctx, opts.modelRef.Reference); err == nil {
+	if _, err := localRepo.Resolve(ctx, opts.ModelRef.Reference); err == nil {
 		// Reference is present in local storage
 		return localRepo, nil
 	}
 
-	if opts.modelRef.Registry == util.DefaultRegistry {
+	if opts.ModelRef.Registry == util.DefaultRegistry {
 		return nil, fmt.Errorf("not found")
 	}
 	// Not in local storage, check remote
-	remoteRegistry, err := remote.NewRegistry(opts.modelRef.Registry, &opts.NetworkOptions)
+	remoteRegistry, err := remote.NewRegistry(opts.ModelRef.Registry, &opts.NetworkOptions)
 	if err != nil {
-		return nil, fmt.Errorf("could not resolve registry %s: %w", opts.modelRef.Registry, err)
+		return nil, fmt.Errorf("could not resolve registry %s: %w", opts.ModelRef.Registry, err)
 	}
 
-	repo, err := remoteRegistry.Repository(ctx, opts.modelRef.Repository)
+	repo, err := remoteRegistry.Repository(ctx, opts.ModelRef.Repository)
 	if err != nil {
-		return nil, fmt.Errorf("could not resolve repository %s in registry %s", opts.modelRef.Repository, opts.modelRef.Registry)
+		return nil, fmt.Errorf("could not resolve repository %s in registry %s", opts.ModelRef.Repository, opts.ModelRef.Registry)
 	}
-	if _, err := repo.Resolve(ctx, opts.modelRef.Reference); err != nil {
+	if _, err := repo.Resolve(ctx, opts.ModelRef.Reference); err != nil {
 		if errors.Is(err, errdef.ErrNotFound) {
-			return nil, fmt.Errorf("reference %s is not present in local storage and could not be found in remote", opts.modelRef.String())
+			return nil, fmt.Errorf("reference %s is not present in local storage and could not be found in remote", opts.ModelRef.String())
 		}
 		return nil, fmt.Errorf("unexpected error retrieving reference from remote: %w", err)
 	}
