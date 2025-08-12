@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -39,7 +38,7 @@ import (
 
 func runDev(ctx context.Context, options *DevStartOptions) error {
 	signalCtx, cancelSignalHandling := context.WithCancel(ctx)
-	defer cancelSignalHandling() 
+	defer cancelSignalHandling()
 	cleanupDone := make(chan bool, 1)
 	signalChan := make(chan os.Signal, 1)
 
@@ -64,18 +63,6 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 			case <-cleanupDone:
 			case <-signalCtx.Done():
 				return
-			}
-		}()
-
-		// Set up cleanup on normal exit
-		defer func() {
-			select {
-			case cleanupDone <- true:
-			default:
-				// Cleanup already in progress
-			}
-			if cleanupErr := options.cleanup(); cleanupErr != nil {
-				output.Debugf("Failed to cleanup cache directory: %v", cleanupErr)
 			}
 		}()
 	}
@@ -154,6 +141,15 @@ func stopDev(_ context.Context, options *DevBaseOptions) error {
 	if err := llmHarness.Stop(); err != nil {
 		return err
 	}
+
+	// Clean up cache directory
+	cacheDir := filepath.Join(options.configHome, "dev-models", "current")
+	if err := os.RemoveAll(cacheDir); err != nil {
+		output.Debugf("Failed to clean up cache directory: %v", err)
+	} else {
+		output.Infof("Cleaned up cache directory")
+	}
+
 	return nil
 }
 
@@ -196,8 +192,8 @@ func findModelFile(absPath string) (string, error) {
 func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error {
 	output.Infof("Extracting ModelKit %s to cache directory...", options.modelRef.String())
 
-	// Create cache directory for extraction
-	extractDir := filepath.Join(options.configHome, "dev-models", fmt.Sprintf("kitops-dev-%d", time.Now().UnixNano()))
+	// Use consistent cache directory for extraction
+	extractDir := filepath.Join(options.configHome, "dev-models", "current")
 	if err := os.MkdirAll(extractDir, 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
