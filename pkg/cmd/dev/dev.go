@@ -87,19 +87,11 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		kitfile.Model.Parts = append(kitfile.Model.Parts, resolvedKitfile.Model.Parts...)
 	}
 
-	modelAbsPath := ""
-	if options.modelRef != nil {
-		// Model was extracted directly to accessible directory
-		modelAbsPath = filepath.Join(options.contextDir, filepath.Base(kitfile.Model.Path))
-		if strings.HasPrefix(filepath.Base(kitfile.Model.Path), "./") {
-			modelAbsPath = filepath.Join(options.contextDir, strings.TrimPrefix(filepath.Base(kitfile.Model.Path), "./"))
-		}
-	} else {
-		modelAbsPath, _, err = filesystem.VerifySubpath(options.contextDir, kitfile.Model.Path)
-		if err != nil {
-			return err
-		}
+	modelAbsPath, _, err := filesystem.VerifySubpath(options.contextDir, kitfile.Model.Path)
+	if err != nil {
+		return err
 	}
+
 	modelPath, err := findModelFile(modelAbsPath)
 	if err != nil {
 		return err
