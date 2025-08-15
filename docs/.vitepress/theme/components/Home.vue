@@ -110,7 +110,7 @@ onMounted(() => {
 
 <template>
 <div class="mt-32 md:mt-40  px-6 md:px-12 text-center content-container">
-  <p class="h4 !font-normal !text-off-white">Simple, secure, and reproducible packaging for AI/ML projects</p>
+  <p class="h4 !font-normal !text-off-white">Standards-based packaging and deployment automation for AI/ML models that integrates with your existing DevOps workflows</p>
   <h1 class="!mt-4">The missing link in your AI pipeline</h1>
 
   <div class="flex flex-col lg:flex-row justify-center items-center gap-10 mt-10 md:mt-14 xl:mt-22">
@@ -243,10 +243,10 @@ onMounted(() => {
   <h2 class="text-center">Why Kit<span class="font-heading font-extralight">?</span></h2>
 
   <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-4 md:gap-y-[4.5rem] xl:gap-22 max-w-[47.5rem] mx-auto">
-    <div class="h4 !text-gold">Model handoffs are hard.</div>
+    <div class="h4 !text-gold">Getting models into production is hard.</div>
     <div class="p2 !space-y-4">
-      <p>Moving a model from a Jupyter notebook to an ML tool or development server, then to a production server like Kubernetes is difficult because each tool uses its own packaging mechanism, and requires engineers to repackage the model multiple times. This slows down development and introduces risk.</p>
-      <p>KitOps is an open source DevOps project built to standardize packaging, reproduction, deployment, and tracking of AI / ML models, so it can be run anywhere, just like application code</p>
+      <p>Deploying AI/ML models through CI/CD pipelines is complex because models, datasets, and configurations are packaged inconsistently across tools and environments. This creates manual bottlenecks, security risks, and deployment failures that slow down your AI initiatives.</p>
+      <p>KitOps is an open source DevOps tool that automates AI/ML model packaging and deployment through your existing CI/CD pipelines, enabling consistent, secure, and auditable model deployments across all environments.</p>
       <p>KitOps solves multiple problems:</p>
     </div>
 
@@ -256,10 +256,16 @@ onMounted(() => {
       <p>Storing ModelKits in your organization’s container registry provides a history of meaningful state changes for auditing. ModelKits are immutable so are perfect for a secure bill-of-materials (SBOM) initiative.</p>
     </div>
 
-    <div class="h4 !text-gold xs:mt-12">Collaboration–</div>
+    <div class="h4 !text-gold xs:mt-12">Pipeline Bottlenecks–</div>
     <div class="p2 !space-y-4">
-      <p>By building ModelKits on industry standards, anyone (not just data scientists) can participate in the model development lifecycle whether they’re integrating models with their application, experimenting with them locally, or deploying them to production.</p>
-      <p>ModelKits can be stored in your existing container registry and work with the tools your team is already using, so you can use the same deployment pipelines and endpoints you’ve hardened with your application development process.</p>
+      <p>KitOps integrates directly into CI/CD workflows, automatically packaging models, datasets, and code as part of your existing build and deployment pipeline.</p>
+      <p>By building ModelKits on industry standards, your platform engineering and DevOps teams can deploy AI/ML models using the same tools they use for applications.</p>
+    </div>
+
+    <div class="h4 !text-gold xs:mt-12">Security & Consistency–</div>
+    <div class="p2 !space-y-4">
+      <p>Storing ModelKits in your organization's container registry provides automated security scanning, compliance validation, and complete audit trails. ModelKits are immutable and signable, perfect for enterprise governance requirements.</p>
+      <p>With ModelKits you can use the same hardened CI/CD pipelines, Kubernetes clusters, and infrastructure-as-code that your organization has already validated and secured.</p>
     </div>
 
   </div>
@@ -272,15 +278,15 @@ onMounted(() => {
     <div class="kit-card flex flex-col">
       <div class="h4 !font-bold !text-salmon">1</div>
       <div class="mt-8 flex flex-col flex-1 justify-between">
-        <p class="p2">Download and install Kit CLI.</p>
-        <a href="/docs/cli/installation/" v-ga-track="{ category: 'button', label: 'install', location: 'get started' }" class="kit-button kit-button-salmon md:w-fit mt-6">Install the CLI</a>
+        <p class="p2">Integrate Kit into your CI/CD pipeline using our GitHub Actions, GitLab CI components, or Jenkins plugins.</p>
+        <a href="/docs/cli/installation/" v-ga-track="{ category: 'button', label: 'install', location: 'get started' }" class="kit-button kit-button-salmon md:w-fit mt-6">CI/CD DOCUMENTATION</a>
       </div>
     </div>
 
     <div class="kit-card flex flex-col">
       <div class="h4 !font-bold !text-cornflower">2</div>
       <div class="mt-8 flex flex-col flex-1 justify-between">
-        <p class="p2">Create a simple manifest file called a Kitfile with your model, dataset and code. Then build and push the ModelKit to a registry for sharing.</p>
+        <p class="p2">Your pipeline automatically builds ModelKits from your Kitfile manifest when code is committed, triggered by webhooks or scheduled jobs.</p>
         <a href="/docs/kitfile/kf-overview/" class="kit-button kit-button-cornflower md:w-fit mt-6">LEARN MORE</a>
       </div>
     </div>
@@ -288,7 +294,7 @@ onMounted(() => {
     <div class="kit-card flex flex-col">
       <div class="h4 !font-bold !text-gold">3</div>
       <div class="mt-8 flex flex-col flex-1 justify-between">
-        <p class="p2">Pull the ModelKit into your pipeline, or use <span class="text-gold">kit dev</span> to start working with the model locally.</p>
+        <p class="p2">Deploy ModelKits through your existing infrastructure - Kubernetes, cloud platforms, or container orchestration - with automated validation and rollback capabilities.</p>
         <a href="/docs/use-cases/" class="kit-button md:w-fit mt-6">USE CASES</a>
       </div>
     </div>
@@ -301,8 +307,8 @@ onMounted(() => {
 
   <ol class="grid grid-cols-1 md:grid-cols-2 gap-x-22 gap-y-16 !mt-16 max-w-[960px] !mx-auto p1">
     <li>
-      <div class="text-off-white">🎁 Standards-based package</div>
-      <p class="p2 !mb-4 !text-gray-06">A ModelKit package includes models, datasets, configurations, and code in an OCI artifact. Add as much or as little as your project needs.</p>
+      <div class="text-off-white">🎁 Enterprise Registry Compatible</div>
+      <p class="p2 !mb-4 !text-gray-06">Each ModelKit is stored in your existing container registries with the same RBAC, security scanning, and compliance controls you use for application containers.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/integrations/integrations/#kitops-compatible-tools">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -321,8 +327,8 @@ onMounted(() => {
       </a>
     </li>
     <li>
-      <div class="text-off-white">🏭 Tags and versions</div>
-      <p class="p2 !mb-4 !text-gray-06">Each ModelKit is tagged and versioned so everyone knows which dataset and model work together.</p>
+      <div class="text-off-white">🏭 Immutable Deployment Artifacts</div>
+      <p class="p2 !mb-4 !text-gray-06">Each ModelKit is tagged, versioned, and includes SHA digests so your deployment pipeline can verify exactly which model, dataset, and configuration are being deployed to each environment.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/why-kitops/">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -351,8 +357,8 @@ onMounted(() => {
       </a>
     </li>
     <li>
-      <div class="text-off-white">🏃‍♂️‍ Local dev mode</div>
-      <p class="p2 !mb-4 !text-gray-06">Kit's Dev Mode lets your run an LLM locally, configure it, and prompt/chat with it instantly</p>
+      <div class="text-off-white">🏃‍♂️‍ Infrastructure-as-Code Ready</div>
+      <p class="p2 !mb-4 !text-gray-06">Generate Kubernetes manifests, Docker containers, and cloud deployment configurations automatically from ModelKits as part of your GitOps workflows.</p>
       <a class="text-off-white font-bold flex items-center gap-2 text-base" href="/docs/why-kitops/">
         LEARN MORE
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -581,6 +587,27 @@ onMounted(() => {
 
 <div class="max-w-3xl mx-auto my-32 md:my-40 lg:my-60 faq-section content-container">
   <h2 class="text-center !mb-10 md:!mb-14 lg:!mb-22">fAq</h2>
+
+   <Accordion content-class="!space-y-[1em]">
+    <template #title>How does KitOps integrate with our existing CI/CD pipeline?</template>
+
+    <p class="!mt-6">KitOps provides native integrations for popular CI/CD platforms including GitHub Actions, GitLab CI, Jenkins, and Azure DevOps. You can trigger ModelKit builds through webhooks, API calls, or scheduled jobs. ModelKits are stored in your existing container registry and can be deployed using the same infrastructure-as-code tools you use for applications.</p>
+
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>What's the learning curve for our DevOps team?</template>
+
+    <p class="!mt-6">Minimal. KitOps uses familiar concepts like container registries, YAML manifests, and standard deployment tools. If your team can deploy containers through CI/CD pipelines, they can deploy ModelKits using the same processes and infrastructure.</p>
+
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>What's the learning curve for our DevOps team?</template>
+
+    <p class="!mt-6">Minimal. KitOps uses familiar concepts like container registries, YAML manifests, and standard deployment tools. If your team can deploy containers through CI/CD pipelines, they can deploy ModelKits using the same processes and infrastructure.</p>
+
+  </Accordion>
 
   <Accordion content-class="!space-y-[1em]">
     <template #title>Are ModelKits a versioning solution or a packaging solution?</template>
