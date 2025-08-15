@@ -180,7 +180,6 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 	if err := os.MkdirAll(extractDir, 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
-	options.tempDir = extractDir // Reuse tempDir field for cleanup
 	options.contextDir = extractDir
 
 	// Extract the ModelKit using the library directly
@@ -199,7 +198,7 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 	}
 	libOpts.FilterConfs = []unpack.FilterConf{*modelFilter}
 
-	// Change working directory to cache directory (like unpack command does)
+	// Change working directory to cache directory unpack logic is relative to CWD
 	originalWd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current working directory: %w", err)

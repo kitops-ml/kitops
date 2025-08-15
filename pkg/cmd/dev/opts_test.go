@@ -25,6 +25,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"oras.land/oras-go/v2/registry"
 )
 
 func TestDevStartOptions_Complete_ReferenceDetection(t *testing.T) {
@@ -203,7 +204,8 @@ func TestDevStartOptions_Cleanup(t *testing.T) {
 	require.NoError(t, os.WriteFile(testFile, []byte("test content"), 0644))
 
 	opts := &DevStartOptions{
-		tempDir: tmpDir,
+		contextDir: tmpDir,
+		modelRef:   &registry.Reference{}, // Simulate ModelKit reference for cleanup
 	}
 
 	// Verify directory and file exist
