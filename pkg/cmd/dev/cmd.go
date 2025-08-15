@@ -27,7 +27,7 @@ import (
 
 func DevCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "dev <directory|modelkit-reference> [flags]",
+		Use:     "dev <directory|registry/repository[:tag|@digest]> [flags]",
 		Short:   devShortDesc,
 		Long:    devLongDesc,
 		Example: devExample,
@@ -41,7 +41,7 @@ func DevCommand() *cobra.Command {
 func DevStartCommand() *cobra.Command {
 	opts := &DevStartOptions{}
 	cmd := &cobra.Command{
-		Use:     "start [directory|modelkit-reference] [flags]",
+		Use:     "start [directory|registry/repository[:tag|@digest]] [flags]",
 		Short:   devStartShortDesc,
 		Long:    devStartLongDesc,
 		Example: devStartExample,

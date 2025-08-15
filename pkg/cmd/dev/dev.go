@@ -97,15 +97,6 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		return err
 	}
 
-	if wd, err := os.Getwd(); err == nil {
-		output.Debugf("Current working directory before harness: %s", wd)
-	}
-	if _, err := os.Stat(modelPath); err != nil {
-		output.Debugf("Model file stat error: %v", err)
-	} else {
-		output.Debugf("Model file exists at: %s", modelPath)
-	}
-
 	llmHarness := &harness.LLMHarness{}
 	llmHarness.Host = options.host
 	llmHarness.Port = options.port

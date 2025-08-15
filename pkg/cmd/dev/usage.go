@@ -26,8 +26,9 @@ const (
 
 Start a development server for a modelkit. You can provide either:
 - A directory path containing an unpacked modelkit with a Kitfile
-- A ModelKit reference (e.g., myrepo/my-model:latest) which will be
-  automatically extracted to a temporary directory
+- A ModelKit reference in the format registry/repository[:tag|@digest] 
+  (e.g., myrepo/my-model:latest) which will be automatically extracted 
+  to a temporary directory
 
 When using a ModelKit reference, only the model components are extracted
 to optimize startup time.`
