@@ -63,14 +63,14 @@ func TestFindModelFile(t *testing.T) {
 			setupFiles:    []string{},
 			testPath:      "nonexistent.gguf",
 			expectError:   true,
-			errorContains: "no such file or directory",
+			errorContains: "", // Don't check specific error message (platform dependent)
 		},
 		{
-			name:          "path is not file or directory",
-			setupFiles:    []string{},
-			testPath:      "/dev/null", // Special file
+			name:          "directory without gguf files",
+			setupFiles:    []string{"subdir/readme.txt"},
+			testPath:      "subdir",
 			expectError:   true,
-			errorContains: "path is not regular file or directory",
+			errorContains: "could not find model file",
 		},
 	}
 
