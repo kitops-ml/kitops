@@ -24,14 +24,26 @@ const (
 	devStartShortDesc = "Start development server (experimental)"
 	devStartLongDesc  = `Start development server (experimental) from a modelkit
 
-Start a development server for an unpacked modelkit, using a context directory
-that includes the model and a kitfile.`
+Start a development server for a modelkit. You can provide either:
+- A directory path containing an unpacked modelkit with a Kitfile
+- A ModelKit reference in the format registry/repository[:tag|@digest] 
+  (e.g., myrepo/my-model:latest) which will be automatically extracted 
+  to a temporary directory
+
+When using a ModelKit reference, only the model components are extracted
+to optimize startup time.`
 
 	devStartExample = `# Serve the model located in the current directory
 kit dev start
 
 # Serve the modelkit in ./my-model on port 8080
-kit dev start ./my-model --port 8080`
+kit dev start ./my-model --port 8080
+
+# Serve a ModelKit reference from local storage or registry
+kit dev start myrepo/my-model:latest
+
+# Serve a specific model with custom host and port
+kit dev start registry.example.com/models/llama2:7b --host 0.0.0.0 --port 8080`
 
 	devStopShortDesc = "Stop development server"
 	devStopLongDesc  = "Stop the development server if it is running"

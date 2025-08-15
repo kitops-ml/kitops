@@ -17,21 +17,55 @@ package dev
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/harness"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/unpack"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 func runDev(ctx context.Context, options *DevStartOptions) error {
+	signalCtx, cancelSignalHandling := context.WithCancel(ctx)
+	defer cancelSignalHandling()
+	cleanupDone := make(chan bool, 1)
+	signalChan := make(chan os.Signal, 1)
+
+	// If we have a ModelKit reference, extract it to cache directory first
+	if options.modelRef != nil {
+		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+		defer signal.Stop(signalChan)
+
+		if err := extractModelKitToCache(ctx, options); err != nil {
+			return fmt.Errorf("failed to extract ModelKit: %w", err)
+		}
+
+		// Set up cleanup goroutine for signals
+		go func() {
+			select {
+			case <-signalChan:
+				output.Infof("Received interrupt signal, cleaning up...")
+				if cleanupErr := options.cleanup(); cleanupErr != nil {
+					output.Debugf("Failed to cleanup cache directory: %v", cleanupErr)
+				}
+				cleanupDone <- true
+			case <-cleanupDone:
+			case <-signalCtx.Done():
+				return
+			}
+		}()
+	}
 
 	kitfile := &artifact.KitFile{}
 
@@ -52,10 +86,12 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		kitfile.Model.Path = resolvedKitfile.Model.Path
 		kitfile.Model.Parts = append(kitfile.Model.Parts, resolvedKitfile.Model.Parts...)
 	}
+
 	modelAbsPath, _, err := filesystem.VerifySubpath(options.contextDir, kitfile.Model.Path)
 	if err != nil {
 		return err
 	}
+
 	modelPath, err := findModelFile(modelAbsPath)
 	if err != nil {
 		return err
@@ -88,6 +124,15 @@ func stopDev(_ context.Context, options *DevBaseOptions) error {
 	if err := llmHarness.Stop(); err != nil {
 		return err
 	}
+
+	// Clean up cache directory
+	cacheDir := filepath.Join(options.configHome, "dev-models", "current")
+	if err := os.RemoveAll(cacheDir); err != nil {
+		output.Debugf("Failed to clean up cache directory: %v", err)
+	} else {
+		output.Infof("Cleaned up cache directory")
+	}
+
 	return nil
 }
 
@@ -123,4 +168,70 @@ func findModelFile(absPath string) (string, error) {
 	}
 	output.Debugf("Found model path in directory %s at %s", absPath, modelPath)
 	return modelPath, nil
+}
+
+// extractModelKitToCache extracts a ModelKit reference to a cache directory
+// using the unpack library with model filter
+func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error {
+	output.Infof("Extracting ModelKit %s to cache directory...", options.modelRef.String())
+
+	// Use consistent cache directory for extraction
+	extractDir := filepath.Join(options.configHome, "dev-models", "current")
+	if err := os.MkdirAll(extractDir, 0755); err != nil {
+		return fmt.Errorf("failed to create cache directory: %w", err)
+	}
+	options.contextDir = extractDir
+
+	// Extract the ModelKit using the library directly
+	libOpts := &unpack.UnpackOptions{
+		ModelRef:       options.modelRef,
+		UnpackDir:      extractDir,
+		ConfigHome:     options.configHome,
+		Overwrite:      true, // Safe for extraction directory
+		NetworkOptions: options.NetworkOptions,
+	}
+
+	// Add model filter
+	modelFilter, err := unpack.ParseFilter("model,kitfile")
+	if err != nil {
+		return fmt.Errorf("failed to create model filter: %w", err)
+	}
+	libOpts.FilterConfs = []unpack.FilterConf{*modelFilter}
+
+	// Change working directory to cache directory unpack logic is relative to CWD
+	originalWd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current working directory: %w", err)
+	}
+	if err := os.Chdir(extractDir); err != nil {
+		return fmt.Errorf("failed to change to cache directory %s: %w", extractDir, err)
+	}
+	// Restore original working directory when done
+	defer func() {
+		if err := os.Chdir(originalWd); err != nil {
+			output.Debugf("Failed to restore working directory: %v", err)
+		}
+	}()
+
+	err = unpack.UnpackModelKit(ctx, libOpts)
+	if err != nil {
+		cleanUpErr := os.RemoveAll(extractDir)
+		if cleanUpErr != nil {
+			return errors.Join(
+				fmt.Errorf("failed to extract ModelKit: %w", err),
+				fmt.Errorf("failed to cleanup cache directory: %w", cleanUpErr),
+			)
+		}
+		return fmt.Errorf("failed to extract ModelKit: %w", err)
+	}
+
+	// Find the Kitfile in the extracted directory
+	kitfilePath := filepath.Join(extractDir, constants.DefaultKitfileName)
+	if _, err := os.Stat(kitfilePath); err != nil {
+		return fmt.Errorf("kitfile not found in extracted ModelKit: %w", err)
+	}
+	options.modelFile = kitfilePath
+
+	output.Infof("ModelKit extracted to %s", extractDir)
+	return nil
 }

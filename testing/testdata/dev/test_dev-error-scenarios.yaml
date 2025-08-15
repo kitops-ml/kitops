@@ -1,0 +1,27 @@
+description: "Test dev command error handling scenarios"
+setup:
+  modelkits:
+    - tag: "test/broken-model:latest"
+      kitfile: |
+        manifestVersion: 1.0.0
+        package:
+          name: broken-model
+        model:
+          path: model-files  # This is a directory, not a file
+      files:
+        - model-files/readme.txt  # No .gguf files in directory
+tests:
+  - name: "model kit without model file"
+    args: "test/broken-model:latest"
+    expectStartError: true
+    startErrorRegexp: "could not find model file"
+    expectedCacheDir: true
+    expectedFiles:
+      - Kitfile
+      - model-files/readme.txt
+    expectedCleanup: true
+  - name: "empty model kit"
+    args: "test/empty:latest"
+    expectStartError: true
+    startErrorRegexp: "failed to extract ModelKit.*not found"
+    expectedCacheDir: false
