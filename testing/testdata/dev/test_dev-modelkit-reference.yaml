@@ -1,0 +1,26 @@
+description: "Test dev command with ModelKit references"
+setup:
+  modelkits:
+    - tag: "test/simple-model:latest"
+      kitfile: |
+        manifestVersion: 1.0.0
+        package:
+          name: simple-test-model
+        model:
+          path: model.gguf
+      files:
+        - model.gguf
+tests:
+  - name: "start with simple reference"
+    args: "test/simple-model:latest"
+    expectStartError: false
+    expectedCacheDir: true
+    expectedFiles:
+      - Kitfile
+      - model.gguf
+    expectedCleanup: true
+  - name: "start with nonexistent reference"
+    args: "nonexistent/model:tag"
+    expectStartError: true
+    startErrorRegexp: "failed to extract ModelKit.*not found"
+    expectedCacheDir: false

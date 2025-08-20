@@ -19,9 +19,14 @@ package dev
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/output"
+	"oras.land/oras-go/v2/registry"
 )
 
 type DevBaseOptions struct {
@@ -44,10 +49,12 @@ func (opts *DevBaseOptions) complete(ctx context.Context, _ []string) error {
 
 type DevStartOptions struct {
 	DevBaseOptions
+	options.NetworkOptions
 	host       string
 	port       int
 	modelFile  string
 	contextDir string
+	modelRef   *registry.Reference // For ModelKit references
 }
 
 func (opts *DevStartOptions) complete(ctx context.Context, args []string) error {
@@ -55,17 +62,37 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 		return err
 	}
 
-	opts.contextDir = ""
 	if len(args) == 1 {
-		opts.contextDir = args[0]
-	}
-	if opts.modelFile == "" {
-		foundKitfile, err := filesystem.FindKitfileInPath(opts.contextDir)
-		if err != nil {
-			return err
+		// Check if the argument is a ModelKit reference
+		if ref, _, err := util.ParseReference(args[0]); err == nil && ref.Reference != "" {
+			// This looks like a ModelKit reference
+			opts.modelRef = ref
+			output.Debugf("Detected ModelKit reference: %s", ref.String())
+		} else {
+			// This is a directory path
+			opts.contextDir = args[0]
+			output.Debugf("Using directory path: %s", args[0])
 		}
-		opts.modelFile = foundKitfile
 	}
+
+	// If we have a ModelKit reference but no explicit modelFile flag, we'll extract to cache
+	if opts.modelRef != nil && opts.modelFile == "" {
+		// We'll set contextDir to cache directory after extraction
+		output.Debugf("Will extract ModelKit reference to cache directory")
+	} else {
+		// Original directory-based logic
+		if opts.modelFile == "" {
+			foundKitfile, err := filesystem.FindKitfileInPath(opts.contextDir)
+			if err != nil {
+				if opts.modelRef == nil && opts.contextDir == "" {
+					return fmt.Errorf("no directory or ModelKit reference provided - specify a directory path or ModelKit reference (e.g., myrepo/my-model:latest)")
+				}
+				return fmt.Errorf("failed to find Kitfile in directory %s: %w", opts.contextDir, err)
+			}
+			opts.modelFile = foundKitfile
+		}
+	}
+
 	if opts.host == "" {
 		opts.host = "127.0.0.1"
 	}
@@ -76,6 +103,20 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 			return fmt.Errorf("Invalid arguments: %s", err)
 		}
 		opts.port = availPort
+	}
+
+	// Complete network options for remote access
+	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (opts *DevStartOptions) cleanup() error {
+	// Only clean up if we extracted a ModelKit reference to contextDir
+	if opts.modelRef != nil && opts.contextDir != "" {
+		return os.RemoveAll(opts.contextDir)
 	}
 	return nil
 }

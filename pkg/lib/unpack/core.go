@@ -38,22 +38,20 @@ import (
 	"oras.land/oras-go/v2/content"
 )
 
-// runUnpack fetches and unpacks a *registry.Reference from an oras.Target. It returns an error if
-// unpacking fails, or if any path specified in the modelkit is not a subdirectory of the current
-// unpack target directory.
-func runUnpack(ctx context.Context, opts *unpackOptions) error {
-	return runUnpackRecursive(ctx, opts, []string{})
+// UnpackModelKit performs the core unpacking logic for a ModelKit.
+func UnpackModelKit(ctx context.Context, opts *UnpackOptions) error {
+	return unpackRecursive(ctx, opts, []string{})
 }
 
-func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []string) error {
+func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []string) error {
 	if len(visitedRefs) > constants.MaxModelRefChain {
 		return fmt.Errorf("reached maximum number of model references: [%s]", strings.Join(visitedRefs, "=>"))
 	}
 
-	ref := opts.modelRef
+	ref := opts.ModelRef
 	store, err := getStoreForRef(ctx, opts)
 	if err != nil {
-		ref := util.FormatRepositoryForDisplay(opts.modelRef.String())
+		ref := util.FormatRepositoryForDisplay(opts.ModelRef.String())
 		return fmt.Errorf("failed to find reference %s: %s", ref, err)
 	}
 	manifestDesc, err := store.Resolve(ctx, ref.Reference)
@@ -71,8 +69,8 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 		}
 	}
 
-	if shouldUnpackLayer(config, opts.filterConfs) {
-		if err := unpackConfig(config, opts.unpackDir, opts.overwrite); err != nil {
+	if shouldUnpackLayer(config, opts.FilterConfs) {
+		if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
 			return err
 		}
 	}
@@ -93,16 +91,16 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 		mediaType := constants.ParseMediaType(layerDesc.MediaType)
 		switch mediaType.BaseType {
 		case constants.ModelType:
-			if !shouldUnpackLayer(config.Model, opts.filterConfs) {
+			if !shouldUnpackLayer(config.Model, opts.FilterConfs) {
 				continue
 			}
 			layerInfo = config.Model.LayerInfo
 			layerPath = config.Model.Path
-			output.Infof("Unpacking model %s to %s", config.Model.Name, config.Model.Path)
+			output.Infof("Unpacking model %s to %s", config.Model.Name, opts.UnpackDir)
 
 		case constants.ModelPartType:
 			part := config.Model.Parts[modelPartIdx]
-			if !shouldUnpackLayer(part, opts.filterConfs) {
+			if !shouldUnpackLayer(part, opts.FilterConfs) {
 				modelPartIdx += 1
 				continue
 			}
@@ -113,7 +111,7 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 
 		case constants.CodeType:
 			codeEntry := config.Code[codeIdx]
-			if !shouldUnpackLayer(codeEntry, opts.filterConfs) {
+			if !shouldUnpackLayer(codeEntry, opts.FilterConfs) {
 				codeIdx += 1
 				continue
 			}
@@ -124,7 +122,7 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 
 		case constants.DatasetType:
 			datasetEntry := config.DataSets[datasetIdx]
-			if !shouldUnpackLayer(datasetEntry, opts.filterConfs) {
+			if !shouldUnpackLayer(datasetEntry, opts.FilterConfs) {
 				datasetIdx += 1
 				continue
 			}
@@ -135,7 +133,7 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 
 		case constants.DocsType:
 			docsEntry := config.Docs[docsIdx]
-			if !shouldUnpackLayer(docsEntry, opts.filterConfs) {
+			if !shouldUnpackLayer(docsEntry, opts.FilterConfs) {
 				docsIdx += 1
 				continue
 			}
@@ -151,13 +149,13 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 			}
 			relPath = ""
 		} else {
-			_, relPath, err = filesystem.VerifySubpath(opts.unpackDir, layerPath)
+			_, relPath, err = filesystem.VerifySubpath(opts.UnpackDir, layerPath)
 			if err != nil {
 				return fmt.Errorf("error resolving %s path: %w", mediaType.BaseType, err)
 			}
 		}
 
-		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.overwrite, opts.ignoreExisting, mediaType.Compression); err != nil {
+		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
@@ -169,7 +167,7 @@ func runUnpackRecursive(ctx context.Context, opts *unpackOptions, visitedRefs []
 	return nil
 }
 
-func unpackParent(ctx context.Context, ref string, optsIn *unpackOptions, visitedRefs []string) error {
+func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visitedRefs []string) error {
 	if idx := getIndex(visitedRefs, ref); idx != -1 {
 		cycleStr := fmt.Sprintf("[%s=>%s]", strings.Join(visitedRefs[idx:], "=>"), ref)
 		return fmt.Errorf("found cycle in modelkit references: %s", cycleStr)
@@ -180,21 +178,21 @@ func unpackParent(ctx context.Context, ref string, optsIn *unpackOptions, visite
 		return err
 	}
 	opts := *optsIn
-	opts.modelRef = parentRef
+	opts.ModelRef = parentRef
 	// Unpack only model, ignore code/datasets
-	if len(opts.filterConfs) == 0 {
-		modelFilter, err := parseFilter("model")
+	if len(opts.FilterConfs) == 0 {
+		modelFilter, err := ParseFilter("model")
 		if err != nil {
 			// Shouldn't happen, ever
 			return fmt.Errorf("failed to parse filter for parent modelkit: %w", err)
 		}
-		opts.filterConfs = []filterConf{*modelFilter}
+		opts.FilterConfs = []FilterConf{*modelFilter}
 	} else {
-		var filterConfs []filterConf
-		for _, conf := range opts.filterConfs {
+		var filterConfs []FilterConf
+		for _, conf := range opts.FilterConfs {
 			if conf.matchesBaseType(constants.ModelType) {
 				// Drop any other base types from this filter
-				conf.baseTypes = []string{constants.ModelType}
+				conf.BaseTypes = []string{constants.ModelType}
 				filterConfs = append(filterConfs, conf)
 			}
 		}
@@ -203,10 +201,10 @@ func unpackParent(ctx context.Context, ref string, optsIn *unpackOptions, visite
 		if len(filterConfs) == 0 {
 			return nil
 		}
-		opts.filterConfs = filterConfs
+		opts.FilterConfs = filterConfs
 	}
 
-	return runUnpackRecursive(ctx, &opts, append(visitedRefs, ref))
+	return unpackRecursive(ctx, &opts, append(visitedRefs, ref))
 }
 
 func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) error {

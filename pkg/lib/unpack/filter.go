@@ -26,21 +26,22 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 )
 
-type filterConf struct {
-	baseTypes []string
-	filters   []string
+// FilterConf represents filter configuration for unpacking operations.
+type FilterConf struct {
+	BaseTypes []string
+	Filters   []string
 }
 
-func (fc *filterConf) matches(baseType, field string) bool {
+func (fc *FilterConf) matches(baseType, field string) bool {
 	return fc.matchesBaseType(baseType) && fc.matchesField(field)
 }
 
-func (fc *filterConf) matchesBaseType(baseType string) bool {
+func (fc *FilterConf) matchesBaseType(baseType string) bool {
 	// Treat modelparts as covered by the 'model' filter
 	if baseType == constants.ModelPartType {
 		baseType = constants.ModelType
 	}
-	for _, t := range fc.baseTypes {
+	for _, t := range fc.BaseTypes {
 		if t == baseType {
 			return true
 		}
@@ -48,29 +49,30 @@ func (fc *filterConf) matchesBaseType(baseType string) bool {
 	return false
 }
 
-func (fc *filterConf) matchesField(field string) bool {
-	if len(fc.filters) == 0 {
+func (fc *FilterConf) matchesField(field string) bool {
+	if len(fc.Filters) == 0 {
 		// By default everything matches
 		return true
 	}
-	return slices.Contains(fc.filters, field)
+	return slices.Contains(fc.Filters, field)
 }
 
-func parseFilter(filter string) (*filterConf, error) {
+// ParseFilter parses a filter string and returns a FilterConf.
+func ParseFilter(filter string) (*FilterConf, error) {
 	typesAndIds := strings.Split(filter, ":")
 
 	if len(typesAndIds) > 2 {
 		return nil, fmt.Errorf("invalid filter: should be in format <type1>,<type2>[:<filter1>,<filter2>]")
 	}
 
-	conf := &filterConf{}
+	conf := &FilterConf{}
 
 	for _, filterType := range strings.Split(typesAndIds[0], ",") {
 		baseType, err := filterToMediaBaseType(filterType)
 		if err != nil {
 			return nil, err
 		}
-		conf.baseTypes = append(conf.baseTypes, baseType)
+		conf.BaseTypes = append(conf.BaseTypes, baseType)
 	}
 
 	// Check for additional filtering based on name/path
@@ -79,14 +81,14 @@ func parseFilter(filter string) (*filterConf, error) {
 	}
 
 	filters := strings.Split(typesAndIds[1], ",")
-	conf.filters = filters
+	conf.Filters = filters
 	return conf, nil
 }
 
 // shouldUnpackLayer determines if we should unpack a layer in a Kitfile by matching
 // fields against the filters. Matching is done against path and name (if present).
 // If filters is empty, we assume everything should be unpacked
-func shouldUnpackLayer(layer any, filters []filterConf) bool {
+func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 	if len(filters) == 0 {
 		return true
 	}
@@ -99,7 +101,7 @@ func shouldUnpackLayer(layer any, filters []filterConf) bool {
 	switch l := layer.(type) {
 	case artifact.KitFile:
 		for _, filter := range filters {
-			if slices.Contains(filter.baseTypes, constants.ConfigType) {
+			if slices.Contains(filter.BaseTypes, constants.ConfigType) {
 				return true
 			}
 		}
@@ -121,7 +123,7 @@ func shouldUnpackLayer(layer any, filters []filterConf) bool {
 	}
 }
 
-func matchesFilters(field string, baseType string, filterConfs []filterConf) bool {
+func matchesFilters(field string, baseType string, filterConfs []FilterConf) bool {
 	for _, filterConf := range filterConfs {
 		if filterConf.matches(baseType, field) {
 			return true
@@ -130,26 +132,26 @@ func matchesFilters(field string, baseType string, filterConfs []filterConf) boo
 	return false
 }
 
-// filtersFromUnpackConf converts a (deprecated) unpackConf to a set of filters to enable supporting the old flags
-func filtersFromUnpackConf(conf unpackConf) []filterConf {
-	filter := filterConf{}
+// FiltersFromUnpackConf converts a (deprecated) unpackConf to a set of filters to enable supporting the old flags
+func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs bool) []FilterConf {
+	filter := FilterConf{}
 
-	if conf.unpackKitfile {
-		filter.baseTypes = append(filter.baseTypes, constants.ConfigType)
+	if unpackKitfile {
+		filter.BaseTypes = append(filter.BaseTypes, constants.ConfigType)
 	}
-	if conf.unpackModels {
-		filter.baseTypes = append(filter.baseTypes, constants.ModelType)
+	if unpackModels {
+		filter.BaseTypes = append(filter.BaseTypes, constants.ModelType)
 	}
-	if conf.unpackDocs {
-		filter.baseTypes = append(filter.baseTypes, constants.DocsType)
+	if unpackDocs {
+		filter.BaseTypes = append(filter.BaseTypes, constants.DocsType)
 	}
-	if conf.unpackDatasets {
-		filter.baseTypes = append(filter.baseTypes, constants.DatasetType)
+	if unpackDatasets {
+		filter.BaseTypes = append(filter.BaseTypes, constants.DatasetType)
 	}
-	if conf.unpackCode {
-		filter.baseTypes = append(filter.baseTypes, constants.CodeType)
+	if unpackCode {
+		filter.BaseTypes = append(filter.BaseTypes, constants.CodeType)
 	}
-	return []filterConf{filter}
+	return []FilterConf{filter}
 }
 
 func filterToMediaBaseType(filterType string) (string, error) {
