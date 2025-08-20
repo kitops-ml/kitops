@@ -30,6 +30,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -83,6 +84,28 @@ func newLocalRepoForName(storagePath, name string) (LocalRepo, error) {
 	repo.localIndex = localIndex
 
 	return repo, nil
+}
+
+// GetAllLocalReposWithTags returns a list of all local repositories with their tags of the form <repository>:<tag>
+func GetAllLocalReposWithTags(configHome string) ([]string, error) {
+	localRepos, err := GetAllLocalRepos(constants.StoragePath(configHome))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read local storage: %w", err)
+	}
+
+	repos := []string{}
+	for _, localRepo := range localRepos {
+		manifests := localRepo.GetAllModels()
+		for _, manifestDesc := range manifests {
+			tags := localRepo.GetTags(manifestDesc)
+			for _, tag := range tags {
+				repo := util.FormatRepositoryForDisplay(localRepo.GetRepoName())
+				repos = append(repos, fmt.Sprintf("%s:%s", repo, tag))
+			}
+		}
+	}
+
+	return repos, nil
 }
 
 func GetAllLocalRepos(storagePath string) ([]LocalRepo, error) {

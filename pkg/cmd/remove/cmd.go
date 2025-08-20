@@ -22,7 +22,8 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/completions"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -67,12 +68,6 @@ type removeOptions struct {
 }
 
 func (opts *removeOptions) complete(ctx context.Context, args []string) error {
-	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
-	if !ok {
-		return fmt.Errorf("default config path not set on command context")
-	}
-	opts.configHome = configHome
-
 	if len(args) > 0 {
 		modelRef, extraTags, err := util.ParseReference(args[0])
 		if err != nil {
@@ -94,8 +89,8 @@ func (opts *removeOptions) complete(ctx context.Context, args []string) error {
 	return nil
 }
 
-func RemoveCommand() *cobra.Command {
-	opts := &removeOptions{}
+func RemoveCommand(configHome string) *cobra.Command {
+	opts := &removeOptions{configHome: configHome}
 	cmd := &cobra.Command{
 		Use:     "remove [flags] registry/repository[:tag|@digest]",
 		Short:   shortDesc,
@@ -127,6 +122,10 @@ func RemoveCommand() *cobra.Command {
 		}
 	}
 
+	lazyLoadedCompletions := func() ([]string, error) {
+		return local.GetAllLocalReposWithTags(configHome)
+	}
+	completions.WithStaticArgCompletions(cmd, lazyLoadedCompletions, 1)
 	return cmd
 }
 

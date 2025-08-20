@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/completions"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
@@ -59,12 +60,6 @@ type pushOptions struct {
 }
 
 func (opts *pushOptions) complete(ctx context.Context, args []string) error {
-	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
-	if !ok {
-		return fmt.Errorf("default config path not set on command context")
-	}
-	opts.configHome = configHome
-
 	srcRef, extraTags, err := util.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference %s: %w", args[0], err)
@@ -97,8 +92,10 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 	return nil
 }
 
-func PushCommand() *cobra.Command {
-	opts := &pushOptions{}
+func PushCommand(configHome string) *cobra.Command {
+	opts := &pushOptions{
+		configHome: configHome,
+	}
 	cmd := &cobra.Command{
 		Use:     "push [flags] SOURCE [DESTINATION]",
 		Short:   shortDesc,
@@ -111,6 +108,10 @@ func PushCommand() *cobra.Command {
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
+	lazyLoadedCompletions := func() ([]string, error) {
+		return local.GetAllLocalReposWithTags(configHome)
+	}
+	completions.WithStaticArgCompletions(cmd, lazyLoadedCompletions, 1)
 	return cmd
 }
 

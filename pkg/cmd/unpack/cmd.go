@@ -23,7 +23,8 @@ import (
 	"path/filepath"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/completions"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -103,11 +104,6 @@ type unpackConf struct {
 }
 
 func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
-	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
-	if !ok {
-		return fmt.Errorf("default config path not set on command context")
-	}
-	opts.configHome = configHome
 	modelRef, extraTags, err := util.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
@@ -147,8 +143,10 @@ func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
 	return nil
 }
 
-func UnpackCommand() *cobra.Command {
-	opts := &unpackOptions{}
+func UnpackCommand(configHome string) *cobra.Command {
+	opts := &unpackOptions{
+		configHome: configHome,
+	}
 
 	cmd := &cobra.Command{
 		Use:     "unpack [flags] [registry/]repository[:tag|@digest]",
@@ -171,6 +169,10 @@ func UnpackCommand() *cobra.Command {
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
+	lazyLoadedCompletions := func() ([]string, error) {
+		return local.GetAllLocalReposWithTags(configHome)
+	}
+	completions.WithStaticArgCompletions(cmd, lazyLoadedCompletions, 1)
 	return cmd
 }
 
