@@ -10,7 +10,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/vbauerster/mpb/v8 v8.10.2
 	golang.org/x/mod v0.27.0
 	golang.org/x/sync v0.16.0
