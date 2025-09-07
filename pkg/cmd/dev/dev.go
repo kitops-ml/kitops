@@ -225,9 +225,8 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 		return fmt.Errorf("failed to extract ModelKit: %w", err)
 	}
 
-	// Find the Kitfile in the extracted directory
-	kitfilePath := filepath.Join(extractDir, constants.DefaultKitfileName)
-	if _, err := os.Stat(kitfilePath); err != nil {
+	kitfilePath, err := filesystem.FindKitfileInPath(extractDir)
+	if err != nil {
 		return fmt.Errorf("kitfile not found in extracted ModelKit: %w", err)
 	}
 	options.modelFile = kitfilePath
