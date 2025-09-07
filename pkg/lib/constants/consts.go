@@ -45,6 +45,10 @@ const (
 	HarnessLogFile                    = "harness.log"
 	UpdateNotificationsConfigFilename = "disable-update-notifications"
 
+	// Dev command model extraction/cache paths
+	DevModelsSubpath       = "dev-models"
+	CurrentDevModelSubpath = "current"
+
 	// Kitops-specific annotations for modelkit artifacts
 	CliVersionAnnotation = "ml.kitops.modelkit.cli-version"
 
@@ -128,6 +132,16 @@ func CredentialsPath(configBase string) string {
 
 func CachePath(configBase string) string {
 	return filepath.Join(configBase, CacheSubpath)
+}
+
+// DevModelsPath returns the base directory used for dev-mode model extractions
+func DevModelsPath(configBase string) string {
+	return filepath.Join(configBase, DevModelsSubpath)
+}
+
+// ExtractedDevModelPath returns the path to the "extracted" dev-mode model directory
+func ExtractedDevModelPath(configBase string) string {
+	return filepath.Join(DevModelsPath(configBase), CurrentDevModelSubpath)
 }
 
 // IndexJsonPath is a wrapper for getting the index.json path for a local OCI index,

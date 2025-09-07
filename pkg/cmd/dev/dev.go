@@ -126,7 +126,7 @@ func stopDev(_ context.Context, options *DevBaseOptions) error {
 	}
 
 	// Clean up cache directory
-	cacheDir := filepath.Join(options.configHome, "dev-models", "current")
+	cacheDir := constants.ExtractedDevModelPath(options.configHome)
 	if err := os.RemoveAll(cacheDir); err != nil {
 		output.Debugf("Failed to clean up cache directory: %v", err)
 	} else {
@@ -176,7 +176,7 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 	output.Infof("Extracting ModelKit %s to cache directory...", options.modelRef.String())
 
 	// Use consistent cache directory for extraction
-	extractDir := filepath.Join(options.configHome, "dev-models", "current")
+	extractDir := constants.ExtractedDevModelPath(options.configHome)
 	if err := os.MkdirAll(extractDir, 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
