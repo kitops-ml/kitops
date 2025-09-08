@@ -198,21 +198,6 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 	}
 	libOpts.FilterConfs = []unpack.FilterConf{*modelFilter}
 
-	// Change working directory to cache directory unpack logic is relative to CWD
-	originalWd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current working directory: %w", err)
-	}
-	if err := os.Chdir(extractDir); err != nil {
-		return fmt.Errorf("failed to change to cache directory %s: %w", extractDir, err)
-	}
-	// Restore original working directory when done
-	defer func() {
-		if err := os.Chdir(originalWd); err != nil {
-			output.Debugf("Failed to restore working directory: %v", err)
-		}
-	}()
-
 	err = unpack.UnpackModelKit(ctx, libOpts)
 	if err != nil {
 		cleanUpErr := os.RemoveAll(extractDir)

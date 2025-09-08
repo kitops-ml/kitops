@@ -176,12 +176,6 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		if err := os.MkdirAll(opts.unpackDir, 0755); err != nil {
 			return output.Fatalf("failed to create directory %s: %w", opts.unpackDir, err)
 		}
-		// Change working directory to context path to make sure relative paths within
-		// tarballs are correct. This is the equivalent of using the -C parameter for tar
-		if err := os.Chdir(opts.unpackDir); err != nil {
-			return output.Fatalf("Failed to use unpack path %s: %w", opts.unpackDir, err)
-		}
-
 		output.Infof("Unpacking to %s", unpackTo)
 
 		// Convert command options to library options

@@ -40,6 +40,27 @@ import (
 
 // UnpackModelKit performs the core unpacking logic for a ModelKit.
 func UnpackModelKit(ctx context.Context, opts *UnpackOptions) error {
+	// If an unpack directory is provided, temporarily change the working directory
+	// so that unpack operations that are relative to CWD behave as expected.
+	// This centralizes tar -C semantics inside the unpack library.
+	if opts != nil && opts.UnpackDir != "" {
+		// Ensure the directory exists
+		if err := os.MkdirAll(opts.UnpackDir, 0o755); err != nil {
+			return fmt.Errorf("failed to create unpack directory %s: %w", opts.UnpackDir, err)
+		}
+		originalWd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get current working directory: %w", err)
+		}
+		if err := os.Chdir(opts.UnpackDir); err != nil {
+			return fmt.Errorf("failed to change working directory to %s: %w", opts.UnpackDir, err)
+		}
+		defer func() {
+			if err := os.Chdir(originalWd); err != nil {
+				output.Debugf("Failed to restore working directory: %v", err)
+			}
+		}()
+	}
 	return unpackRecursive(ctx, opts, []string{})
 }
 
