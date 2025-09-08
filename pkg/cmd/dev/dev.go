@@ -37,34 +37,22 @@ import (
 )
 
 func runDev(ctx context.Context, options *DevStartOptions) error {
-	signalCtx, cancelSignalHandling := context.WithCancel(ctx)
-	defer cancelSignalHandling()
-	cleanupDone := make(chan bool, 1)
-	signalChan := make(chan os.Signal, 1)
+	// Create a context for long-running operations like unpack
+	signalCtx, stopSignal := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stopSignal()
 
-	// If we have a ModelKit reference, extract it to cache directory first
 	if options.modelRef != nil {
-		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-		defer signal.Stop(signalChan)
-
-		if err := extractModelKitToCache(ctx, options); err != nil {
+		if err := extractModelKitToCache(signalCtx, options); err != nil {
 			return fmt.Errorf("failed to extract ModelKit: %w", err)
 		}
-
-		// Set up cleanup goroutine for signals
-		go func() {
-			select {
-			case <-signalChan:
-				output.Infof("Received interrupt signal, cleaning up...")
-				if cleanupErr := options.cleanup(); cleanupErr != nil {
-					output.Debugf("Failed to cleanup cache directory: %v", cleanupErr)
-				}
-				cleanupDone <- true
-			case <-cleanupDone:
-			case <-signalCtx.Done():
-				return
+		// If a signal was received right after extraction, clean up and stop here
+		if err := signalCtx.Err(); err != nil {
+			output.Infof("Interrupted, cleaning up cache...")
+			if cleanupErr := options.cleanup(); cleanupErr != nil {
+				output.Debugf("Failed to cleanup cache directory: %v", cleanupErr)
 			}
-		}()
+			return signalCtx.Err()
+		}
 	}
 
 	kitfile := &artifact.KitFile{}
@@ -114,25 +102,37 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 
 func stopDev(_ context.Context, options *DevBaseOptions) error {
 
-	llmHarness := &harness.LLMHarness{}
-	llmHarness.ConfigHome = options.configHome
-
+	// Don't fail stopDev if harness is not running.
+	// We still want to clean up any cached contents.
+	var stopErr error
+	llmHarness := &harness.LLMHarness{ConfigHome: options.configHome}
 	if err := llmHarness.Init(); err != nil {
-		return err
+		output.Debugf("Harness init failed during stop: %v", err)
+		stopErr = err
+	} else if err := llmHarness.Stop(); err != nil {
+		output.Debugf("Failed to stop dev server: %v", err)
+		stopErr = err
 	}
 
-	if err := llmHarness.Stop(); err != nil {
-		return err
-	}
-
-	// Clean up cache directory
+	// Always attempt to clean up cache directory
 	cacheDir := constants.ExtractedDevModelPath(options.configHome)
-	if err := os.RemoveAll(cacheDir); err != nil {
-		output.Debugf("Failed to clean up cache directory: %v", err)
-	} else {
+	cleanupErr := os.RemoveAll(cacheDir)
+	if cleanupErr == nil {
 		output.Infof("Cleaned up cache directory")
+	} else {
+		output.Debugf("Failed to clean up cache directory: %v", cleanupErr)
 	}
 
+	// Return errors according to precedence: both -> join; cleanup -> cleanup; stop -> stop; else nil
+	if cleanupErr != nil && stopErr != nil {
+		return errors.Join(stopErr, fmt.Errorf("failed to clean up cache directory: %w", cleanupErr))
+	}
+	if cleanupErr != nil {
+		return fmt.Errorf("failed to clean up cache directory: %w", cleanupErr)
+	}
+	if stopErr != nil {
+		return stopErr
+	}
 	return nil
 }
 

@@ -225,21 +225,10 @@ func TestDevCleanup(t *testing.T) {
 		assert.NoError(t, err, "Test file %s should exist before cleanup", file)
 	}
 
-	// Run dev stop (will fail due to no running server, and won't cleanup cache)
-	// This is actually a bug in the current implementation - cleanup should happen even if stop fails
+	// Run dev stop (will fail due to no running server), but should still clean up cache
 	runCommand(t, expectError, "dev", "stop")
-
-	// Current behavior: cache directory is NOT cleaned up when stop fails
-	// This is a known limitation of the current implementation
 	_, err = os.Stat(cacheDir)
-	assert.NoError(t, err, "Cache directory currently is NOT cleaned up when dev stop fails (known limitation)")
-
-	// Manual cleanup to verify the logic works
-	err = os.RemoveAll(cacheDir)
-	assert.NoError(t, err, "Manual cleanup should work")
-
-	_, err = os.Stat(cacheDir)
-	assert.True(t, os.IsNotExist(err), "Cache directory should be removed after manual cleanup")
+	assert.True(t, os.IsNotExist(err), "Cache directory should be removed by dev stop")
 }
 
 // TestDevErrorScenarios tests various error conditions
