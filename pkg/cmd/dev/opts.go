@@ -62,6 +62,9 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 		return err
 	}
 
+	// Default: use current directory
+	opts.contextDir = ""
+
 	if len(args) == 1 {
 		// Check if the argument is a ModelKit reference
 		if ref, _, err := util.ParseReference(args[0]); err == nil && ref.Reference != "" {
@@ -75,22 +78,24 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 		}
 	}
 
-	// If we have a ModelKit reference but no explicit modelFile flag, we'll extract to cache
-	if opts.modelRef != nil && opts.modelFile == "" {
-		// We'll set contextDir to cache directory after extraction
-		output.Debugf("Will extract ModelKit reference to cache directory")
-	} else {
-		// Original directory-based logic
-		if opts.modelFile == "" {
-			foundKitfile, err := filesystem.FindKitfileInPath(opts.contextDir)
-			if err != nil {
-				if opts.modelRef == nil && opts.contextDir == "" {
-					return fmt.Errorf("no directory or ModelKit reference provided - specify a directory path or ModelKit reference (e.g., myrepo/my-model:latest)")
-				}
-				return fmt.Errorf("failed to find Kitfile in directory %s: %w", opts.contextDir, err)
-			}
-			opts.modelFile = foundKitfile
+	// If we have a ModelKit reference we'll extract to cache and then use that as contextDir
+	// but check for conflicts here
+	if opts.modelRef != nil && opts.modelFile != "" {
+		return fmt.Errorf("cannot specify both a ModelKit reference and a --file flag")
+	}
+
+	// Using a directory, find Kitfile unless --file is provided
+	if opts.modelRef == nil && opts.modelFile == "" {
+		foundKitfile, err := filesystem.FindKitfileInPath(opts.contextDir)
+		if err != nil {
+			return fmt.Errorf(
+				"no Kitfile found in directory '%s'.\n"+
+					"Please ensure the directory contains a Kitfile, or specify a ModelKit reference or --file flag.\n"+
+					"Error: %w",
+				opts.contextDir, err,
+			)
 		}
+		opts.modelFile = foundKitfile
 	}
 
 	if opts.host == "" {
@@ -100,7 +105,7 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 	if opts.port == 0 {
 		availPort, err := findAvailablePort()
 		if err != nil {
-			return fmt.Errorf("Invalid arguments: %s", err)
+			return fmt.Errorf("invalid arguments: %s", err)
 		}
 		opts.port = availPort
 	}

@@ -146,12 +146,12 @@ func TestDevStartOptions_Complete_ErrorCases(t *testing.T) {
 		{
 			name:                "no arguments with no kitfile in current dir",
 			args:                []string{},
-			expectErrorContains: "no directory or ModelKit reference provided",
+			expectErrorContains: "no Kitfile found in directory",
 		},
 		{
 			name:                "empty string argument",
 			args:                []string{""},
-			expectErrorContains: "no directory or ModelKit reference provided",
+			expectErrorContains: "no Kitfile found in directory",
 		},
 		{
 			name: "path with many parts treated as reference",

@@ -243,7 +243,7 @@ func TestDevErrorScenarios(t *testing.T) {
 		{
 			name:           "no arguments and no kitfile",
 			args:           []string{"dev", "start"},
-			expectedRegexp: "no directory or ModelKit reference provided",
+			expectedRegexp: "no Kitfile found in directory",
 		},
 		{
 			name:           "nonexistent modelkit reference",
@@ -253,7 +253,7 @@ func TestDevErrorScenarios(t *testing.T) {
 		{
 			name:           "empty argument",
 			args:           []string{"dev", "start", ""},
-			expectedRegexp: "no directory or ModelKit reference provided",
+			expectedRegexp: "no Kitfile found in directory",
 		},
 	}
 
