@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -102,8 +103,16 @@ func RemoveCommand() *cobra.Command {
 		Long:    longDesc,
 		Example: examples,
 		RunE:    runCommand(opts),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if cmd.Flags().Changed("all") || cmd.Flags().Changed("remote") {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			if len(args) >= 1 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+		},
 	}
-	// cmd.Args = cobra.ExactArgs(1)
 	cmd.Flags().BoolVarP(&opts.forceDelete, "force", "f", false, "remove modelkit and all other tags that refer to it")
 	cmd.Flags().BoolVarP(&opts.removeAll, "all", "a", false, "remove all untagged modelkits")
 	cmd.Flags().BoolVarP(&opts.remote, "remote", "r", false, "remove modelkit from remote registry")

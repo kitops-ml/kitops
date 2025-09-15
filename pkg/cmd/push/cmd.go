@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
@@ -105,9 +106,15 @@ func PushCommand() *cobra.Command {
 		Long:    longDesc,
 		Example: example,
 		RunE:    runCommand(opts),
+		Args:    cobra.RangeArgs(1, 2),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) >= 2 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+		},
 	}
 
-	cmd.Args = cobra.RangeArgs(1, 2)
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
