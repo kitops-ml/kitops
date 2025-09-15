@@ -117,7 +117,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			}
 			layerInfo = config.Model.LayerInfo
 			layerPath = config.Model.Path
-			output.Infof("Unpacking model %s to %s", config.Model.Name, opts.UnpackDir)
+			output.Infof("Unpacking model %s to %s", config.Model.Name, filepath.Join(opts.UnpackDir, config.Model.Path))
 
 		case constants.ModelPartType:
 			part := config.Model.Parts[modelPartIdx]
