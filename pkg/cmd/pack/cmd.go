@@ -80,6 +80,7 @@ func PackCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.compression, "compression", "none", "Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest'")
 	cmd.Flags().SortFlags = false
 	cmd.Args = cobra.ExactArgs(1)
+	cmd.CompletionOptions.SetDefaultShellCompDirective(cobra.ShellCompDirectiveDefault)
 	return cmd
 }
 

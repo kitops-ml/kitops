@@ -127,7 +127,13 @@ func RunCommand() *cobra.Command {
 	}
 	addSubcommands(cmd)
 	cmd.PersistentFlags().StringVar(&opts.loglevel, "log-level", "info", "Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info')")
+	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"trace", "debug", "info", "warn", "error"}, cobra.ShellCompDirectiveDefault
+	})
 	cmd.PersistentFlags().StringVar(&opts.progressBars, "progress", "plain", "Configure progress bars for longer operations (options: none, plain, fancy)")
+	cmd.RegisterFlagCompletionFunc("progress", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"none", "plain", "fancy"}, cobra.ShellCompDirectiveDefault
+	})
 	cmd.PersistentFlags().StringVar(&opts.configHome, "config", "", "Alternate path to root storage directory for CLI")
 	cmd.PersistentFlags().CountVarP(&opts.verbosity, "verbose", "v", "Increase verbosity of output (use -vv for more)")
 	cmd.PersistentFlags().SortFlags = false
@@ -138,6 +144,8 @@ func RunCommand() *cobra.Command {
 	cobra.AddTemplateFunc("indent", indentBlock)
 	cobra.AddTemplateFunc("sectionHead", sectionHead)
 	cobra.AddTemplateFunc("ensureTrailingNewline", ensureTrailingNewline)
+
+	cmd.CompletionOptions.SetDefaultShellCompDirective(cobra.ShellCompDirectiveNoFileComp)
 	return cmd
 }
 

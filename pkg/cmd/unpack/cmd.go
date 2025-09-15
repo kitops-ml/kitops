@@ -162,6 +162,7 @@ func UnpackCommand() *cobra.Command {
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
+	cmd.CompletionOptions.SetDefaultShellCompDirective(cobra.ShellCompDirectiveDefault)
 	return cmd
 }
 
