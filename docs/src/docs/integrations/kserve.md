@@ -96,3 +96,9 @@ env:
 ### AWS ECR (IRSA)
 
 If you use AWS ECR and leverage IRSA (IAM Roles for Service Accounts), set `AWS_ROLE_ARN` on the service account. KitOps will detect it and perform ECR login automatically, unless `KIT_USER` and `KIT_PASSWORD` are provided (which take precedence).
+
+### GKE Workload Identity Federation
+
+The KitOps KServe container also supports GKE login via Workload Identity Federation. To enable this feature, set the `GCP_WIF` environment variable to `true` and specify the `GCP_GAR_LOCATION` to indicate the location of your Google Artifact Registry (GAR) repository (for example, `europe` or `europe-west3`).
+
+When these variables are set, KitOps will use Workload Identity Federation to authenticate with GKE—unless you provide `KIT_USER` and `KIT_PASSWORD`, which always take precedence.
