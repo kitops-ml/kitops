@@ -173,11 +173,17 @@ Start development server (experimental)
 
 Start development server (experimental) from a modelkit
 
-Start a development server for an unpacked modelkit, using a context directory
-that includes the model and a kitfile.
+Start a development server for a modelkit. You can provide either:
+- A directory path containing an unpacked modelkit with a Kitfile
+- A ModelKit reference in the format registry/repository[:tag|@digest] 
+  (e.g., myrepo/my-model:latest) which will be automatically extracted 
+  to a temporary directory
+
+When using a ModelKit reference, only the model components are extracted
+to optimize startup time.
 
 ```
-kit dev start <directory> [flags]
+kit dev start [directory|registry/repository[:tag|@digest]] [flags]
 ```
 
 ### Examples
@@ -188,15 +194,27 @@ kit dev start
 
 # Serve the modelkit in ./my-model on port 8080
 kit dev start ./my-model --port 8080
+
+# Serve a ModelKit reference from local storage or registry
+kit dev start myrepo/my-model:latest
+
+# Serve a specific model with custom host and port
+kit dev start registry.example.com/models/llama2:7b --host 0.0.0.0 --port 8080
 ```
 
 ### Options
 
 ```
-  -f, --file string   Path to the kitfile
-      --host string   Host for the development server (default "127.0.0.1")
-      --port int      Port for development server to listen on
-  -h, --help          help for start
+  -f, --file string       Path to the kitfile
+      --host string       Host for the development server (default "127.0.0.1")
+      --port int          Port for development server to listen on
+      --plain-http        Use plain HTTP when connecting to remote registries
+      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
+      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string      Proxy to use for connections (overrides proxy set by environment)
+  -h, --help              help for start
 ```
 
 ### Options inherited from parent commands
