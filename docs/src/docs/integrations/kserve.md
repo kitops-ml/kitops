@@ -3,13 +3,13 @@ description: Learn how to integrate KitOps ModelKits with KServe using a Cluster
 ---
 # Integrating KitOps with KServe
 
-ModelKits let you treat your model as a first‑class, OCI‑versioned artifact with rich metadata and strong supply‑chain guarantees—while [KServe](https://kserve.github.io/website/master/) handles the runtime plumbing for scalable, pluggable inference. The result is a secure, reproducible, and operationally streamlined path from model build to model serving.
+ModelKits let you treat your model as a first‑class, OCI‑versioned artifact with rich metadata and strong supply‑chain guarantees—while [KServe](https://kserve.github.io/website/) handles the runtime plumbing for scalable, pluggable inference. The result is a secure, reproducible, and operationally streamlined path from model build to model serving.
 
-KitOps can be used as a `ClusterStorageContainer` in [KServe](https://kserve.github.io/website/master/) to serve ModelKits directly in InferenceServices. This guide shows how to install, configure, and build the KitOps container for KServe.
+KitOps can be used as a `ClusterStorageContainer` in [KServe](https://kserve.github.io/website/) to serve ModelKits directly in InferenceServices. This guide shows how to install, configure, and build the KitOps container for KServe.
 
 ## Prerequisites
 
-- A Kubernetes cluster with [KServe](https://kserve.github.io/website/master/) installed.
+- A Kubernetes cluster with [KServe](https://kserve.github.io/website/) installed.
 - `kubectl` configured to access your cluster.
 - A built KitOps KServe image (for example, `ghcr.io/kitops-ml/kitops-kserve:latest`).
 

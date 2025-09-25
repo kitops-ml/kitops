@@ -1,6 +1,6 @@
 # KitOps ClusterStorageContainer Image for KServe
 
-This directory’s Dockerfile builds an image that runs as a `ClusterStorageContainer` for [KServe](https://kserve.github.io/website/master/).
+This directory’s Dockerfile builds an image that runs as a `ClusterStorageContainer` for [KServe](https://kserve.github.io/website/).
 
 ## Installing
 
@@ -121,4 +121,4 @@ This example uses the `Secret` kit-secret but it can be modified to inject any s
 
 ## Additional links
 
-* [KServe ClusterStorageContainer Documentation](https://kserve.github.io/website/master/modelserving/storage/storagecontainers/)
+* [KServe ClusterStorageContainer Documentation](https://kserve.github.io/website/docs/model-serving/storage/storage-containers/)
