@@ -1,0 +1,11 @@
+
+        value: {inputValue: registry_uri}
+      - name: PIPELINE_RUN_ID
+        value: {inputValue: pipeline_run_id}
+      - name: EXPERIMENT_NAME
+        value: {inputValue: experiment_name}
+      - name: KUBEFLOW_METADATA_HOST
+        value: {inputValue: kubeflow_metadata_host}
+      - name: DOCKER_CONFIG_PATH
+        value: {inputValue: docker_config_path}
+    # Add volume mounts for secrets if needed
