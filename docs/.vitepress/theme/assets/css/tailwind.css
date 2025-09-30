@@ -269,15 +269,24 @@ h4,
 }
 
 .kit-cards {
-  @apply grid grid-cols-1 lg:grid-cols-3 gap-2;
+  @apply grid grid-cols-1 lg:grid-cols-4 gap-4;
 
   &>.kit-card {
-    @apply border border-gray-02 p-8 xl:p-10;
-    @apply w-full max-w-md mx-auto;
+    @apply p-6;
+    @apply rounded-lg;
+    background-color: #222222;
+    border: 1px solid #363636;
   }
 
-  & .kit-card h4 {
-    @apply text-cornflower !font-bold;
+  & .kit-card .icon {
+    @apply size-14 flex items-center justify-center rounded-lg;
+    background-color: #222222;
+    border: 1px solid #363636;
+  }
+
+  & .kit-card code {
+    @apply font-sans!;
+    @apply text-gold;
   }
 }
 
