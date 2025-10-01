@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Vue3Marquee } from 'vue3-marquee'
 import axios from 'axios'
 import VueTurnstile from 'vue-turnstile'
+import Accordion from './Accordion.vue'
 
 const error = ref('')
 const email = ref('')
@@ -520,6 +521,88 @@ onMounted(() => {
       </div>
     </div>
   </div>
+</div>
+
+<div class="max-w-3xl mx-auto mt-32 md:mt-40 xl:mt-60 px-6 faq-section content-container">
+  <h2 class="text-center !mb-10 md:!mb-14 lg:!mb-22">fAq</h2>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Are ModelKits a versioning solution or a packaging solution?</template>
+
+    <p class="!mt-6">
+      ModelKits do both. With a ModelKit, you can package all the parts of your AI project in one shareable asset, and tag them with a version.
+      ModelKits were designed for the model development lifecycle, where projects are handed off from data science teams to application teams to deployment teams. Versioning and packaging makes it easy for team members to find the datasets and configurations that map to a specific model version.
+      You can <a href="/docs/overview/" class="underline">read more details about KitOps in our overview</a>.
+    </p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>How do I get started with Kit?</template>
+
+    <p class="!mt-6">The easiest way to get started is to follow our <a href="/docs/get-started/" class="underline">Quick Start</a>, where you’ll learn how to:</p>
+
+    <ul class="space-y-2 list-disc list-inside">
+      <li>Package up a model, notebook, and datasets into a single ModelKit you can use with your existing tools</li>
+      <li>Share the ModelKit with others through your public or private registry</li>
+      <li>Grab only the assets you need from the ModelKit for testing, integration, local running, or deployment</li>
+    </ul>
+
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Can I see if something changed between ModelKits?</template>
+
+    <p class="!mt-6">Yes [choir sings hallelujah], each ModelKit includes SHA digests for the ModelKit and every artifact it holds so you can quickly see if something changed between ModelKit versions. </p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>What are the benefits of using Kit?</template>
+
+    <p class="!mt-6">Increased speed: Teams can work faster with a centralized and versioned package for their AI project coordination. ModelKits eliminate hunting for datasets or code, and make it obvious which datasets and configurations are needed for each model. Handoffs can be automated and executed quickly and with confidence.</p>
+    <p>Reduced risk: ModelKits are self-verifying. Both the ModelKit itself and all the artifacts added to it are tamper-proof. Anyone can quickly and easily verify when something may have changed.</p>
+    <p>Improved efficiency: Models stored in ModelKits can be run locally for experimentation or application integration, or packaged for deployment with a single command. Any artifact in a ModelKit can be separately pulled saving time and space on local or shared machines. This makes it easy for data scientists, application developers, and DevOps engineers to find and grab the pieces they need to do their job without being overwhelmed with unnecessary files.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>What tools are compatible with Kit?</template>
+
+    <p class="!mt-6">ModelKits store their assets as OCI-compatible artifacts. This makes them compatible with nearly every development and deployment tool and registry in use today.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Where are ModelKits stored?</template>
+    <p class="!mt-6">ModelKits can be stored in any OCI-compliant registry - for example in a container registry like Docker Hub or Jozu Hub, or your favorite cloud vendor’s container registry, they can even be stored in an artifact repository like Artifactory.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Is KitOps open source and free to use?</template>
+
+    <p class="!mt-6">Yes, it is licensed with the Apache 2.0 license and welcomes all users and contributors. If you’re <a href="https://github.com/kitops-ml/kitops/blob/main/CONTRIBUTING.md" class="underline">interested in contributing</a>, let us know.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Are ModelKits a replacement for Docker containers?</template>
+
+    <p class="!mt-6">No, ModelKits complement containers - in fact, KitOps can take a ModelKit and generate a container for the model automatically. However, not all models should be deployed inside containers - sometimes it’s more efficient and faster to deploy an init container linked to the model for deployment. Datasets may also not need to be in containers - many datasets are easier to read and manipulate for training and validation when they’re not in a container. Finally, each container is still separate so even if you do want to put everything in its own container it’s not clear to people outside the AI project which datasets go with which models and which configurations.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Why would I use KitOps for versioning instead of Git?</template>
+
+    <p class="!mt-6">Models and datasets in AI projects are often 10s or 100s of GB in size. Git was designed to work with many small files that can be easily diff’ed between versions. Git treats models and datasets stored in LFS (large file storage) as atomic blobs and can’t differentiate between versions of them. This makes it both inefficient and dangerous since it’s easy for someone to tamper with the models and datasets in the LFS without Git knowing. Finally, once you use LFS, a clone is no longer guaranteed to be the same as the original repo, because the repo refers to an LFS server that is independent of the clone and can change independently.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>My MLOps tools do versioning, why do I need Kit?</template>
+
+    <p class="!mt-6">KitOps is the only standards-based and open source solution for packaging and versioning AI project assets. Popular MLOps tools use proprietary and often closed formats to lock you into their ecosystem. This makes handoffs between MLOps tool users and non-MLOps tool users (like your application development and DevOps teams) unnecessarily hard. The future of MLOps tools is still being written, and it’s likely that many will be acquired or shut down and the cost of moving projects from one proprietary format to another is high. By using the OCI standard that’s already supported by nearly every tool on the planet, ModelKits give you a future-proofed solution for packaging and versioning that is compatible with both your MLOps tools and development / DevOps tools so everyone can collaborate regardless of the tools they use.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Is enterprise support available for Kit?</template>
+
+    <p class="!mt-6">Enterprise support for ModelKits and the Kit CLI is available from <a href="https://www.jozu.com/" class="underline" target="_blank">Jozu</a>.</p>
+  </Accordion>
 </div>
 
 <div class="bg-black/20 py-18 mt-32">
