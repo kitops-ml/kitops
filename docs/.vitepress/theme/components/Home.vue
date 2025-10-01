@@ -64,7 +64,7 @@ onMounted(() => {
 <template>
 <div class="mt-32 md:mt-40 px-6 md:px-12 text-center content-container">
   <div class="relative">
-    <div class="bg-radial from-[--alpha(var(--color-gold)/30%)] via-[--alpha(#996931/5%)] to-transparent from-0% to-60% absolute size-160 top-1/2 left-1/2 -translate-1/2"></div>
+    <div class="bg-radial from-[--alpha(var(--color-gold)/30%)] via-[--alpha(#996931/5%)] to-transparent from-0% to-60% absolute size-full lg:size-160 top-1/2 left-1/2 -translate-1/2"></div>
     <h1 class="z-0 relative mt-4! font-medium!">The Enterprise Model Registry <br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">for Secure AI</span></h1>
     <h2 class="z-0 relative font-bold! font-sans! text-3xl! my-6!">Secure. Portable. No Lock‑In.</h2>
     <p class="z-0 relative h4 font-normal! text-off-white!">The only model registry that works anywhere containers run — from public cloud to the most locked‑down air‑gapped environments.</p>
