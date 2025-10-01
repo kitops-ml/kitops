@@ -154,7 +154,12 @@ onMounted(() => {
   <iframe width="1050" class="border-16 border-[--alpha(#2c2c2c/20%)] rounded-xl max-w-full aspect-video mt-22 mx-auto" src="https://www.youtube.com/embed/iK9mnU0prRU?si=ommsLD32Kjj4RUMu&amp;autoplay=0" title="YouTube video player" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
   <div class="mt-16">
-    <a href="#" class="px-4 py-2.5 rounded-lg bg-[#FFB052] hocus:opacity-50 text-black!">Enterprise Support for KitOps</a>
+    <a href="https://jozu.com/kitops-modelpack-support" target="_blank" class="px-4 py-2.5 rounded-lg inline-flex items-center gap-2.5 bg-[#FFB052] hocus:opacity-50 text-black!">
+      Enterprise Support for KitOps
+      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
+        <path d="M15.7625 2.20004H16.5125V11.2H15.0125V4.75942L5.79375 13.9782L5.2625 14.5094L4.20312 13.45L4.73438 12.9188L13.9531 3.70004H7.5125V2.20004H15.7625Z" fill="black"/>
+      </svg>
+    </a>
   </div>
 </div>
 
@@ -238,7 +243,12 @@ onMounted(() => {
   </div>
 
   <div class="text-center mt-16">
-    <a href="#" class="bg-white rounded-lg text-black! px-4 py-2.5">Start free</a>
+    <a href="/docs/get-started/" class="bg-white rounded-lg text-black! px-4 py-2.5 inline-flex items-center gap-2.5">
+      Get started
+      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
+        <path d="M15.7625 2.20004H16.5125V11.2H15.0125V4.75942L5.79375 13.9782L5.2625 14.5094L4.20312 13.45L4.73438 12.9188L13.9531 3.70004H7.5125V2.20004H15.7625Z" fill="black"/>
+      </svg>
+    </a>
   </div>
 </div>
 
@@ -335,16 +345,7 @@ onMounted(() => {
   <div class="max-w-2xl mx-auto p1 space-y-8! mt-8 text-center text-[#B8B8B8]!">
     <p>Enterprise AI teams face three problems with traditional model registries: security gaps, vendor lock‑in, and deployment friction. KitOps solves them all.</p>
     <p>Unlike proprietary registries that trap you in closed ecosystems, KitOps stores models, datasets, code, and configs as OCI artifacts in your container registries — Docker Hub, ECR, GCR, Harbor, Artifactory, and beyond.</p>
-    <p>With 100,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on security, compliance, or uptime.</p>
-  </div>
-
-  <div class="mt-8 p2 text-center">
-    <a href="/docs/use-cases/" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
-      Learn More
-      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-        <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="#FFAF52"/>
-      </svg>
-    </a>
+    <p>With 150,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on security, compliance, or uptime.</p>
   </div>
 </div>
 
@@ -381,15 +382,6 @@ onMounted(() => {
         <li class="pl-3 text-[#B8B8B8]!">Security That Moves at CI/CD Speed</li>
       </ul>
     </div>
-  </div>
-
-  <div class="mt-8 p2 text-center">
-    <a href="/docs/use-cases/" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
-      Learn More
-      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-        <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="#FFAF52"/>
-      </svg>
-    </a>
   </div>
 </div>
 
@@ -474,15 +466,6 @@ onMounted(() => {
       </div>
     </div>
   </div>
-
-  <div class="mt-8 p2 text-center">
-    <a href="/docs/use-cases/" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
-      Learn More
-      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-        <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="#FFAF52"/>
-      </svg>
-    </a>
-  </div>
 </div>
 
 <div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 content-container">
@@ -559,14 +542,8 @@ onMounted(() => {
 
     <p class="my-8! p1">Production-ready support from the creators and maintainers of the industry's leading open source AI/ML packaging standards</p>
 
-    <div class="flex items-center justify-center gap-3">
-      <a href="#" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
-        Learn More
-        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-          <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="#FFAF52"/>
-        </svg>
-      </a>
-      <a href="#" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
+    <div class="flex items-center justify-center">
+      <a href="https://jozu.com/pricing" target="_blank" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
         See Support Plans
         <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
           <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="#FFAF52"/>
@@ -601,23 +578,6 @@ onMounted(() => {
   &:focus {
     border-color: var(--color-gold);
     outline: none !important;
-  }
-}
-
-.quote-bg {
-  background-image: url("data:image/svg+xml,%3Csvg width='30' height='23' viewBox='0 0 30 23' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0.0875627 15.504C0.0875627 14.4 0.375563 13.32 0.951563 12.264V12.192L7.57556 0.887997H10.5996L5.84756 9.024L6.63956 8.952C8.41556 8.952 9.92756 9.6 11.1756 10.896C12.4716 12.144 13.1196 13.68 13.1196 15.504C13.1196 17.328 12.4716 18.888 11.1756 20.184C9.92756 21.432 8.41556 22.056 6.63956 22.056C4.81556 22.056 3.25556 21.432 1.95956 20.184C0.711563 18.888 0.0875627 17.328 0.0875627 15.504ZM23.4156 8.952C25.2396 8.952 26.7756 9.6 28.0236 10.896C29.3196 12.144 29.9676 13.68 29.9676 15.504C29.9676 17.28 29.3196 18.816 28.0236 20.112C26.7756 21.408 25.2396 22.056 23.4156 22.056C21.6396 22.056 20.1036 21.408 18.8076 20.112C17.5116 18.816 16.8636 17.28 16.8636 15.504C16.8636 14.352 17.1756 13.272 17.7996 12.264V12.192L24.3516 0.887997H27.4476L22.6956 9.024L23.4156 8.952Z' fill='%23FFAF52'/%3E%3C/svg%3E%0A");
-  background-position: 40px 40px;
-  background-repeat: no-repeat;
-}
-
-.quotes-container {
-  transform: v-bind(quotesOffsetMobile);
-}
-
-/* screen(md) */
-@media screen and (min-width: 768px) {
-  .quotes-container {
-    transform: v-bind(quotesOffsetDesktop);
   }
 }
 </style>
