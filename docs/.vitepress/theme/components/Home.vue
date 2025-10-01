@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { isClient } from '@vueuse/core'
 import { ref, computed, onMounted } from 'vue'
 import { Vue3Marquee } from 'vue3-marquee'
-import Accordion from './Accordion.vue'
-import vGaTrack from '../directives/ga'
 import axios from 'axios'
 import VueTurnstile from 'vue-turnstile'
 
@@ -15,51 +12,6 @@ const isBusy = ref(false)
 const isSubscribed = ref(false)
 const isSuccess = ref(false)
 const isProd = import.meta.env.PROD
-
-const activeQuote = ref(0)
-const quotes = [
-  {
-    text: `When you start producing many models, you need to have a way to store them, track where they are deployed,
-      on what data they were trained on, which version of the runtime (if any) they are compatible with, and so on.
-      It's inevitable for any company dealing with data science projects.`,
-    authorName: 'Marco',
-    authorTitle: 'Data Scientist',
-    authorCompany: 'Orobix',
-  },
-  {
-    text: `The whole idea [of KitOps] is awesome... the development process used to be a struggle.
-      By creating a middle ground between Devs and Data Scientists, you brought both sides together.`,
-    authorName: 'Paulo',
-    authorTitle: 'Data Engineer',
-    authorCompany: 'Zwift',
-  },
-  {
-    text: `Currently we have a system that resembles half-MLOps but lacks data versioning tied to model versioning and
-      configurations, and makes it difficult to deploy and keep track [of AI projects]`,
-    authorName: 'Majid',
-    authorTitle: 'Data Scientist',
-    authorCompany: 'Siemens',
-  },
-  {
-    text: `As we have an open source first policy we are forced to go with tools like MLflow.
-      But I really don’t like their 'opinionated' approach to how practitioners should log artifacts.
-      I like the idea of using existing best practices in the MLOps space.`,
-    authorName: 'Niklas',
-    authorTitle: 'MLOps Engineer',
-    authorCompany: 'Bundesdruckerei',
-  },
-]
-
-const quotesOffsetMobile = computed(() => {
-  if (isClient) {
-    return `translateX(${(activeQuote.value * window.innerWidth - (activeQuote.value * 6)) * -1}px)`
-  }
-
-  return `translateX(0)`
-})
-
-// current quote * card width + margin + half card)
-const quotesOffsetDesktop = computed(() => `translateX(${((activeQuote.value * 664 + 16) + 332) * -1}px)`)
 
 const subscribeToNewsletter = async () => {
   isBusy.value = true
@@ -114,7 +66,7 @@ onMounted(() => {
     <div class="bg-radial from-[--alpha(var(--color-gold)/30%)] via-[--alpha(#996931/5%)] to-transparent from-0% to-60% absolute size-160 top-1/2 left-1/2 -translate-1/2"></div>
     <h1 class="z-0 relative mt-4! font-medium!">The Enterprise Model Registry <br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">for Secure AI</span></h1>
     <h2 class="z-0 relative font-bold! font-sans! text-3xl! my-6!">Secure. Portable. No Lock‑In.</h2>
-    <p class="z-0 relative h4 font-normal! text-off-white!">The o/nly model registry that works anywhere containers run — from public cloud to the most locked‑down air‑gapped environments.</p>
+    <p class="z-0 relative h4 font-normal! text-off-white!">The only model registry that works anywhere containers run — from public cloud to the most locked‑down air‑gapped environments.</p>
   </div>
 
   <div class="flex flex-col lg:flex-row justify-center items-center gap-10 mt-10 md:mt-14 xl:mt-22">
@@ -381,7 +333,7 @@ onMounted(() => {
   </div>
   <h2 class="text-center font-heading!">Why the Standard Matters</h2>
   <div class="max-w-2xl mx-auto p1 space-y-8! mt-8 text-center text-[#B8B8B8]!">
-    <p>Enterprise AI teams face three problems with traditional model registries: security gaps, vendor lock‑in, and deployment friction.KitOps solves them all.</p>
+    <p>Enterprise AI teams face three problems with traditional model registries: security gaps, vendor lock‑in, and deployment friction. KitOps solves them all.</p>
     <p>Unlike proprietary registries that trap you in closed ecosystems, KitOps stores models, datasets, code, and configs as OCI artifacts in your container registries — Docker Hub, ECR, GCR, Harbor, Artifactory, and beyond.</p>
     <p>With 100,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on security, compliance, or uptime.</p>
   </div>
