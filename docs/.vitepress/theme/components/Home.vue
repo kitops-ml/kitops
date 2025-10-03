@@ -144,9 +144,9 @@ onMounted(() => {
   </div>
 </div>
 
-<div id="howdoesitwork" class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 text-center max-w-[1152px] content-container">
+<div class="my-32 md:my-40 xl:my-60 px-6 md:px-12 text-center max-w-[1152px] content-container">
   <h2>Why Kitops exists</h2>
-  <div class="p1 space-y-8! mt-8 max-w-lg mx-auto">
+  <div class="p1 space-y-8! mt-8 max-w-4xl mx-auto">
     <p>Enterprise AI teams face three problems with traditional model registries: <strong>security gaps, vendor lock‑in, and deployment friction</strong>.<br>KitOps solves them all.</p>
     <p>Unlike proprietary registries that trap you in closed ecosystems, KitOps stores models, datasets, code, and configs as OCI artifacts in <strong>your</strong> container registries — Docker Hub, ECR, GCR, Harbor, Artifactory, and beyond.</p>
     <p>With 100,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on <strong>security, compliance, or uptime</strong>.</p>
@@ -155,10 +155,10 @@ onMounted(() => {
   <iframe width="1050" class="border-16 border-[--alpha(#2c2c2c/20%)] rounded-xl max-w-full aspect-video mt-22 mx-auto" src="https://www.youtube.com/embed/iK9mnU0prRU?si=ommsLD32Kjj4RUMu&amp;autoplay=0" title="YouTube video player" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
   <div class="mt-16">
-    <a href="https://jozu.com/kitops-modelpack-support" target="_blank" class="px-4 py-2.5 rounded-lg inline-flex items-center gap-2.5 bg-[#FFB052] hocus:opacity-50 text-black!">
+    <a href="https://jozu.com/kitops-modelpack-support" target="_blank" class="kit-button inline-flex! items-center gap-2.5">
       Enterprise Support for KitOps
       <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-        <path d="M15.7625 2.20004H16.5125V11.2H15.0125V4.75942L5.79375 13.9782L5.2625 14.5094L4.20312 13.45L4.73438 12.9188L13.9531 3.70004H7.5125V2.20004H15.7625Z" fill="black"/>
+        <path d="M15.7625 2.20004H16.5125V11.2H15.0125V4.75942L5.79375 13.9782L5.2625 14.5094L4.20312 13.45L4.73438 12.9188L13.9531 3.70004H7.5125V2.20004H15.7625Z" fill="currentColor"/>
       </svg>
     </a>
   </div>
@@ -244,10 +244,10 @@ onMounted(() => {
   </div>
 
   <div class="text-center mt-16">
-    <a href="/docs/get-started/" class="bg-white rounded-lg text-black! px-4 py-2.5 inline-flex items-center gap-2.5">
+    <a href="/docs/get-started/" class="kit-button inline-flex! items-center gap-2.5">
       Get started
       <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-        <path d="M15.7625 2.20004H16.5125V11.2H15.0125V4.75942L5.79375 13.9782L5.2625 14.5094L4.20312 13.45L4.73438 12.9188L13.9531 3.70004H7.5125V2.20004H15.7625Z" fill="black"/>
+        <path d="M15.7625 2.20004H16.5125V11.2H15.0125V4.75942L5.79375 13.9782L5.2625 14.5094L4.20312 13.45L4.73438 12.9188L13.9531 3.70004H7.5125V2.20004H15.7625Z" fill="currentColor"/>
       </svg>
     </a>
   </div>
@@ -340,47 +340,35 @@ onMounted(() => {
 
 <div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 content-container">
   <div class="text-center mb-6">
-    <div class="inline-block p-2.5 rounded-lg border-2 border-gold text-gold bg-[--alpha(var(--color-gold)/40%)] uppercase font-bold">MISSION</div>
-  </div>
-  <h2 class="text-center font-heading!">Why the Standard Matters</h2>
-  <div class="max-w-2xl mx-auto p1 space-y-8! mt-8 text-center text-[#B8B8B8]!">
-    <p>Enterprise AI teams face three problems with traditional model registries: security gaps, vendor lock‑in, and deployment friction. KitOps solves them all.</p>
-    <p>Unlike proprietary registries that trap you in closed ecosystems, KitOps stores models, datasets, code, and configs as OCI artifacts in your container registries — Docker Hub, ECR, GCR, Harbor, Artifactory, and beyond.</p>
-    <p>With 150,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on security, compliance, or uptime.</p>
-  </div>
-</div>
-
-<div class="mt-32 md:mt-40 xl:mt-60 px-6 md:px-12 content-container">
-  <div class="text-center mb-6">
     <div class="inline-block p-2.5 rounded-lg border-2 border-gold text-gold bg-[--alpha(var(--color-gold)/40%)] uppercase font-bold">THE ENGINEERS CHOICE</div>
   </div>
   <h2 class="text-center font-heading!">Built for Engineers Who Demand Trust</h2>
 
   <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-3 gap-3">
     <div>
-      <div class="p2 text-gold!">Proof / Momentum Focused</div>
+      <div class="p2 text-gold!">Momentum Focused</div>
       <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]!">Engineered for Adoption, Trusted in Production</li>
-        <li class="pl-3 text-[#B8B8B8]!">The Standard Engineers Rely On</li>
-        <li class="pl-3 text-[#B8B8B8]!">Why Teams Ship with KitOps</li>
+        <li class="pl-3 text-[#B8B8B8]!">Trusted in production</li>
+        <li class="pl-3 text-[#B8B8B8]!">Relied on by Enterprise teams</li>
+        <li class="pl-3 text-[#B8B8B8]!">Engineered for adoption</li>
       </ul>
     </div>
 
     <div>
       <div class="p2 text-gold! xs:mt-12">Trust & Security Focused</div>
       <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]!">Built for Engineers Who Demand Trust</li>
-        <li class="pl-3 text-[#B8B8B8]!">The Secure Choice for Modern AI</li>
-        <li class="pl-3 text-[#B8B8B8]!">Security by Design, Not by Accident</li>
+        <li class="pl-3 text-[#B8B8B8]!">Built to meet proven standards</li>
+        <li class="pl-3 text-[#B8B8B8]!">Designed for air-gapped environments</li>
+        <li class="pl-3 text-[#B8B8B8]!">Security by default</li>
       </ul>
     </div>
 
     <div>
       <div class="p2 text-gold! xs:mt-12">Integration & Workflow Focused</div>
       <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]!">Seamless Security, Native to Your Stack</li>
-        <li class="pl-3 text-[#B8B8B8]!">Fits Where You Work, Scales How You Build</li>
-        <li class="pl-3 text-[#B8B8B8]!">Security That Moves at CI/CD Speed</li>
+        <li class="pl-3 text-[#B8B8B8]!">Native to your stack</li>
+        <li class="pl-3 text-[#B8B8B8]!">Works at enterprise scale</li>
+        <li class="pl-3 text-[#B8B8B8]!">Moves at CI/CD speed</li>
       </ul>
     </div>
   </div>
@@ -481,7 +469,7 @@ onMounted(() => {
       </div>
       <div class="mt-8 flex flex-col flex-1 p2">
         <p>Install the KitOps CLI</p>
-        <code>Brew install KitOps</code>
+        <code class="text-base mt-3">brew install KitOps</code>
       </div>
     </div>
 
@@ -493,7 +481,7 @@ onMounted(() => {
       </div>
       <div class="mt-8 flex flex-col flex-1 p2">
         <p>Package Your First Model</p>
-        <code>Kit pack . -t myregistry.com/my-model:latest</code>
+        <code class="text-base mt-3">kit pack . -t myregistry.com/my-model:latest</code>
       </div>
     </div>
 
@@ -505,7 +493,7 @@ onMounted(() => {
       </div>
       <div class="mt-8 flex flex-col flex-1 p2">
         <p>Store in Your Registry</p>
-        <code>Kit push myregistry.com/my-model:latest</code>
+        <code class="text-base mt-3">kit push myregistry.com/my-model:latest</code>
       </div>
     </div>
 
@@ -517,7 +505,7 @@ onMounted(() => {
       </div>
       <div class="mt-8 flex flex-col flex-1 p2">
         <p>Deploy Anywhere</p>
-        <code>Kit unpack myregistry.com/my-model:latest --model</code>
+        <code class="text-base mt-3">kit unpack myregistry.com/my-model:latest --model</code>
       </div>
     </div>
   </div>
@@ -626,10 +614,10 @@ onMounted(() => {
     <p class="my-8! p1">Production-ready support from the creators and maintainers of the industry's leading open source AI/ML packaging standards</p>
 
     <div class="flex items-center justify-center">
-      <a href="https://jozu.com/pricing" target="_blank" class="text-[#B8B8B8] px-4 py-3 inline-flex items-center gap-2.5 rounded-lg bg-[#141414] border border-[#363636]">
+      <a href="https://jozu.com/pricing" target="_blank" class="kit-button inline-flex! items-center gap-2.5">
         See Support Plans
         <svg xmlns="http://www.w3.org/2000/svg" width="21" height="17" viewBox="0 0 21 17" fill="none">
-          <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="#FFAF52"/>
+          <path d="M18.2156 9.48618L18.9219 8.77993L18.2156 8.07368L13.2156 3.07368L12.5094 2.36743L11.0938 3.78306C11.1344 3.82368 12.4688 5.15806 15.0938 7.78306H2.50938V9.78306H15.0938C12.4688 12.4081 11.1344 13.7424 11.0938 13.7831L12.5094 15.1987L13.2156 14.4924L18.2156 9.49243V9.48618Z" fill="currentColor"/>
         </svg>
       </a>
     </div>

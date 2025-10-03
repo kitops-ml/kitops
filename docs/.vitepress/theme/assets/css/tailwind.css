@@ -285,7 +285,7 @@ h4,
   }
 
   & .kit-card code {
-    @apply font-sans!;
+    @apply font-mono!;
     @apply text-gold;
   }
 }
