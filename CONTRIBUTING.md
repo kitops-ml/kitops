@@ -3,6 +3,7 @@
 * [Ways to Contribute](#ways-to-contribute)
 * [Development Environment Setup](#development-environment-setup)
 * [Pull Request Lifecycle](#pull-request-lifecycle)
+* [AI-Assisted Contributions](#ai-assisted-contributions)
 * [Sign Your Commits](#sign-your-commits)
 * [Ask for Help](#ask-for-help)
 
@@ -77,6 +78,34 @@ If you think there's something else you can help with please contact us in the [
 ## Pull Request Lifecycle
 
 Pull requests are often called a "PR". KitOps generally follows the standard [GitHub pull request process](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests).
+
+## AI-Assisted Contributions
+
+We welcome the use of AI coding assistants (GitHub Copilot, Claude, ChatGPT, etc.) to help write code, documentation, and tests. However, you are fully responsible for reviewing and understanding all AI-generated code before submitting it.
+
+### Requirements for AI-Assisted PRs
+
+* **Review everything**: Read every line of AI-generated code. Understand what it does and why.
+* **Test thoroughly**: AI can generate plausible-looking code that doesn't work or has subtle bugs. Run tests and verify behavior.
+* **Remove AI artifacts**: Delete verbose comments, unnecessary explanations, or boilerplate that AI tends to add.
+* **Check for hallucinations**: AI models can invent APIs, packages, or patterns that don't exist. Verify all imports and function calls.
+* **Attest in your PR**: Use the AI-Assisted Code checklist in the PR template to acknowledge your review.
+
+### What Reviewers Look For
+
+Maintainers will be alert to common AI-generated code patterns:
+
+* Overly defensive error handling or excessive nil checks
+* Verbose or redundant comments explaining obvious operations
+* Cargo-culted patterns that don't fit our codebase conventions
+* Inconsistent style mixing modern and legacy approaches
+* Test cases that pass but don't actually validate behavior
+
+If a PR shows signs of unreviewed AI output, we'll reject it with feedback. This isn't punitive. It's about maintaining code quality and helping you learn to use AI tools effectively.
+
+### Small PRs Principle
+
+Keep PRs focused and reasonably sized. Smaller changes are easier to review (for both you and maintainers) and make it obvious when AI has generated too much code. If your AI assistant wants to refactor multiple files, split it into separate PRs.
 
 ## Code Reviews
 
