@@ -131,14 +131,11 @@ func removeModel(ctx context.Context, opts *removeOptions) error {
 }
 
 func removeRemoteModel(ctx context.Context, opts *removeOptions) error {
-	registry, err := remote.NewRegistry(opts.modelRef.Registry, &opts.NetworkOptions)
+	repository, err := remote.NewRepository(ctx, opts.modelRef.Registry, opts.modelRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return err
 	}
-	repository, err := registry.Repository(ctx, opts.modelRef.Repository)
-	if err != nil {
-		return err
-	}
+
 	desc, err := repository.Resolve(ctx, opts.modelRef.Reference)
 	if err != nil {
 		if errors.Is(err, errdef.ErrNotFound) {
@@ -146,6 +143,7 @@ func removeRemoteModel(ctx context.Context, opts *removeOptions) error {
 		}
 		return fmt.Errorf("error resolving modelkit: %w", err)
 	}
+
 	if err := repository.Delete(ctx, desc); err != nil {
 		if errResp, ok := err.(*errcode.ErrorResponse); ok && errResp.StatusCode == http.StatusMethodNotAllowed {
 			return fmt.Errorf("removing models is unsupported by registry %s", opts.modelRef.Registry)

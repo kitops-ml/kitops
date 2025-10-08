@@ -86,11 +86,7 @@ func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.De
 }
 
 func pullModel(ctx context.Context, localRepo local.LocalRepo, opts *pullOptions) (ocispec.Descriptor, error) {
-	remoteRegistry, err := remote.NewRegistry(opts.modelRef.Registry, &opts.NetworkOptions)
-	if err != nil {
-		return ocispec.DescriptorEmptyJSON, fmt.Errorf("could not resolve registry: %w", err)
-	}
-	repo, err := remoteRegistry.Repository(ctx, opts.modelRef.Repository)
+	repo, err := remote.NewRepository(ctx, opts.modelRef.Registry, opts.modelRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to read repository: %w", err)
 	}
