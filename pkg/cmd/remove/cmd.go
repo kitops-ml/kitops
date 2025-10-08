@@ -83,8 +83,8 @@ func (opts *removeOptions) complete(ctx context.Context, args []string) error {
 		opts.extraTags = extraTags
 	}
 
-	if opts.remote && (opts.forceDelete || opts.removeAll) {
-		return fmt.Errorf("cannot use --all or --force with --remote")
+	if opts.remote && opts.removeAll {
+		return fmt.Errorf("cannot use --all with --remote")
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {

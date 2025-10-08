@@ -42,6 +42,31 @@ type Repository struct {
 	Client    remote.Client
 }
 
+func (r *Repository) Untag(ctx context.Context, reference string) error {
+	if err := r.Reference.ValidateReferenceAsDigest(); err == nil {
+		return fmt.Errorf("cannot untag using digest")
+	}
+	ctx = auth.AppendRepositoryScope(ctx, r.Reference, auth.ActionPull, auth.ActionDelete)
+	apiURL := buildRepositoryManifestsURL(r.PlainHttp, r.Reference, reference)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, apiURL, nil)
+	if err != nil {
+		return fmt.Errorf("error generating request: %w", err)
+	}
+	resp, err := r.client().Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to untag: %w", err)
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusBadRequest, http.StatusMethodNotAllowed:
+		return fmt.Errorf("remote registry does not support untagging")
+	case http.StatusAccepted:
+		return nil
+	default:
+		return fmt.Errorf("unexpected response code from remote registry: %s", resp.Status)
+	}
+}
+
 // Push pushes the content, matching the expected descriptor.
 func (r *Repository) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
 	if expected.MediaType == ocispec.MediaTypeImageManifest {
@@ -287,4 +312,12 @@ func buildRepositoryBlobUploadURL(plainHTTP bool, ref registry.Reference) string
 		scheme = "http"
 	}
 	return fmt.Sprintf("%s://%s/v2/%s/blobs/uploads/", scheme, ref.Host(), ref.Repository)
+}
+
+func buildRepositoryManifestsURL(plainHTTP bool, registryRef registry.Reference, manifestRef string) string {
+	scheme := "https"
+	if plainHTTP {
+		scheme = "http"
+	}
+	return fmt.Sprintf("%s://%s/v2/%s/manifests/%s", scheme, registryRef.Host(), registryRef.Repository, manifestRef)
 }
