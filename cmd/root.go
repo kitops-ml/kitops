@@ -104,7 +104,7 @@ func RunCommand() *cobra.Command {
 			cache.SetCacheHome(constants.CachePath(configHome))
 			cmd.SetContext(ctx)
 
-			update.CheckForUpdate(configHome)
+			update.CheckForUpdate(configHome, cmd.CalledAs())
 
 			// At this point, we've parsed the command tree and args; the CLI is being correctly
 			// so we don't want to print usage. Each subcommand should print its error message before

@@ -35,7 +35,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const releaseUrl = "https://api.github.com/repos/kitops-ml/kitops/releases/latest"
+const versionCheckUrl = "https://kitops.org/version"
 
 // Regexp for a semver version -- taken from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 // We've added an optional 'v' to the start (e.g. v1.2.3) since using a 'v' prefix is common (and used, in our case)
@@ -55,7 +55,7 @@ type ghReleaseInfo struct {
 	Url        string `json:"html_url"`
 }
 
-func CheckForUpdate(configHome string) {
+func CheckForUpdate(configHome, command string) {
 	// If this isn't a release version of kit, don't nag the user unnecessarily
 	if constants.Version == "unknown" || !versionTagRegexp.MatchString(constants.Version) {
 		return
@@ -64,7 +64,7 @@ func CheckForUpdate(configHome string) {
 		return
 	}
 
-	info, err := getLatestReleaseInfo()
+	info, err := getLatestReleaseInfo(command)
 	if err != nil {
 		output.Debugf("Error checking for CLI updates: %s", err)
 		return
@@ -116,11 +116,18 @@ func shouldShowNotification(configHome string) bool {
 	return false
 }
 
-func getLatestReleaseInfo() (*ghReleaseInfo, error) {
+func getLatestReleaseInfo(command string) (*ghReleaseInfo, error) {
 	client := &http.Client{
 		Timeout: 1 * time.Second,
 	}
-	resp, err := client.Get(releaseUrl)
+	req, err := http.NewRequest(http.MethodGet, versionCheckUrl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error while generating HTTP request: %w", err)
+	}
+	req.Header.Set("User-Agent", "kitops-cli/"+constants.Version)
+	req.Header.Set("X-Command", command)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for updates: %w", err)
 	}
