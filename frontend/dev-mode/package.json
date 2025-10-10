@@ -16,7 +16,7 @@
     "@vueuse/components": "^10.9.0",
     "just-use-native-fetch": "^1.0.0",
     "markdown-it": "^14.1.0",
-    "vue": "^3.4.21",
+    "vue": "^3.5.21",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
