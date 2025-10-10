@@ -17,7 +17,7 @@
     "just-use-native-fetch": "^1.0.0",
     "markdown-it": "^14.1.0",
     "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@iconify-json/ri": "^1.1.20",
