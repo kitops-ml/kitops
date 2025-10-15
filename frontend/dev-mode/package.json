@@ -40,5 +40,6 @@
     "vite": "^5.2.8",
     "vite-plugin-dynamic-import": "^1.6.0",
     "vue-tsc": "^2.0.12"
-  }
+  },
+  "packageManager": "pnpm@10.12.4"
 }
