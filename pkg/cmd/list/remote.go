@@ -29,12 +29,7 @@ import (
 )
 
 func listRemoteKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) {
-	remoteRegistry, err := remote.NewRegistry(opts.remoteRef.Registry, &opts.NetworkOptions)
-	if err != nil {
-		return nil, fmt.Errorf("could not resolve registry %s: %w", opts.remoteRef.Registry, err)
-	}
-
-	repo, err := remoteRegistry.Repository(ctx, opts.remoteRef.Repository)
+	repo, err := remote.NewRepository(ctx, opts.remoteRef.Registry, opts.remoteRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read repository: %w", err)
 	}

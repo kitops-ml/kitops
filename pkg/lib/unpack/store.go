@@ -47,12 +47,7 @@ func getStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, erro
 		return nil, fmt.Errorf("not found")
 	}
 	// Not in local storage, check remote
-	remoteRegistry, err := remote.NewRegistry(opts.ModelRef.Registry, &opts.NetworkOptions)
-	if err != nil {
-		return nil, fmt.Errorf("could not resolve registry %s: %w", opts.ModelRef.Registry, err)
-	}
-
-	repo, err := remoteRegistry.Repository(ctx, opts.ModelRef.Repository)
+	repo, err := remote.NewRepository(ctx, opts.ModelRef.Registry, opts.ModelRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve repository %s in registry %s", opts.ModelRef.Repository, opts.ModelRef.Registry)
 	}
