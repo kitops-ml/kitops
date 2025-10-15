@@ -71,5 +71,8 @@ func untagRemoteModel(ctx context.Context, tag string, repo registry.Repository)
 	if !ok {
 		return fmt.Errorf("remote repository implementation does not support untagging ModelKits")
 	}
-	return untaggerRepo.Untag(ctx, tag)
+	if err := untaggerRepo.Untag(ctx, tag); err != nil {
+		return fmt.Errorf("failed to untag ModelKit in remote: %w", err)
+	}
+	return nil
 }

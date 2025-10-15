@@ -60,6 +60,8 @@ func (r *Repository) Untag(ctx context.Context, reference string) error {
 	switch resp.StatusCode {
 	case http.StatusBadRequest, http.StatusMethodNotAllowed:
 		return fmt.Errorf("remote registry does not support untagging")
+	case http.StatusNotFound:
+		return fmt.Errorf("reference %s not found in remote registry", reference)
 	case http.StatusAccepted:
 		return nil
 	default:
