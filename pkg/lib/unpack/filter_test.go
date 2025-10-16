@@ -19,6 +19,7 @@ package unpack
 import (
 	"testing"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,29 +30,29 @@ func TestParseFilter_EdgeCases(t *testing.T) {
 		filter          string
 		expectError     bool
 		errorContains   string
-		expectedTypes   []string
+		expectedTypes   []mediatype.BaseType
 		expectedFilters []string
 	}{
 		{
 			name:          "simple model filter",
 			filter:        "model",
-			expectedTypes: []string{"model"},
+			expectedTypes: []mediatype.BaseType{mediatype.ModelBaseType},
 		},
 		{
 			name:            "model with specific filters",
 			filter:          "model:llama-7b,gpt-3",
-			expectedTypes:   []string{"model"},
+			expectedTypes:   []mediatype.BaseType{mediatype.ModelBaseType},
 			expectedFilters: []string{"llama-7b", "gpt-3"},
 		},
 		{
 			name:          "multiple types",
 			filter:        "model,datasets,code",
-			expectedTypes: []string{"model", "dataset", "code"},
+			expectedTypes: []mediatype.BaseType{mediatype.ModelBaseType, mediatype.DatasetBaseType, mediatype.CodeBaseType},
 		},
 		{
 			name:            "multiple types with filters",
 			filter:          "datasets:training-data,validation",
-			expectedTypes:   []string{"dataset"},
+			expectedTypes:   []mediatype.BaseType{mediatype.DatasetBaseType},
 			expectedFilters: []string{"training-data", "validation"},
 		},
 		{
@@ -120,20 +121,20 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 		unpackDatasets    bool
 		unpackDocs        bool
 		expectedTypeCount int
-		expectedTypes     []string
+		expectedTypes     []mediatype.BaseType
 	}{
 		{
 			name:              "only models",
 			unpackModels:      true,
 			expectedTypeCount: 1,
-			expectedTypes:     []string{"model"},
+			expectedTypes:     []mediatype.BaseType{mediatype.ModelBaseType},
 		},
 		{
 			name:              "models and datasets",
 			unpackModels:      true,
 			unpackDatasets:    true,
 			expectedTypeCount: 2,
-			expectedTypes:     []string{"model", "dataset"},
+			expectedTypes:     []mediatype.BaseType{mediatype.ModelBaseType, mediatype.DatasetBaseType},
 		},
 		{
 			name:              "all types",
@@ -143,7 +144,7 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 			unpackDatasets:    true,
 			unpackDocs:        true,
 			expectedTypeCount: 5,
-			expectedTypes:     []string{"config", "model", "docs", "dataset", "code"},
+			expectedTypes:     []mediatype.BaseType{mediatype.ConfigBaseType, mediatype.ModelBaseType, mediatype.DocsBaseType, mediatype.DatasetBaseType, mediatype.CodeBaseType},
 		},
 		{
 			name:              "none selected",
