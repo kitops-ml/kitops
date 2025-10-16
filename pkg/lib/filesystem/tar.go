@@ -48,15 +48,15 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 	if layerIgnored, err := ignore.Matches(path, path); err != nil {
 		return "", ocispec.DescriptorEmptyJSON, nil, err
 	} else if layerIgnored {
-		output.Errorf("Warning: %s layer path %s ignored by kitignore", mediaType.BaseType, path)
+		output.Errorf("Warning: %s layer path %s ignored by kitignore", mediaType.UserString(), path)
 	}
 
 	totalSize, err := getTotalSize(path, ignore)
 	if err != nil {
-		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("error processing %s: %w", mediaType.BaseType, err)
+		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("error processing %s: %w", mediaType.UserString(), err)
 	}
 	if totalSize == 0 {
-		output.Logf(output.LogLevelWarn, "No files detected in %s layer with path %s", mediaType.BaseType, path)
+		output.Logf(output.LogLevelWarn, "No files detected in %s layer with path %s", mediaType.UserString(), path)
 	}
 
 	tempFile, tempFileCleanup, err := cache.MkCacheFile(cache.CachePackSubdir, "kitops_layer_")
@@ -72,7 +72,7 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 
 	var compressedWriter io.WriteCloser
 	var tarWriter *tar.Writer
-	switch mediaType.Compression {
+	switch mediaType.Compression() {
 	case mediatype.GzipCompression:
 		compressedWriter = gzip.NewWriter(fileWriter)
 		diffIdDigester = digest.Canonical.Digester()

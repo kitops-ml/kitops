@@ -81,7 +81,7 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 	if err != nil {
 		return nil, fmt.Errorf("failed to read modelkit: %w", err)
 	}
-	if manifest.Config.MediaType != mediatype.ModelConfigMediaType.String() {
+	if manifest.Config.MediaType != mediatype.KitConfigMediaType.String() {
 		return nil, nil
 	}
 	info := &modelInfo{

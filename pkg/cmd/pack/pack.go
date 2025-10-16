@@ -24,6 +24,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
@@ -92,7 +93,11 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 		return nil, err
 	}
 
-	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, opts.compression)
+	compression, err := mediatype.ParseCompression(opts.compression)
+	if err != nil {
+		return nil, err
+	}
+	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, compression)
 	if err != nil {
 		return nil, err
 	}

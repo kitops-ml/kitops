@@ -42,7 +42,7 @@ import (
 // SaveModel saves an *artifact.Model to the provided oras.Target, compressing layers. It attempts to block
 // modelkits that include paths that leave the base context directory, allowing only subdirectories of the root
 // context to be included in the modelkit.
-func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression string) (*ocispec.Descriptor, error) {
+func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression mediatype.CompressionType) (*ocispec.Descriptor, error) {
 	layerDescs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, compression)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 		return ocispec.DescriptorEmptyJSON, err
 	}
 	desc := ocispec.Descriptor{
-		MediaType: mediatype.ModelConfigMediaType.String(),
+		MediaType: mediatype.KitConfigMediaType.String(),
 		Digest:    digest.FromBytes(modelBytes),
 		Size:      int64(len(modelBytes)),
 	}
@@ -96,14 +96,11 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 	return desc, nil
 }
 
-func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression string) ([]ocispec.Descriptor, error) {
+func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression mediatype.CompressionType) ([]ocispec.Descriptor, error) {
 	var layers []ocispec.Descriptor
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !util.IsModelKitReference(kitfile.Model.Path) {
-			mediaType := mediatype.MediaType{
-				BaseType:    mediatype.ModelType,
-				Compression: compression,
-			}
+			mediaType := mediatype.NewKit(mediatype.ModelBaseType, compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, kitfile.Model.Path, mediaType, ignore)
 			if err != nil {
 				return nil, err
@@ -112,10 +109,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 			kitfile.Model.LayerInfo = layerInfo
 		}
 		for idx, part := range kitfile.Model.Parts {
-			mediaType := mediatype.MediaType{
-				BaseType:    mediatype.ModelPartType,
-				Compression: compression,
-			}
+			mediaType := mediatype.NewKit(mediatype.ModelPartBaseType, compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, part.Path, mediaType, ignore)
 			if err != nil {
 				return nil, err
@@ -125,10 +119,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		}
 	}
 	for idx, code := range kitfile.Code {
-		mediaType := mediatype.MediaType{
-			BaseType:    mediatype.CodeType,
-			Compression: compression,
-		}
+		mediaType := mediatype.NewKit(mediatype.CodeBaseType, compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, code.Path, mediaType, ignore)
 		if err != nil {
 			return nil, err
@@ -137,10 +128,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
 	for idx, dataset := range kitfile.DataSets {
-		mediaType := mediatype.MediaType{
-			BaseType:    mediatype.DatasetType,
-			Compression: compression,
-		}
+		mediaType := mediatype.NewKit(mediatype.DatasetBaseType, compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)
 		if err != nil {
 			return nil, err
@@ -149,10 +137,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.DataSets[idx].LayerInfo = layerInfo
 	}
 	for idx, docs := range kitfile.Docs {
-		mediaType := mediatype.MediaType{
-			BaseType:    mediatype.DocsType,
-			Compression: compression,
-		}
+		mediaType := mediatype.NewKit(mediatype.DocsBaseType, compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, docs.Path, mediaType, ignore)
 		if err != nil {
 			return nil, err
@@ -181,7 +166,7 @@ func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path strin
 	if exists, err := localRepo.Exists(ctx, desc); err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	} else if exists {
-		output.Infof("Already saved %s layer: %s", mediaType.BaseType, desc.Digest)
+		output.Infof("Already saved %s layer: %s", mediaType.UserString(), desc.Digest)
 		return desc, info, nil
 	}
 
@@ -214,7 +199,7 @@ func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path strin
 		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to move layer to storage: file is not stored")
 	}
 
-	output.Infof("Saved %s layer: %s", mediaType.BaseType, desc.Digest)
+	output.Infof("Saved %s layer: %s", mediaType.UserString(), desc.Digest)
 	return desc, info, nil
 }
 

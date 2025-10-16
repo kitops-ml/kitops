@@ -110,9 +110,12 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		// Grab path + layer info from the config object corresponding to this layer
 		var layerPath string
 		var layerInfo *artifact.LayerInfo
-		mediaType := mediatype.ParseMediaType(layerDesc.MediaType)
-		switch mediaType.BaseType {
-		case mediatype.ModelType:
+		mediaType, err := mediatype.ParseMediaType(layerDesc.MediaType)
+		if err != nil {
+			return err
+		}
+		switch mediaType.Base() {
+		case mediatype.ModelBaseType:
 			if !shouldUnpackLayer(config.Model, opts.FilterConfs) {
 				continue
 			}
@@ -120,7 +123,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			layerPath = config.Model.Path
 			output.Infof("Unpacking model %s to %s", config.Model.Name, filepath.Join(opts.UnpackDir, config.Model.Path))
 
-		case mediatype.ModelPartType:
+		case mediatype.ModelPartBaseType:
 			part := config.Model.Parts[modelPartIdx]
 			if !shouldUnpackLayer(part, opts.FilterConfs) {
 				modelPartIdx += 1
@@ -131,7 +134,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking model part %s to %s", part.Name, part.Path)
 			modelPartIdx += 1
 
-		case mediatype.CodeType:
+		case mediatype.CodeBaseType:
 			codeEntry := config.Code[codeIdx]
 			if !shouldUnpackLayer(codeEntry, opts.FilterConfs) {
 				codeIdx += 1
@@ -142,7 +145,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking code to %s", codeEntry.Path)
 			codeIdx += 1
 
-		case mediatype.DatasetType:
+		case mediatype.DatasetBaseType:
 			datasetEntry := config.DataSets[datasetIdx]
 			if !shouldUnpackLayer(datasetEntry, opts.FilterConfs) {
 				datasetIdx += 1
@@ -153,7 +156,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking dataset %s to %s", datasetEntry.Name, datasetEntry.Path)
 			datasetIdx += 1
 
-		case mediatype.DocsType:
+		case mediatype.DocsBaseType:
 			docsEntry := config.Docs[docsIdx]
 			if !shouldUnpackLayer(docsEntry, opts.FilterConfs) {
 				docsIdx += 1
@@ -167,17 +170,17 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 
 		if layerInfo != nil {
 			if layerInfo.Digest != layerDesc.Digest.String() {
-				return fmt.Errorf("digest in config and manifest do not match in %s", mediaType.BaseType)
+				return fmt.Errorf("digest in config and manifest do not match in %s", mediaType.UserString())
 			}
 			relPath = ""
 		} else {
 			_, relPath, err = filesystem.VerifySubpath(opts.UnpackDir, layerPath)
 			if err != nil {
-				return fmt.Errorf("error resolving %s path: %w", mediaType.BaseType, err)
+				return fmt.Errorf("error resolving %s path: %w", mediaType.UserString(), err)
 			}
 		}
 
-		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression); err != nil {
+		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression()); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
@@ -212,9 +215,9 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	} else {
 		var filterConfs []FilterConf
 		for _, conf := range opts.FilterConfs {
-			if conf.matchesBaseType(mediatype.ModelType) {
+			if conf.matchesBaseType(mediatype.ModelBaseType) {
 				// Drop any other base types from this filter
-				conf.BaseTypes = []string{mediatype.ModelType}
+				conf.BaseTypes = []mediatype.BaseType{mediatype.ModelBaseType}
 				filterConfs = append(filterConfs, conf)
 			}
 		}
@@ -263,7 +266,7 @@ func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) er
 	return nil
 }
 
-func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, compression string) error {
+func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, compression mediatype.CompressionType) error {
 	rc, err := store.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed get layer %s: %w", desc.Digest, err)
