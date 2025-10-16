@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -199,7 +199,7 @@ func GetManifest(ctx context.Context, store oras.ReadOnlyTarget, manifestDesc oc
 	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
 		return nil, fmt.Errorf("failed to parse manifest %s: %w", manifestDesc.Digest, err)
 	}
-	if manifest.Config.MediaType != constants.ModelConfigMediaType.String() {
+	if manifest.Config.MediaType != mediatype.ModelConfigMediaType.String() {
 		return nil, ErrNotAModelKit
 	}
 
@@ -209,7 +209,7 @@ func GetManifest(ctx context.Context, store oras.ReadOnlyTarget, manifestDesc oc
 // GetConfig returns the config (Kitfile) described by a descriptor. Returns an error if the config blob cannot
 // be resolved or if the descriptor does not describe a Kitfile.
 func GetConfig(ctx context.Context, store oras.ReadOnlyTarget, configDesc ocispec.Descriptor) (*artifact.KitFile, error) {
-	if configDesc.MediaType != constants.ModelConfigMediaType.String() {
+	if configDesc.MediaType != mediatype.ModelConfigMediaType.String() {
 		return nil, fmt.Errorf("configuration descriptor does not describe a Kitfile")
 	}
 	configBytes, err := content.FetchAll(ctx, store, configDesc)

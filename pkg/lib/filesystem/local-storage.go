@@ -26,6 +26,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
@@ -72,7 +73,7 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 		return ocispec.DescriptorEmptyJSON, err
 	}
 	desc := ocispec.Descriptor{
-		MediaType: constants.ModelConfigMediaType.String(),
+		MediaType: mediatype.ModelConfigMediaType.String(),
 		Digest:    digest.FromBytes(modelBytes),
 		Size:      int64(len(modelBytes)),
 	}
@@ -99,8 +100,8 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	var layers []ocispec.Descriptor
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !util.IsModelKitReference(kitfile.Model.Path) {
-			mediaType := constants.MediaType{
-				BaseType:    constants.ModelType,
+			mediaType := mediatype.MediaType{
+				BaseType:    mediatype.ModelType,
 				Compression: compression,
 			}
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, kitfile.Model.Path, mediaType, ignore)
@@ -111,8 +112,8 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 			kitfile.Model.LayerInfo = layerInfo
 		}
 		for idx, part := range kitfile.Model.Parts {
-			mediaType := constants.MediaType{
-				BaseType:    constants.ModelPartType,
+			mediaType := mediatype.MediaType{
+				BaseType:    mediatype.ModelPartType,
 				Compression: compression,
 			}
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, part.Path, mediaType, ignore)
@@ -124,8 +125,8 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		}
 	}
 	for idx, code := range kitfile.Code {
-		mediaType := constants.MediaType{
-			BaseType:    constants.CodeType,
+		mediaType := mediatype.MediaType{
+			BaseType:    mediatype.CodeType,
 			Compression: compression,
 		}
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, code.Path, mediaType, ignore)
@@ -136,8 +137,8 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
 	for idx, dataset := range kitfile.DataSets {
-		mediaType := constants.MediaType{
-			BaseType:    constants.DatasetType,
+		mediaType := mediatype.MediaType{
+			BaseType:    mediatype.DatasetType,
 			Compression: compression,
 		}
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)
@@ -148,8 +149,8 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.DataSets[idx].LayerInfo = layerInfo
 	}
 	for idx, docs := range kitfile.Docs {
-		mediaType := constants.MediaType{
-			BaseType:    constants.DocsType,
+		mediaType := mediatype.MediaType{
+			BaseType:    mediatype.DocsType,
 			Compression: compression,
 		}
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, docs.Path, mediaType, ignore)
@@ -163,7 +164,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	return layers, nil
 }
 
-func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType constants.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
 	// to a temporary file. Ideally, we'd also add this to the internal store by moving the file to avoid
 	// copying if possible.

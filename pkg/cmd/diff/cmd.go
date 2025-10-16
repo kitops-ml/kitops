@@ -28,6 +28,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
@@ -190,7 +191,7 @@ func displayLayers(title string, layers []ocispec.Descriptor) {
 		output.Infof(layerTableHeadings)
 		for _, layer := range layers {
 			output.Infof(layerTableFormat,
-				constants.FormatMediaTypeForUser(layer.MediaType),
+				mediatype.FormatMediaTypeForUser(layer.MediaType),
 				layer.Digest[:17],
 				output.FormatBytes(layer.Size))
 		}

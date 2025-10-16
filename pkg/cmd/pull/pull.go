@@ -23,6 +23,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -120,7 +121,7 @@ func referenceIsModel(ctx context.Context, ref *registry.Reference, repo registr
 	if err := json.Unmarshal(manifestBytes, manifest); err != nil {
 		return fmt.Errorf("failed to parse manifest: %w", err)
 	}
-	if manifest.Config.MediaType != constants.ModelConfigMediaType.String() {
+	if manifest.Config.MediaType != mediatype.ModelConfigMediaType.String() {
 		return fmt.Errorf("reference %s does not refer to a model", ref.String())
 	}
 	return nil

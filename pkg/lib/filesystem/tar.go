@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -41,7 +41,7 @@ import (
 // a descriptor (including hash) for the compressed file, the layer is saved to a temporary file
 // on disk and must be moved to an appropriate location. It is the responsibility of the caller
 // to clean up the temporary file when it is no longer needed.
-func packLayerToTar(path string, mediaType constants.MediaType, ignore ignore.Paths) (tempFilePath string, desc ocispec.Descriptor, layerInfo *artifact.LayerInfo, err error) {
+func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Paths) (tempFilePath string, desc ocispec.Descriptor, layerInfo *artifact.LayerInfo, err error) {
 	// Clean path to ensure consistent format (./path vs path/ vs path)
 	path = filepath.Clean(path)
 
@@ -73,12 +73,12 @@ func packLayerToTar(path string, mediaType constants.MediaType, ignore ignore.Pa
 	var compressedWriter io.WriteCloser
 	var tarWriter *tar.Writer
 	switch mediaType.Compression {
-	case constants.GzipCompression:
+	case mediatype.GzipCompression:
 		compressedWriter = gzip.NewWriter(fileWriter)
 		diffIdDigester = digest.Canonical.Digester()
 		mw := io.MultiWriter(compressedWriter, diffIdDigester.Hash())
 		tarWriter = tar.NewWriter(mw)
-	case constants.GzipFastestCompression:
+	case mediatype.GzipFastestCompression:
 		compressedWriter, err = gzip.NewWriterLevel(fileWriter, gzip.BestSpeed)
 		if err != nil {
 			return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to set up gzip compression: %w", err)
@@ -86,7 +86,7 @@ func packLayerToTar(path string, mediaType constants.MediaType, ignore ignore.Pa
 		diffIdDigester = digest.Canonical.Digester()
 		mw := io.MultiWriter(compressedWriter, diffIdDigester.Hash())
 		tarWriter = tar.NewWriter(mw)
-	case constants.NoneCompression:
+	case mediatype.NoneCompression:
 		tarWriter = tar.NewWriter(fileWriter)
 		diffIdDigester = digester
 	}

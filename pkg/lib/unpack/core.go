@@ -30,6 +30,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -109,9 +110,9 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		// Grab path + layer info from the config object corresponding to this layer
 		var layerPath string
 		var layerInfo *artifact.LayerInfo
-		mediaType := constants.ParseMediaType(layerDesc.MediaType)
+		mediaType := mediatype.ParseMediaType(layerDesc.MediaType)
 		switch mediaType.BaseType {
-		case constants.ModelType:
+		case mediatype.ModelType:
 			if !shouldUnpackLayer(config.Model, opts.FilterConfs) {
 				continue
 			}
@@ -119,7 +120,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			layerPath = config.Model.Path
 			output.Infof("Unpacking model %s to %s", config.Model.Name, filepath.Join(opts.UnpackDir, config.Model.Path))
 
-		case constants.ModelPartType:
+		case mediatype.ModelPartType:
 			part := config.Model.Parts[modelPartIdx]
 			if !shouldUnpackLayer(part, opts.FilterConfs) {
 				modelPartIdx += 1
@@ -130,7 +131,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking model part %s to %s", part.Name, part.Path)
 			modelPartIdx += 1
 
-		case constants.CodeType:
+		case mediatype.CodeType:
 			codeEntry := config.Code[codeIdx]
 			if !shouldUnpackLayer(codeEntry, opts.FilterConfs) {
 				codeIdx += 1
@@ -141,7 +142,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking code to %s", codeEntry.Path)
 			codeIdx += 1
 
-		case constants.DatasetType:
+		case mediatype.DatasetType:
 			datasetEntry := config.DataSets[datasetIdx]
 			if !shouldUnpackLayer(datasetEntry, opts.FilterConfs) {
 				datasetIdx += 1
@@ -152,7 +153,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking dataset %s to %s", datasetEntry.Name, datasetEntry.Path)
 			datasetIdx += 1
 
-		case constants.DocsType:
+		case mediatype.DocsType:
 			docsEntry := config.Docs[docsIdx]
 			if !shouldUnpackLayer(docsEntry, opts.FilterConfs) {
 				docsIdx += 1
@@ -211,9 +212,9 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	} else {
 		var filterConfs []FilterConf
 		for _, conf := range opts.FilterConfs {
-			if conf.matchesBaseType(constants.ModelType) {
+			if conf.matchesBaseType(mediatype.ModelType) {
 				// Drop any other base types from this filter
-				conf.BaseTypes = []string{constants.ModelType}
+				conf.BaseTypes = []string{mediatype.ModelType}
 				filterConfs = append(filterConfs, conf)
 			}
 		}
@@ -274,9 +275,9 @@ func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descri
 	var cr io.ReadCloser
 	var cErr error
 	switch compression {
-	case constants.GzipCompression, constants.GzipFastestCompression:
+	case mediatype.GzipCompression, mediatype.GzipFastestCompression:
 		cr, cErr = gzip.NewReader(rc)
-	case constants.NoneCompression:
+	case mediatype.NoneCompression:
 		cr = rc
 	}
 	if cErr != nil {

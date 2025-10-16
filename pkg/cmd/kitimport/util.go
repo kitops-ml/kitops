@@ -29,6 +29,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
@@ -108,7 +109,7 @@ func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *
 	if err != nil {
 		return err
 	}
-	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, constants.NoneCompression)
+	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, mediatype.NoneCompression)
 	if err != nil {
 		return err
 	}

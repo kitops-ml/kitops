@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -142,7 +143,7 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 		opts.modelRef = util.DefaultReference()
 	}
 
-	if err := constants.IsValidCompression(opts.compression); err != nil {
+	if err := mediatype.IsValidCompression(opts.compression); err != nil {
 		return err
 	}
 

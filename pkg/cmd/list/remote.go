@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
@@ -81,7 +81,7 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 	if err != nil {
 		return nil, fmt.Errorf("failed to read modelkit: %w", err)
 	}
-	if manifest.Config.MediaType != constants.ModelConfigMediaType.String() {
+	if manifest.Config.MediaType != mediatype.ModelConfigMediaType.String() {
 		return nil, nil
 	}
 	info := &modelInfo{
