@@ -89,15 +89,15 @@ func ParseModelPackBaseType(s string) (BaseType, error) {
 	switch s {
 	case "config":
 		return ConfigBaseType, nil
-	case "model":
+	case "weight":
 		return ModelBaseType, nil
-	case "modelpart":
+	case "weight.config":
 		return ModelPartBaseType, nil
 	case "dataset":
 		return DatasetBaseType, nil
 	case "code":
 		return CodeBaseType, nil
-	case "docs":
+	case "doc":
 		return DocsBaseType, nil
 	default:
 		return UnknownBaseType, fmt.Errorf("invalid base type %s", s)
