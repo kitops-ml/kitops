@@ -1,4 +1,4 @@
-// Copyright 2024 The KitOps Authors.
+// Copyright 2025 The KitOps Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,69 +18,74 @@ package mediatype
 
 import "fmt"
 
-var KitConfigMediaType MediaType = &kitopsMediaType{
-	baseType: ConfigBaseType,
-}
-
-type kitopsMediaType struct {
+type modelpackMediatype struct {
 	baseType        BaseType
 	compressionType CompressionType
 	format          Format
 }
 
-func (mt *kitopsMediaType) Base() BaseType {
+func (mt *modelpackMediatype) Base() BaseType {
 	return mt.baseType
 }
 
-func (mt *kitopsMediaType) Compression() CompressionType {
+func (mt *modelpackMediatype) Compression() CompressionType {
 	return mt.compressionType
 }
 
-func (mt *kitopsMediaType) Format() Format {
-	return mt.format
+func (mt *modelpackMediatype) Format() Format {
+	return Format(mt.format)
 }
 
-func (mt *kitopsMediaType) String() string {
+func (mt *modelpackMediatype) String() string {
 	if mt.baseType == ConfigBaseType {
-		return "application/vnd.kitops.modelkit.config.v1+json"
+		return "application/vnd.cncf.model.config.v1+json"
 	}
-
-	// Don't handle non-tar formats for KitOps; we don't want to support them (yet?)
-	switch mt.compressionType {
-	case NoneCompression:
-		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.tar", mt.baseTypeString())
-	case GzipCompression, GzipFastestCompression:
-		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.tar+gzip", mt.baseTypeString())
-	}
-	// Should never happen since parsing should only result in valid values
-	return "invalid mediatype"
+	return fmt.Sprintf("application/vnd.cncf.model.%s.v1.%s", mt.baseTypeString(), mt.formatAndCompression())
 }
 
-func (mt *kitopsMediaType) UserString() string {
+func (mt *modelpackMediatype) UserString() string {
 	return mt.baseTypeString()
 }
 
-func (mt *kitopsMediaType) baseTypeString() string {
+func (mt *modelpackMediatype) baseTypeString() string {
 	switch mt.baseType {
 	case ConfigBaseType:
 		return "config"
 	case ModelBaseType:
-		return "model"
+		return "weight"
 	case ModelPartBaseType:
-		return "modelpart"
+		return "weight.config"
 	case DatasetBaseType:
 		return "dataset"
 	case CodeBaseType:
 		return "code"
 	case DocsBaseType:
-		return "docs"
+		return "doc"
 	}
 	return "invalid mediatype"
 }
 
-var _ MediaType = (*kitopsMediaType)(nil)
+func (mt *modelpackMediatype) formatAndCompression() string {
+	// ModelPack does not support compression for raw layers
+	switch mt.format {
+	case RawFormat:
+		return "raw"
+	case TarFormat:
+		switch mt.compressionType {
+		case NoneCompression:
+			return "tar"
+		case GzipCompression, GzipFastestCompression:
+			return "tar+gzip"
+		case ZstdCompression:
+			return "tar+zstd"
+		}
+	}
+	return "invalid mediatype"
+}
 
-func ParseKitBaseType(s string) (BaseType, error) {
+var _ MediaType = (*modelpackMediatype)(nil)
+
+func ParseModelPackBaseType(s string) (BaseType, error) {
 	switch s {
 	case "config":
 		return ConfigBaseType, nil
