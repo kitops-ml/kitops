@@ -25,8 +25,8 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	"github.com/kitops-ml/kitops/pkg/lib/hf"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
@@ -127,7 +127,7 @@ func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact
 	// Repurpose the ignore implementation to find which files we need to download and which ones we can skip.
 	// This works because ignore is designed to _also_ ignore paths that are packed as part of another layer
 	// instead of the current one.
-	ignore, err := filesystem.NewIgnore(nil, kitfile)
+	ignore, err := ignore.New(nil, kitfile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process Kitfile to get file list: %w", err)
 	}

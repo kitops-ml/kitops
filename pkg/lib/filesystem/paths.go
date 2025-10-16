@@ -17,6 +17,7 @@
 package filesystem
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -24,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 )
 
 // VerifySubpath checks that filepath.Join(context, subDir) is a subdirectory of context, following
@@ -96,4 +98,48 @@ func FindKitfileInPath(contextDir string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("No Kitfile found in %s. Consider using the -f flag to specify its path", contextDir)
+}
+
+// Return the total size of all files in a basepath, given a set of ignores
+func getTotalSize(basePath string, ignore ignore.Paths) (int64, error) {
+	pathInfo, err := os.Stat(basePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return 0, fmt.Errorf("path %s does not exist", basePath)
+		}
+		return 0, err
+	}
+
+	if pathInfo.Mode().IsRegular() {
+		return pathInfo.Size(), nil
+	} else if pathInfo.IsDir() {
+		var total int64
+		err := filepath.WalkDir(basePath, func(file string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if shouldIgnore, err := ignore.Matches(file, basePath); err != nil {
+				return fmt.Errorf("failed to match %s against ignore file: %w", file, err)
+			} else if shouldIgnore {
+				if !ignore.HasExclusions() && d.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if d.Type().IsRegular() {
+				fi, err := d.Info()
+				if err != nil {
+					return fmt.Errorf("failed to stat %s: %w", file, err)
+				}
+				total += fi.Size()
+			}
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+		return total, nil
+	} else {
+		return 0, fmt.Errorf("path %s is neither a file nor a directory", basePath)
+	}
 }

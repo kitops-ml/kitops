@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package filesystem
+package ignore
 
 import (
 	"testing"
@@ -96,7 +96,7 @@ func TestIgnoreMatches(t *testing.T) {
 			for _, layerPath := range tt.layerPaths {
 				testKitfile.Code = append(testKitfile.Code, artifact.Code{Path: layerPath})
 			}
-			ignore, err := NewIgnore(tt.kitIgnore, testKitfile)
+			ignore, err := New(tt.kitIgnore, testKitfile)
 			assert.NoError(t, err)
 
 			ignored, err := ignore.Matches(tt.curPath, tt.curLayerPath)

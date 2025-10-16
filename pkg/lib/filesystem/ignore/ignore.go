@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package filesystem
+package ignore
 
 import (
 	"fmt"
@@ -31,20 +31,20 @@ import (
 	"github.com/moby/patternmatcher/ignorefile"
 )
 
-type IgnorePaths interface {
+type Paths interface {
 	Matches(path, layerPath string) (bool, error)
 	HasExclusions() bool
 }
 
-func NewIgnoreFromContext(contextDir string, kitfile *artifact.KitFile, extraLayers ...string) (IgnorePaths, error) {
+func NewFromContext(contextDir string, kitfile *artifact.KitFile, extraLayers ...string) (Paths, error) {
 	kitIgnorePaths, err := readIgnoreFile(contextDir)
 	if err != nil {
 		return nil, err
 	}
-	return NewIgnore(kitIgnorePaths, kitfile, extraLayers...)
+	return New(kitIgnorePaths, kitfile, extraLayers...)
 }
 
-func NewIgnore(kitIgnorePaths []string, kitfile *artifact.KitFile, extraLayers ...string) (IgnorePaths, error) {
+func New(kitIgnorePaths []string, kitfile *artifact.KitFile, extraLayers ...string) (Paths, error) {
 	kitIgnorePaths = append(kitIgnorePaths, constants.DefaultKitfileNames()...)
 	kitIgnorePaths = append(kitIgnorePaths, constants.IgnoreFileName)
 	kitIgnorePM, err := patternmatcher.New(kitIgnorePaths)

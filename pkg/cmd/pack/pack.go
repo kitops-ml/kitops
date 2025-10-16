@@ -25,6 +25,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -86,12 +87,12 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 		extraLayerPaths = util.LayerPathsFromKitfile(parentKitfile)
 	}
 
-	ignore, err := filesystem.NewIgnoreFromContext(opts.contextDir, kitfile, extraLayerPaths...)
+	ignore, err := ignore.NewFromContext(opts.contextDir, kitfile, extraLayerPaths...)
 	if err != nil {
 		return nil, err
 	}
 
-	manifestDesc, err := kfutils.SaveModel(ctx, localRepo, kitfile, ignore, opts.compression)
+	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, opts.compression)
 	if err != nil {
 		return nil, err
 	}

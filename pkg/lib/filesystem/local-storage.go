@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package kitfile
+package filesystem
 
 import (
 	"bytes"
@@ -26,8 +26,8 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -41,7 +41,7 @@ import (
 // SaveModel saves an *artifact.Model to the provided oras.Target, compressing layers. It attempts to block
 // modelkits that include paths that leave the base context directory, allowing only subdirectories of the root
 // context to be included in the modelkit.
-func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore filesystem.IgnorePaths, compression string) (*ocispec.Descriptor, error) {
+func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression string) (*ocispec.Descriptor, error) {
 	layerDescs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, compression)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 	return desc, nil
 }
 
-func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore filesystem.IgnorePaths, compression string) ([]ocispec.Descriptor, error) {
+func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression string) ([]ocispec.Descriptor, error) {
 	var layers []ocispec.Descriptor
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !util.IsModelKitReference(kitfile.Model.Path) {
@@ -163,11 +163,11 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	return layers, nil
 }
 
-func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType constants.MediaType, ignore filesystem.IgnorePaths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType constants.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
 	// to a temporary file. Ideally, we'd also add this to the internal store by moving the file to avoid
 	// copying if possible.
-	tempPath, desc, info, err := compressLayer(path, mediaType, ignore)
+	tempPath, desc, info, err := packLayerToTar(path, mediaType, ignore)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	}

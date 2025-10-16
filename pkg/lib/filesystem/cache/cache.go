@@ -19,10 +19,11 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"github.com/kitops-ml/kitops/pkg/output"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 var cacheHomeDir = os.TempDir()
