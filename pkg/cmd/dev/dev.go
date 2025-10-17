@@ -29,10 +29,10 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/lib/harness"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-	"github.com/kitops-ml/kitops/pkg/lib/unpack"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 

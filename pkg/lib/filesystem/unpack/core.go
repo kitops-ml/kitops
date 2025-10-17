@@ -112,7 +112,9 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		var layerInfo *artifact.LayerInfo
 		mediaType, err := mediatype.ParseMediaType(layerDesc.MediaType)
 		if err != nil {
-			return err
+			// We may encounter unknown media types while unpacking ModelPacks, e.g. we include Kitfiles
+			// which are not ModelPack mediatypes
+			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
 		}
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
@@ -166,6 +168,14 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			layerPath = docsEntry.Path
 			output.Infof("Unpacking docs to %s", docsEntry.Path)
 			docsIdx += 1
+
+		case mediatype.ConfigBaseType:
+			// ModelPacks may contain a Kitfile in their layers, which is unpacked separately
+			continue
+
+		// Should never happen as we check earlier, but for completeness' sake:
+		case mediatype.UnknownBaseType:
+			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
 		}
 
 		if layerInfo != nil {

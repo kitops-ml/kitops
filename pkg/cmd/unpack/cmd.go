@@ -25,8 +25,8 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-	"github.com/kitops-ml/kitops/pkg/lib/unpack"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
