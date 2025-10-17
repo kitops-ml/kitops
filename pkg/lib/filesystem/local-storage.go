@@ -39,11 +39,17 @@ import (
 	"oras.land/oras-go/v2"
 )
 
+type SaveModelOptions struct {
+	ModelFormat mediatype.ModelFormat
+	Compression mediatype.CompressionType
+	LayerFormat mediatype.Format
+}
+
 // SaveModel saves an *artifact.Model to the provided oras.Target, compressing layers. It attempts to block
 // modelkits that include paths that leave the base context directory, allowing only subdirectories of the root
 // context to be included in the modelkit.
-func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression mediatype.CompressionType) (*ocispec.Descriptor, error) {
-	layerDescs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, compression)
+func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (*ocispec.Descriptor, error) {
+	layerDescs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +59,10 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 		return nil, err
 	}
 
-	manifest := createManifest(configDesc, layerDescs)
+	manifest, err := createManifest(configDesc, layerDescs, opts.ModelFormat)
+	if err != nil {
+		return nil, fmt.Errorf("error creating manifest: %w", err)
+	}
 
 	manifestDesc, err := saveModelManifest(ctx, localRepo, manifest)
 	if err != nil {
@@ -96,11 +105,11 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 	return desc, nil
 }
 
-func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, compression mediatype.CompressionType) ([]ocispec.Descriptor, error) {
+func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) ([]ocispec.Descriptor, error) {
 	var layers []ocispec.Descriptor
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !util.IsModelKitReference(kitfile.Model.Path) {
-			mediaType := mediatype.NewKit(mediatype.ModelBaseType, compression)
+			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelBaseType, opts.LayerFormat, opts.Compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, kitfile.Model.Path, mediaType, ignore)
 			if err != nil {
 				return nil, err
@@ -109,7 +118,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 			kitfile.Model.LayerInfo = layerInfo
 		}
 		for idx, part := range kitfile.Model.Parts {
-			mediaType := mediatype.NewKit(mediatype.ModelPartBaseType, compression)
+			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelPartBaseType, opts.LayerFormat, opts.Compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, part.Path, mediaType, ignore)
 			if err != nil {
 				return nil, err
@@ -119,7 +128,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		}
 	}
 	for idx, code := range kitfile.Code {
-		mediaType := mediatype.NewKit(mediatype.CodeBaseType, compression)
+		mediaType := mediatype.New(opts.ModelFormat, mediatype.CodeBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, code.Path, mediaType, ignore)
 		if err != nil {
 			return nil, err
@@ -128,7 +137,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
 	for idx, dataset := range kitfile.DataSets {
-		mediaType := mediatype.NewKit(mediatype.DatasetBaseType, compression)
+		mediaType := mediatype.New(opts.ModelFormat, mediatype.DatasetBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)
 		if err != nil {
 			return nil, err
@@ -137,7 +146,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.DataSets[idx].LayerInfo = layerInfo
 	}
 	for idx, docs := range kitfile.Docs {
-		mediaType := mediatype.NewKit(mediatype.DocsBaseType, compression)
+		mediaType := mediatype.New(opts.ModelFormat, mediatype.DocsBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, docs.Path, mediaType, ignore)
 		if err != nil {
 			return nil, err
@@ -151,8 +160,12 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 
 func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
-	// to a temporary file. Ideally, we'd also add this to the internal store by moving the file to avoid
+	// to a temporary file. Ideally, we can also add this to the internal store by moving the file to avoid
 	// copying if possible.
+	if mediaType.Format() != mediatype.TarFormat {
+		// TODO: Add support for ModelPack's "raw" layer type
+		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("Only tar-formatted layers are currently supported")
+	}
 	tempPath, desc, info, err := packLayerToTar(path, mediaType, ignore)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
@@ -230,15 +243,32 @@ func saveModelManifest(ctx context.Context, store oras.Target, manifest ocispec.
 	return &desc, nil
 }
 
-func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descriptor) ocispec.Manifest {
-	manifest := ocispec.Manifest{
-		Versioned: specs.Versioned{SchemaVersion: 2},
-		Config:    configDesc,
-		Layers:    layerDescs,
-		Annotations: map[string]string{
-			constants.CliVersionAnnotation: constants.Version,
-		},
+func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descriptor, modelFormat mediatype.ModelFormat) (ocispec.Manifest, error) {
+	var manifest ocispec.Manifest
+	switch modelFormat {
+	case mediatype.KitFormat:
+		manifest = ocispec.Manifest{
+			Versioned:    specs.Versioned{SchemaVersion: 2},
+			ArtifactType: mediatype.ArtifactTypeKitManifest,
+			Config:       configDesc,
+			Layers:       layerDescs,
+		}
+	case mediatype.ModelPackFormat:
+		manifest = ocispec.Manifest{
+			Versioned:    specs.Versioned{SchemaVersion: 2},
+			ArtifactType: mediatype.ArtifactTypeModelManifest,
+			// TODO: add support for ModelPack's configuration type
+			Config: ocispec.DescriptorEmptyJSON,
+			Layers: append(layerDescs, configDesc),
+		}
+	default:
+		return ocispec.Manifest{}, fmt.Errorf("invalid Model format")
 	}
 
-	return manifest
+	// Global annotations
+	manifest.Annotations = map[string]string{
+		constants.CliVersionAnnotation: constants.Version,
+	}
+
+	return manifest, nil
 }

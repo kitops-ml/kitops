@@ -26,6 +26,14 @@ import (
 var kitopsMediaTypeRegexp = regexp.MustCompile(`^application/vnd\.kitops\.modelkit\.(\w+)\.v1\.tar(?:\+(\w+))?$`)
 var modelPackMediaTypeRegexp = regexp.MustCompile(`^application/vnd\.cncf\.model\.(\w+(?:\.\w+)?)\.v1\.(\w+)(?:\+?(\w+))?$`)
 
+type ModelFormat int
+
+const (
+	UnknownModelFormat ModelFormat = iota
+	KitFormat
+	ModelPackFormat
+)
+
 type MediaType interface {
 	Base() BaseType
 	Compression() CompressionType
@@ -122,10 +130,21 @@ func ParseMediaType(s string) (MediaType, error) {
 	return nil, fmt.Errorf("unrecognized media type %s", s)
 }
 
-func NewKit(base BaseType, comp CompressionType) MediaType {
-	return &kitopsMediaType{
-		baseType:        base,
-		compressionType: comp,
+func New(modelFormat ModelFormat, base BaseType, format Format, comp CompressionType) MediaType {
+	switch modelFormat {
+	case ModelPackFormat:
+		return &modelpackMediatype{
+			baseType:        base,
+			compressionType: comp,
+			format:          format,
+		}
+	// Default: return Kit format
+	default:
+		return &kitopsMediaType{
+			baseType:        base,
+			compressionType: comp,
+			format:          format,
+		}
 	}
 }
 
@@ -141,6 +160,21 @@ func ParseCompression(c string) (CompressionType, error) {
 		return ZstdCompression, nil
 	default:
 		return UnknownCompression, fmt.Errorf("invalid compression %s", c)
+	}
+}
+
+func (c CompressionType) String() string {
+	switch c {
+	case NoneCompression:
+		return "none"
+	case GzipCompression:
+		return "gzip"
+	case GzipFastestCompression:
+		return "gzip (fastest)"
+	case ZstdCompression:
+		return "zstd"
+	default:
+		return "unknown"
 	}
 }
 

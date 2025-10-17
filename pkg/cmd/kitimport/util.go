@@ -109,7 +109,11 @@ func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *
 	if err != nil {
 		return err
 	}
-	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, mediatype.NoneCompression)
+	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, &filesystem.SaveModelOptions{
+		ModelFormat: mediatype.KitFormat,
+		Compression: mediatype.NoneCompression,
+		LayerFormat: mediatype.TarFormat,
+	})
 	if err != nil {
 		return err
 	}

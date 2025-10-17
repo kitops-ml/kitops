@@ -18,6 +18,10 @@ package mediatype
 
 import "fmt"
 
+var ModelPackConfigMediaType MediaType = &modelpackMediatype{
+	baseType: ConfigBaseType,
+}
+
 type modelpackMediatype struct {
 	baseType        BaseType
 	compressionType CompressionType

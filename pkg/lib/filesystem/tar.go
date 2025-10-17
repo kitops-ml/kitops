@@ -89,6 +89,8 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 	case mediatype.NoneCompression:
 		tarWriter = tar.NewWriter(fileWriter)
 		diffIdDigester = digester
+	default:
+		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("Unsupported compression format: %s", mediaType.Compression())
 	}
 	progressTarWriter, plog := output.TarProgress(totalSize, tarWriter)
 
