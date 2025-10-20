@@ -822,17 +822,25 @@ kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest
 
 ## kit remove
 
-Remove a modelkit from local storage
+Remove a modelkit from local storage or remote registry
 
 ### Synopsis
 
-Removes a modelkit from storage on the local disk.
+Removes a modelkit from storage on the local disk or from a remote registry.
 
 The model to be removed may be specifed either by a tag or by a digest. If
 specified by digest, that modelkit will be removed along with any tags that
 might refer to it. If specified by tag (and the --force flag is not used),
 the modelkit will only be removed if no other tags refer to it; otherwise
 it is only untagged.
+
+When removing modelkits in a remote registry, if the modelkit is specified by
+digest, the modelkit will be deleted on the remote (if supported), removing any
+tags that might refer to it. If the modelkit is specified with a tag (and the
+--force) flag is not used, it will only be untagged. If the --force flag is
+used, the modelkit and all tags referring to it will be removed (i.e. the same
+as if the digest for that tag was specified).
+
 
 ```
 kit remove [flags] registry/repository[:tag|@digest]
@@ -855,6 +863,15 @@ kit remove --all
 
 # Remove all locally stored modelkits
 kit remove --all --force
+
+# Untag a remote modelkit
+kit remove --remote my-registry.com/my-org/my-repo:my-tag
+
+# Delete a remote modelkit and all tags referring to it
+kit remove --remote my-registry.com/my-org/my-repo@sha256:<digest>
+
+# Delete a remote modelkit and all its tags without using a digest
+kit remove --remote --force my-registry.com/my-org/my-repo:my-tag
 ```
 
 ### Options
