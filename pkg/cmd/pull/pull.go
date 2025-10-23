@@ -121,7 +121,7 @@ func referenceIsModel(ctx context.Context, ref *registry.Reference, repo registr
 	if err := json.Unmarshal(manifestBytes, manifest); err != nil {
 		return fmt.Errorf("failed to parse manifest: %w", err)
 	}
-	if manifest.Config.MediaType != mediatype.KitConfigMediaType.String() {
+	if _, err := mediatype.ModelFormatForManifest(manifest); err != nil {
 		return fmt.Errorf("reference %s does not refer to a model", ref.String())
 	}
 	return nil

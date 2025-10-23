@@ -17,6 +17,7 @@
 package local
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -172,6 +173,11 @@ func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.R
 			return nil, errdef.ErrNotFound
 		}
 	}
+	// Handle empty descriptors and descriptors using the data field
+	if target.Data != nil {
+		return io.NopCloser(bytes.NewReader(target.Data)), nil
+	}
+
 	return lr.Store.Fetch(ctx, target)
 }
 
