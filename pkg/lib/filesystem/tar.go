@@ -123,6 +123,10 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 		Digest:    digester.Digest(),
 		Size:      tempFileInfo.Size(),
 	}
+	if err := fillDescAnnotations(&desc, path, nil); err != nil {
+		return "", ocispec.DescriptorEmptyJSON, nil, err
+	}
+
 	layerInfo = &artifact.LayerInfo{
 		Digest: digester.Digest().String(),
 		DiffId: diffIdDigester.Digest().String(),

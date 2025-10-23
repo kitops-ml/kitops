@@ -49,12 +49,12 @@ type SaveModelOptions struct {
 // modelkits that include paths that leave the base context directory, allowing only subdirectories of the root
 // context to be included in the modelkit.
 func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (*ocispec.Descriptor, error) {
-	layerDescs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, opts)
+	layerDescs, diffIDs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	configDesc, err := saveConfig(ctx, localRepo, kitfile)
+	configDesc, err := saveConfig(ctx, localRepo, kitfile, diffIDs, opts.ModelFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +62,18 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 	manifest, err := createManifest(configDesc, layerDescs, opts.ModelFormat)
 	if err != nil {
 		return nil, fmt.Errorf("error creating manifest: %w", err)
+	}
+
+	// If not storing a Kitfile, save the Kitfile to an annotation since it will be lost otherwise
+	if opts.ModelFormat == mediatype.ModelPackFormat {
+		kitfileBytes, err := kitfile.MarshalToJSON()
+		if err != nil {
+			return nil, err
+		}
+		if manifest.Annotations == nil {
+			manifest.Annotations = map[string]string{}
+		}
+		manifest.Annotations[constants.KitfileJsonAnnotation] = string(kitfileBytes)
 	}
 
 	manifestDesc, err := saveModelManifest(ctx, localRepo, manifest)
@@ -76,15 +88,33 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 	return manifestDesc, nil
 }
 
-func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile) (ocispec.Descriptor, error) {
-	modelBytes, err := kitfile.MarshalToJSON()
-	if err != nil {
-		return ocispec.DescriptorEmptyJSON, err
+func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, diffIDs []digest.Digest, modelFormat mediatype.ModelFormat) (ocispec.Descriptor, error) {
+	var configBytes []byte
+	var configMediaType string
+	switch modelFormat {
+	case mediatype.KitFormat:
+		configMediaType = mediatype.KitConfigMediaType.String()
+		bytes, err := kitfile.MarshalToJSON()
+		if err != nil {
+			return ocispec.DescriptorEmptyJSON, err
+		}
+		configBytes = bytes
+	case mediatype.ModelPackFormat:
+		configMediaType = mediatype.ModelPackConfigMediaType.String()
+		modelpackConfig := kitfile.ToModelPackConfig(diffIDs)
+		bytes, err := json.Marshal(modelpackConfig)
+		if err != nil {
+			return ocispec.DescriptorEmptyJSON, err
+		}
+		configBytes = bytes
+	default:
+		return ocispec.DescriptorEmptyJSON, fmt.Errorf("unrecognized model format")
 	}
+
 	desc := ocispec.Descriptor{
-		MediaType: mediatype.KitConfigMediaType.String(),
-		Digest:    digest.FromBytes(modelBytes),
-		Size:      int64(len(modelBytes)),
+		MediaType: configMediaType,
+		Digest:    digest.FromBytes(configBytes),
+		Size:      int64(len(configBytes)),
 	}
 
 	exists, err := localRepo.Exists(ctx, desc)
@@ -93,7 +123,7 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 	}
 	if !exists {
 		// Does not exist in storage, need to push
-		err = localRepo.Push(ctx, desc, bytes.NewReader(modelBytes))
+		err = localRepo.Push(ctx, desc, bytes.NewReader(configBytes))
 		if err != nil {
 			return ocispec.DescriptorEmptyJSON, err
 		}
@@ -105,25 +135,26 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 	return desc, nil
 }
 
-func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) ([]ocispec.Descriptor, error) {
-	var layers []ocispec.Descriptor
+func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (layers []ocispec.Descriptor, diffIDs []digest.Digest, err error) {
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !util.IsModelKitReference(kitfile.Model.Path) {
 			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelBaseType, opts.LayerFormat, opts.Compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, kitfile.Model.Path, mediaType, ignore)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			layers = append(layers, layer)
+			diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 			kitfile.Model.LayerInfo = layerInfo
 		}
 		for idx, part := range kitfile.Model.Parts {
 			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelPartBaseType, opts.LayerFormat, opts.Compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, part.Path, mediaType, ignore)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			layers = append(layers, layer)
+			diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 			kitfile.Model.Parts[idx].LayerInfo = layerInfo
 		}
 	}
@@ -131,31 +162,34 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.CodeBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, code.Path, mediaType, ignore)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		layers = append(layers, layer)
+		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
 	for idx, dataset := range kitfile.DataSets {
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.DatasetBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		layers = append(layers, layer)
+		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 		kitfile.DataSets[idx].LayerInfo = layerInfo
 	}
 	for idx, docs := range kitfile.Docs {
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.DocsBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, docs.Path, mediaType, ignore)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		layers = append(layers, layer)
+		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 		kitfile.Docs[idx].LayerInfo = layerInfo
 	}
 
-	return layers, nil
+	return layers, diffIDs, nil
 }
 
 func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
@@ -170,6 +204,7 @@ func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path strin
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	}
+
 	defer func() {
 		if err := os.Remove(tempPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 			output.Errorf("Failed to remove temporary file %s: %s", tempPath, err)
@@ -257,18 +292,18 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 		manifest = ocispec.Manifest{
 			Versioned:    specs.Versioned{SchemaVersion: 2},
 			ArtifactType: mediatype.ArtifactTypeModelManifest,
-			// TODO: add support for ModelPack's configuration type
-			Config: ocispec.DescriptorEmptyJSON,
-			Layers: append(layerDescs, configDesc),
+			Config:       configDesc,
+			Layers:       layerDescs,
 		}
 	default:
 		return ocispec.Manifest{}, fmt.Errorf("invalid Model format")
 	}
 
 	// Global annotations
-	manifest.Annotations = map[string]string{
-		constants.CliVersionAnnotation: constants.Version,
+	if manifest.Annotations == nil {
+		manifest.Annotations = map[string]string{}
 	}
+	manifest.Annotations[constants.CliVersionAnnotation] = constants.Version
 
 	return manifest, nil
 }

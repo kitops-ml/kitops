@@ -50,7 +50,9 @@ const (
 	CurrentDevModelSubpath = "current"
 
 	// Kitops-specific annotations for modelkit artifacts
-	CliVersionAnnotation = "ml.kitops.modelkit.cli-version"
+	// TODO: update these to use the newer kitops.org domain
+	CliVersionAnnotation  = "ml.kitops.modelkit.cli-version"
+	KitfileJsonAnnotation = "ml.kitops.modelkit.kitfile"
 
 	// MaxModelRefChain is the maximum number of "parent" modelkits a modelkit may have
 	// by e.g. referring to another modelkit in its .model.path

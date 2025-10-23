@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/google/licensecheck v0.3.1
 	github.com/moby/patternmatcher v0.6.0
+	github.com/modelpack/model-spec v0.0.8-0.20251029035601-816c546bfd6b
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/spf13/cobra v1.10.1

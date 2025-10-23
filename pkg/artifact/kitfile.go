@@ -20,7 +20,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"time"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
+	"github.com/opencontainers/go-digest"
 	"gopkg.in/yaml.v3"
 )
 
@@ -132,4 +135,61 @@ func (kf *KitFile) MarshalToYAML() ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (kf *KitFile) ToModelPackConfig(diffIDs []digest.Digest) modelspecv1.Model {
+	// Fill fields as best as we can, depending on what's available in the Kitfile
+	now := time.Now()
+
+	modelDescriptor := modelspecv1.ModelDescriptor{
+		CreatedAt:   &now,
+		Authors:     kf.Package.Authors,
+		Name:        kf.Package.Name,
+		Version:     kf.Package.Version,
+		Licenses:    kf.collectLicenses(),
+		Title:       kf.Package.Name,
+		Description: kf.Package.Description,
+	}
+
+	modelFS := modelspecv1.ModelFS{
+		Type:    "layers",
+		DiffIDs: diffIDs,
+	}
+
+	modelConfig := modelspecv1.ModelConfig{}
+	if kf.Model != nil {
+		modelConfig.Format = kf.Model.Format
+	}
+
+	model := modelspecv1.Model{
+		Descriptor: modelDescriptor,
+		ModelFS:    modelFS,
+		Config:     modelConfig,
+	}
+
+	return model
+}
+
+func (kf *KitFile) collectLicenses() []string {
+	var licenses []string
+	appendNotEmpty := func(l []string, s string) []string {
+		if s == "" {
+			return l
+		}
+		return append(l, s)
+	}
+	licenses = appendNotEmpty(licenses, kf.Package.License)
+	if kf.Model != nil {
+		licenses = appendNotEmpty(licenses, kf.Model.License)
+		for _, modelpart := range kf.Model.Parts {
+			licenses = appendNotEmpty(licenses, modelpart.License)
+		}
+	}
+	for _, ds := range kf.DataSets {
+		licenses = appendNotEmpty(licenses, ds.License)
+	}
+	for _, code := range kf.Code {
+		licenses = appendNotEmpty(licenses, code.License)
+	}
+	return licenses
 }
