@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
 	"github.com/opencontainers/go-digest"
@@ -211,22 +212,22 @@ func GetKitfileForManifest(ctx context.Context, store oras.ReadOnlyTarget, manif
 	if err != nil {
 		return nil, ErrNotAModelKit
 	}
-	var configDesc ocispec.Descriptor
-	if modelFormat == mediatype.KitFormat {
-		configDesc = manifest.Config
-	} else {
-		for _, layer := range manifest.Layers {
-			if layer.MediaType == mediatype.KitConfigMediaType.String() {
-				configDesc = layer
-				break
-			}
+	switch modelFormat {
+	case mediatype.KitFormat:
+		return GetConfig(ctx, store, manifest.Config)
+	case mediatype.ModelPackFormat:
+		// TODO: can we (try to) generate a Kitfile from a ModelPack manifest?
+		if manifest.Annotations == nil || manifest.Annotations[constants.KitfileJsonAnnotation] == "" {
+			return nil, fmt.Errorf("ModelPack artifact does not contain a Kitfile")
 		}
+		kfstring := manifest.Annotations[constants.KitfileJsonAnnotation]
+		kitfile := &artifact.KitFile{}
+		if err := json.Unmarshal([]byte(kfstring), kitfile); err != nil {
+			return nil, fmt.Errorf("failed to parse config: %w", err)
+		}
+		return kitfile, nil
 	}
-	if configDesc.Digest == "" {
-		// TODO: handle ModelPack cases where no Kitfile is available
-		return nil, fmt.Errorf("could not find config for artifact")
-	}
-	return GetConfig(ctx, store, configDesc)
+	return nil, fmt.Errorf("Could not find config for artifact")
 }
 
 // GetConfig returns the config (Kitfile) described by a descriptor. Returns an error if the config blob cannot
