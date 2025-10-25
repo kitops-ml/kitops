@@ -736,3 +736,14 @@
     "published_time": "2025-06-02"
   }
 ]
+  {
+    "url": "https://open.substack.com/pub/techwithmanav/p/the-complete-guide-to-ml-model-versioning?r=4uyiev&utm_campaign=post&utm_medium=web&showWelcomeOnShare=false ",
+    "title": "The Complete Guide to ML Model Versioning: Why Git Alone Won't Save You ",
+    "tags": [
+      "KitOps",
+      "Open Source",
+      "Technical Guide"
+    ],
+    "author": "Manav Sutar",
+    "published_time": "2025-10-22"
+  }
