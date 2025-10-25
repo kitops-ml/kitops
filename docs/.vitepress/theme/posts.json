@@ -725,14 +725,14 @@
     "published_time": "2025-05-09"
   },
   {
-    "url": "https://www.upgrad.com/blog/open-source-projects-for-beginners/",
-    "title": "Top Open Source Projects for Beginners",
+    "url": "https://open.substack.com/pub/techwithmanav/p/the-complete-guide-to-ml-model-versioning?r=4uyiev&utm_campaign=post&utm_medium=web&showWelcomeOnShare=false",
+    "title": "The Complete Guide to ML Model Versioning: Why Git Alone Won't Save You",
     "tags": [
       "KitOps",
       "Open Source",
-      "Beginners"
+      "Machine Learning"
     ],
-    "author": "Pavan Vadapalli",
-    "published_time": "2025-06-02"
+    "author": "Manav Sutar",
+    "published_time": "2025-10-22"
   }
 ]
