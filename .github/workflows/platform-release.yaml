@@ -191,7 +191,7 @@ jobs:
           cp ./kitops/build/homebrew/*.* ./homebrew-files
 
       - name: Merge build artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: dist
           pattern: dist-*
@@ -297,7 +297,7 @@ jobs:
           token: ${{ steps.generate-token.outputs.token }}
 
       - name: Download the homebrew artifacts to build the homebrew recipe
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: homebrew-files
           path: homebrew-files
