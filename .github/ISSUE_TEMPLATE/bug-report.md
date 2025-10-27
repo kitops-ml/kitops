@@ -3,6 +3,7 @@ name: Bug Report
 about: Thank you for helping us improve
 title: ''
 labels: bug
+type: bug
 assignees: ''
 
 ---
