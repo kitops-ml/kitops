@@ -734,5 +734,138 @@
     ],
     "author": "Pavan Vadapalli",
     "published_time": "2025-06-02"
+  },
+    {
+    "url": "https://pub.towardsai.net/10-underground-ai-ml-tools-that-actually-100x-developer-productivity-6299dab31f71",
+    "tags": [
+      "AI",
+      "Tools",
+      "Productivity"
+    ],
+    "author": "Rohan Mistry",
+    "title": "10 Underground AI/ML Tools That Actually 100x Developer Productivity",
+    "published_time": "2025-10-26"
+  },
+  {
+    "url": "https://www.gorkem-ercan.com/p/the-state-of-oci-artifacts-for-aiml",
+    "tags": [
+      "OCI",
+      "MLOps",
+      "Open Source"
+    ],
+    "author": "Gorkem Ercan",
+    "published_time": "2025-10-07",
+    "title": "The State of OCI Artifacts for AI/ML"
+  },
+  {
+    "url": "https://infraflowai.substack.com/p/the-complete-guide-to-ml-model-versioning",
+    "tags": [
+      "MLOps",
+      "Versioning",
+      "Best Practices"
+    ],
+    "author": "Manav Sutar",
+    "published_time": "2025-10-22",
+    "title": "The Complete Guide to ML Model Versioning: Why Git Alone Won't Save You"
+  },
+  {
+    "url": "https://infraflowai.substack.com/p/mlflow-kitops-the-missing-link-in",
+    "tags": [
+      "MLOps",
+      "Versioning",
+      "Best Practices"
+    ],
+    "author": "Manav Sutar",
+    "published_time": "2025-10-11",
+    "title": "MLFlow + KitOps: The Missing Link in ML Reproducibility"
+  },
+  {
+    "url": "https://infraflowai.substack.com/p/your-ml-pipeline-is-broken-because",
+    "tags": [
+      "MLOps",
+      "Versioning",
+      "Best Practices"
+    ],
+    "author": "Manav Sutar",
+    "published_time": "2025-10-05",
+    "title": "Your ML Pipeline Is Broken Because You're Not Versioning Anything That Matters"
+  },
+  {
+    "url": "https://infraflowai.substack.com/p/how-to-deploy-ml-models-like-code",
+    "tags": [
+      "MLOps",
+      "Versioning",
+      "Best Practices"
+    ],
+    "author": "Manav Sutar",
+    "published_time": "2025-09-30",
+    "title": "How to Deploy ML Models Like Code"
+  },
+  {
+    "url": "https://infraflowai.substack.com/p/the-game-changer-your-ml-projects",
+    "tags": [
+      "MLOps",
+      "Versioning",
+      "Best Practices"
+    ],
+    "author": "Manav Sutar",
+    "published_time": "2025-09-24",
+    "title": "The Game-Changer Your ML Projects Have Been Waiting For: KitOps and OCI Artifacts"
+  },
+  {
+    "url": "https://jozu.com/blog/how-kitops-and-weights-biases-work-together-for-reliable-model-versioning/",
+    "tags": [
+      "KitOps",
+      "MLOps",
+      "Open Source"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-09-28",
+    "title": "How KitOps and Weights & Biases Work Together for Reliable Model Versioning"
+  },
+  {
+    "url": "https://jozu.com/blog/ml-training-notebook-deployable-modelkits-kitops-marimo/",
+    "tags": [
+      "KitOps",
+      "MLOps",
+      "Open Source"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-08-30",
+    "title": "How to Turn ML Training Notebook into Deployable ModelKits (KitOps + Marimo)"
+  },
+  {
+    "url": "https://jozu.com/blog/how-to-deploy-ml-models-like-code-a-practical-guide-to-kitops-and-flux-cd/",
+    "tags": [
+      "KitOps",
+      "MLOps",
+      "Open Source"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-10-10",
+    "title": "How to Deploy ML Models Like Code: A Practical Guide to KitOps and Flux CD"
+  },
+  {
+    "url": "https://jozu.com/blog/whats-wrong-with-your-kserve-setup-and-how-to-fix-it/",
+    "tags": [
+      "KitOps",
+      "MLOps",
+      "Open Source"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-10-22",
+    "title": "What's Wrong with Your KServe Setup (and How to Fix It)"
+  },
+  {
+    "url": "https://blog.sonda.red/posts/05-intel-homelab-3/",
+    "tags": [
+      "Homelab",
+      "Intel",
+      "MLOps",
+      "Kubernetes"
+    ],
+    "author": "Kalin Daskalov",
+    "published_time": "2025-09-18",
+    "title": "Lab Notes: Intel AI Inference Platform MVP"
   }
 ]
