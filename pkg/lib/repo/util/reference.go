@@ -226,8 +226,9 @@ func GetKitfileForManifest(ctx context.Context, store oras.ReadOnlyTarget, manif
 			return nil, fmt.Errorf("failed to parse config: %w", err)
 		}
 		return kitfile, nil
+	default:
+		return nil, fmt.Errorf("Unknown artifact type")
 	}
-	return nil, fmt.Errorf("Could not find config for artifact")
 }
 
 // GetConfig returns the config (Kitfile) described by a descriptor. Returns an error if the config blob cannot

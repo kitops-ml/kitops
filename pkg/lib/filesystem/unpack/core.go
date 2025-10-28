@@ -80,20 +80,26 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	if err != nil {
 		return fmt.Errorf("failed to resolve reference: %w", err)
 	}
-	manifest, config, err := util.GetManifestAndConfig(ctx, store, manifestDesc)
-	if err != nil {
-		return fmt.Errorf("failed to read model: %s", err)
-	}
-	if config.Model != nil && util.IsModelKitReference(config.Model.Path) {
-		output.Infof("Unpacking referenced modelkit %s", config.Model.Path)
-		if err := unpackParent(ctx, config.Model.Path, opts, visitedRefs); err != nil {
-			return err
-		}
-	}
 
-	if shouldUnpackLayer(config, opts.FilterConfs) {
-		if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
-			return err
+	manifest, err := util.GetManifest(ctx, store, manifestDesc)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest: %s", err)
+	}
+	config, err := util.GetKitfileForManifest(ctx, store, manifest)
+	if err != nil {
+		output.Infof("Could not get Kitfile: %s", err)
+	}
+	if config != nil {
+		if config.Model != nil && util.IsModelKitReference(config.Model.Path) {
+			output.Infof("Unpacking referenced modelkit %s", config.Model.Path)
+			if err := unpackParent(ctx, config.Model.Path, opts, visitedRefs); err != nil {
+				return err
+			}
+		}
+		if shouldUnpackLayer(config, opts.FilterConfs) {
+			if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
+				return err
+			}
 		}
 	}
 
