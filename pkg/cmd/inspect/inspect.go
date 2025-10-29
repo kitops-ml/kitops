@@ -18,6 +18,7 @@ package inspect
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -66,7 +67,7 @@ func getRemoteInspect(ctx context.Context, opts *inspectOptions) (*inspectInfo, 
 
 func getInspectInfo(ctx context.Context, repository oras.Target, ref string) (*inspectInfo, error) {
 	desc, manifest, kitfile, err := util.ResolveManifestAndConfig(ctx, repository, ref)
-	if err != nil {
+	if err != nil && !errors.Is(err, util.ErrNoKitfile) {
 		return nil, err
 	}
 	version := "unknown"

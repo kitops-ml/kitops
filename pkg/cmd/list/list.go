@@ -49,9 +49,17 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]modelInfo, e
 	var infos []modelInfo
 	manifestDescs := repo.GetAllModels()
 	for _, manifestDesc := range manifestDescs {
-		manifest, config, err := util.GetManifestAndConfig(ctx, repo, manifestDesc)
-		if err != nil && !errors.Is(err, util.ErrNotAModelKit) {
-			return nil, err
+		manifest, config, err := util.GetManifestAndKitfile(ctx, repo, manifestDesc)
+		if err != nil {
+			if errors.Is(err, util.ErrNotAModelKit) {
+				// Shouldn't happen since this is a local repo, but either way it's not a supported artifact
+				continue
+			}
+			// Allow artifacts without Kitfiles as all that will be lacking is some metadata; we can still
+			// describe them
+			if !errors.Is(err, util.ErrNoKitfile) {
+				return nil, err
+			}
 		}
 		tags := repo.GetTags(manifestDesc)
 		// Strip localhost from repo if present, since we added it

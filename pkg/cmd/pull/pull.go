@@ -19,6 +19,7 @@ package pull
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -68,8 +69,12 @@ func runPullRecursive(ctx context.Context, localRepo local.LocalRepo, opts *pull
 }
 
 func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.Descriptor, optsIn *pullOptions, pulledRefs []string) error {
-	_, config, err := util.GetManifestAndConfig(ctx, localRepo, desc)
+	_, config, err := util.GetManifestAndKitfile(ctx, localRepo, desc)
 	if err != nil {
+		if errors.Is(err, util.ErrNoKitfile) {
+			// If there's no Kitfile but it's otherwise a support artifact type, skip pulling parents as there aren't any
+			return nil
+		}
 		return err
 	}
 	if config.Model == nil || !util.IsModelKitReference(config.Model.Path) {

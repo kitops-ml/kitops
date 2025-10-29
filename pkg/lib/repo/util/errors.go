@@ -19,3 +19,4 @@ package util
 import "errors"
 
 var ErrNotAModelKit = errors.New("reference exists but is not a modelkit")
+var ErrNoKitfile = errors.New("artifact does not contain a Kitfile")

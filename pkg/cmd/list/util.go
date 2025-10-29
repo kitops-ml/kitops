@@ -52,6 +52,8 @@ func (m *modelInfo) format() []string {
 	return lines
 }
 
+// fill adds information pulled from a manifest and kitfile into the modelInfo. Handles
+// cases where the Kitfile is nil
 func (m *modelInfo) fill(manifest *ocispec.Manifest, kitfile *artifact.KitFile) {
 	m.Size = getModelSize(manifest)
 	m.Author = getModelAuthor(kitfile)
@@ -67,7 +69,7 @@ func getModelSize(manifest *ocispec.Manifest) string {
 }
 
 func getModelAuthor(kitfile *artifact.KitFile) string {
-	if len(kitfile.Package.Authors) > 0 {
+	if kitfile != nil && len(kitfile.Package.Authors) > 0 {
 		return kitfile.Package.Authors[0]
 	} else {
 		return "<none>"
@@ -75,7 +77,10 @@ func getModelAuthor(kitfile *artifact.KitFile) string {
 }
 
 func getModelName(kitfile *artifact.KitFile) string {
-	name := kitfile.Package.Name
+	name := ""
+	if kitfile != nil {
+		name = kitfile.Package.Name
+	}
 	if name == "" {
 		name = "<none>"
 	}

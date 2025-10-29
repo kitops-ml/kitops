@@ -18,6 +18,7 @@ package kitfile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -49,6 +50,9 @@ func GetKitfileForRef(ctx context.Context, configHome string, ref *registry.Refe
 	_, _, localKitfile, err := util.ResolveManifestAndConfig(ctx, localRepo, ref.Reference)
 	if err == nil {
 		return localKitfile, nil
+	} else if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
+		// We found an artifact but it does not have a Kitfile
+		return nil, err
 	}
 
 	repository, err := remote.NewRepository(ctx, ref.Registry, ref.Repository, options.DefaultNetworkOptions(configHome))

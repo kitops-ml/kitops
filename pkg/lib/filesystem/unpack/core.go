@@ -35,6 +35,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/content"
 )
@@ -87,9 +88,19 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	}
 	config, err := util.GetKitfileForManifest(ctx, store, manifest)
 	if err != nil {
-		output.Infof("Could not get Kitfile: %s", err)
-	}
-	if config != nil {
+		if !errors.Is(err, util.ErrNoKitfile) {
+			return err
+		}
+		output.Logf(output.LogLevelWarn, "Could not get Kitfile: %s", err)
+		output.Logf(output.LogLevelWarn, "Functionality may be impacted")
+		// TODO: we can probably _also_ handle getting the model-spec config and using it here
+		genconfig, err := generateKitfileForModelPack(manifest)
+		if err != nil {
+			return fmt.Errorf("could not process manifest: %w", err)
+		}
+		config = genconfig
+	} else {
+		// These steps only make sense if we have a legitimate Kitfile available
 		if config.Model != nil && util.IsModelKitReference(config.Model.Path) {
 			output.Infof("Unpacking referenced modelkit %s", config.Model.Path)
 			if err := unpackParent(ctx, config.Model.Path, opts, visitedRefs); err != nil {
@@ -196,6 +207,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			}
 		}
 
+		// TODO: handle DiffIDs when unpacking layers
 		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression()); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
@@ -395,4 +407,41 @@ func getIndex(list []string, s string) int {
 		}
 	}
 	return -1
+}
+
+// generateKitfileForModelPack generates a "Kitfile" for a manifest that otherwise does not contain one.
+// This is a minimal Kitfile suitable only for unpacking, containing a path for every layer. If a layer
+// does not use the 'org.cncf.model.filepath' annotation, an error is returned.
+func generateKitfileForModelPack(manifest *ocispec.Manifest) (*artifact.KitFile, error) {
+	if format, err := mediatype.ModelFormatForManifest(manifest); err != nil || format != mediatype.ModelPackFormat {
+		return nil, fmt.Errorf("not a modelpack artifact")
+	}
+	kf := &artifact.KitFile{
+		Model: &artifact.Model{},
+	}
+	for _, desc := range manifest.Layers {
+		if desc.Annotations == nil || desc.Annotations[modelspecv1.AnnotationFilepath] == "" {
+			return nil, fmt.Errorf("unknown file path for layer: no %s annotation", modelspecv1.AnnotationFilepath)
+		}
+		filepath := desc.Annotations[modelspecv1.AnnotationFilepath]
+		mt, err := mediatype.ParseMediaType(desc.MediaType)
+		if err != nil {
+			return nil, err
+		}
+		switch mt.Base() {
+		case mediatype.ModelBaseType:
+			kf.Model.Path = filepath
+		case mediatype.ModelPartBaseType:
+			kf.Model.Parts = append(kf.Model.Parts, artifact.ModelPart{Path: filepath})
+		case mediatype.CodeBaseType:
+			kf.Code = append(kf.Code, artifact.Code{Path: filepath})
+		case mediatype.DatasetBaseType:
+			kf.DataSets = append(kf.DataSets, artifact.DataSet{Path: filepath})
+		case mediatype.DocsBaseType:
+			kf.Docs = append(kf.Docs, artifact.Docs{Path: filepath})
+		default:
+			return nil, fmt.Errorf("unknown layer type: %s", mt)
+		}
+	}
+	return kf, nil
 }
