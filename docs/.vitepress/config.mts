@@ -82,32 +82,28 @@ export default defineConfig({
       {
         text: 'Getting started',
         items: [
-          { text: 'Overview', link: '/docs/overview/' },
-          { text: 'How it is Used', link: '/docs/use-cases/' },
-          { text: 'Get Started', link: '/docs/get-started/' },
+          { text: 'KitOps Overview', link: '/docs/overview/' },
+          { text: 'Installation', link: '/docs/use-cases/' }, //install docs, simplified
+          { text: 'Creating ModelKits', link: '/docs/create/' },
           { text: 'HuggingFace Import', link: '/docs/hf-import/' },
-          { text: 'Deploy ModelKits', link: '/docs/deploy/' },
-          { text: 'Why KitOps?', link: '/docs/why-kitops/' },
+          { text: 'Distributing ModelKits', link: '/docs/deploy/' },
+          { text: 'Using ModelKits', link: '/docs/deploy/' },
+          //{ text: 'Get Started', link: '/docs/get-started/' },
+          { text: 'Use Cases', link: '/docs/why-kitops/' }, // mix use-cases.md and this one (mostly use-cases)
+          //{ text: 'ModelKit Quick Starts', link: 'https://jozu.ml/organization/jozu-quickstarts' },
         ]
       },
       {
-        text: 'ModelKit',
+        text: 'Architecture',
         items: [
-          { text: 'Overview', link: '/docs/modelkit/intro/' },
-          { text: 'Specification', link: '/docs/modelkit/spec/' },
-          { text: 'ModelKit Quick Starts', link: 'https://jozu.ml/organization/jozu-quickstarts' },
-          // { text: 'Compatibility', link: '/docs/modelkit/compatibility/' },
+          { text: 'Core Concepts', link: '/docs/arch/concepts/' }, //new
+          { text: 'ModelKit Structure', link: '/docs/arch/modelkit/' }, //combo of two pages
+          { text: 'Kitfile', link: '/docs/arch/kitfile/' }, //combo of two pages
+          { text: 'Registry Interaction', link: '/docs/arch/registry/' }, //new
         ]
       },
       {
-        text: 'Kitfile',
-        items: [
-          { text: 'Overview', link: '/docs/kitfile/kf-overview/' },
-          { text: 'Format', link: '/docs/kitfile/format/' }
-        ]
-      },
-      {
-        text: 'Kit CLI',
+        text: 'Kit CLI Reference',
         items: getSidebarItemsFromMdFiles('docs/cli', {
             replacements: {
               'cli-reference': 'Command Reference' ,
@@ -117,9 +113,9 @@ export default defineConfig({
           })
       },
       {
-        text: 'Kit Python Library',
+        text: 'Kit Python SDK',
         items: [
-          { text: 'Overview', link: '/docs/pykitops/' },
+          { text: 'SDK Overview', link: '/docs/pykitops/' },
           { text: 'Before You Begin', link: '/docs/pykitops/before-you-begin/' },
           { text: 'How-to Guides', link: '/docs/pykitops/how-to-guides/' },
           { text: 'Class Reference', link: '/docs/pykitops/reference/' },
@@ -131,7 +127,7 @@ export default defineConfig({
           { text: 'Integration List', link: '/docs/integrations/integrations/' },
           { text: 'MLFlow', link: '/docs/integrations/mlflow/' },
           { text: 'CI/CD', link: '/docs/integrations/cicd/' },
-          { text: 'Kubernetes - initContainer', link: '/docs/integrations/k8s-init-container/' },
+          { text: 'Kubernetes & initContainer', link: '/docs/integrations/k8s-init-container/' },
           { text: 'KServe', link: '/docs/integrations/kserve/' },
         ]
       },
