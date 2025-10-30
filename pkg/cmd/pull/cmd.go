@@ -61,6 +61,10 @@ func (opts *pullOptions) complete(ctx context.Context, args []string) error {
 	if len(extraTags) > 0 {
 		return fmt.Errorf("reference cannot include multiple tags")
 	}
+	if modelRef.Reference == "" {
+		output.Infof("No tag specified for pull. Using 'latest' as default ('%s:latest')", args[0])
+		modelRef.Reference = "latest"
+	}
 	opts.modelRef = modelRef
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {

@@ -120,6 +120,9 @@ func (opts *inspectOptions) complete(ctx context.Context, args []string) error {
 	if len(extraTags) > 0 {
 		return fmt.Errorf("invalid reference format: extra tags are not supported: %s", strings.Join(extraTags, ", "))
 	}
+	if ref.Reference == "" {
+		return fmt.Errorf("missing tag or digest from ModelKit reference '%s'", args[0])
+	}
 	opts.modelRef = ref
 
 	if opts.modelRef.Registry == util.DefaultRegistry && opts.checkRemote {

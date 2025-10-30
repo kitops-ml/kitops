@@ -86,11 +86,17 @@ func (opts *tagOptions) complete(ctx context.Context, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
+	if modelRef.Reference == "" {
+		return fmt.Errorf("source ModelKit reference requires a tag or digest (%s:<tag>)", args[0])
+	}
 	opts.sourceRef = modelRef
 
 	modelRef, _, err = util.ParseReference(args[1])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
+	}
+	if modelRef.Reference == "" {
+		return fmt.Errorf("target ModelKit reference requires a tag or digest (%s:<tag>)", args[1])
 	}
 	opts.targetRef = modelRef
 	return nil

@@ -73,6 +73,10 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 	if len(extraTags) > 0 {
 		return fmt.Errorf("reference cannot include multiple tags")
 	}
+	if srcRef.Reference == "" {
+		output.Infof("No tag specified for push. Using 'latest' as default ('%s:latest')", args[0])
+		srcRef.Reference = "latest"
+	}
 	opts.srcModelRef = srcRef
 	if len(args) == 1 {
 		opts.destModelRef = srcRef
@@ -83,6 +87,10 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 		}
 		if len(extraTags) > 0 {
 			return fmt.Errorf("target reference cannot include multiple tags")
+		}
+		if destRef.Reference == "" {
+			output.Infof("No tag specified for push target. Using 'latest' as default ('%s:latest')", args[1])
+			destRef.Reference = "latest"
 		}
 		opts.destModelRef = destRef
 	}

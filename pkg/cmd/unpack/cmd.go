@@ -113,6 +113,10 @@ func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
+	if modelRef.Reference == "" {
+		output.Infof("No tag specified for unpack. Using 'latest' as default ('%s:latest')", args[0])
+		modelRef.Reference = "latest"
+	}
 	if len(extraTags) > 0 {
 		return fmt.Errorf("can not unpack multiple tags")
 	}

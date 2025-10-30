@@ -132,6 +132,10 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse reference: %w", err)
 		}
+		if modelRef.Reference == "" {
+			output.Infof("No tag or digest specified with --tag flag. Using 'latest' as default ('%s:latest')", opts.fullTagRef)
+			modelRef.Reference = "latest"
+		}
 		opts.modelRef = modelRef
 		opts.extraRefs = extraRefs
 	} else {

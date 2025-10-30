@@ -96,6 +96,9 @@ func (opts *removeOptions) complete(ctx context.Context, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse reference: %w", err)
 		}
+		if modelRef.Reference == "" {
+			return fmt.Errorf("tag or digest is required when removing (%s:<tag>)", args[0])
+		}
 		opts.modelRef = modelRef
 		opts.extraTags = extraTags
 	}

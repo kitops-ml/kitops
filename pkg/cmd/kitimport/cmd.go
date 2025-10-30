@@ -144,6 +144,10 @@ func (opts *importOptions) complete(ctx context.Context, args []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid argument: tag '%s' is invalid: %w", opts.tag, err)
 	}
+	if ref.Reference == "" {
+		output.Infof("No tag or digest provided with --tag flag. Using 'latest' as default ('%s:latest')", opts.tag)
+		ref.Reference = "latest"
+	}
 	opts.modelKitRef = ref
 
 	validTools := []string{"git", "hf"}
