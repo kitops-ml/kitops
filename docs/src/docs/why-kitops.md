@@ -1,7 +1,7 @@
 ---
 title: Why Use KitOps - Standards-Based AI/ML Packaging
 description: Discover why KitOps is the leading open-source solution for packaging, versioning, and deploying AI/ML models. Built on OCI standards and compatible with your existing tools.
-keywords: kitops, modelkit, ml model versioning, ai packaging, ai ml deployment, reproducible machine learning, OCI ML tools, MLOps alternative, secure AI packaging
+keywords: kitops, modelkit, modelpack, ml model versioning, ai packaging, ai ml deployment, reproducible machine learning, OCI ML tools, MLOps alternative, secure AI packaging
 ---
 
 # Why Use KitOps?

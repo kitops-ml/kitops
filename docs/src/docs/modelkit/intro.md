@@ -1,7 +1,7 @@
 ---
 title: ModelKit Overview - OCI Packaging for AI/ML Projects
 description: Learn how ModelKit standardizes the packaging of models, datasets, and code for AI/ML workflows. OCI-compliant, versioned, and easy to use across registries and tools.
-keywords: modelkit, modelkit overview, oci ai packaging, ml model registry, share ai model, package machine learning model, reproducible ml model, versioned ai artifact, docker for ai models
+keywords: modelkit, modelkit overview, oci ai packaging, ml model registry, share ai model, package machine learning model, reproducible ml model, versioned ai artifact, docker for ai models, modelpack
 ---
 
 # ModelKit Overview

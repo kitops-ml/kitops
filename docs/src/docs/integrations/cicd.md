@@ -1,5 +1,6 @@
 ---
 description: Use KitOps ModelKits to add AI/ML to your CI/CD tool's pipelines.
+keywords: modelkit, modelkit integration, oci ai packaging, ml model integration, ai model tools, machine learning pipelines, ml model serving, docker for ai models, modelpack
 ---
 # Using KitOps ModelKits from a CI/CD Tool
 

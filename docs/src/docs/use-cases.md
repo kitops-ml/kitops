@@ -1,7 +1,7 @@
 ---
 title: KitOps Use Cases - Secure Model Delivery & Versioning
 description: Learn how organizations use KitOps to securely package, track, and deploy AI/ML models through CI/CD, with security scanning, tagging, and rollback.
-keywords: kitops use cases, ai model deployment workflow, mlops handoff, versioning ai models, secure ai pipelines, eu ai act compliance, ai model governance, mlflow handoff, reproducible ml deployment
+keywords: kitops use cases, modelpack, ai model deployment workflow, mlops handoff, versioning ai models, secure ai pipelines, eu ai act compliance, ai model governance, mlflow handoff, reproducible ml deployment
 ---
 
 # How Teams Use KitOps 🛠️

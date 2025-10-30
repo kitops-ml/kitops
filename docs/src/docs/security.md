@@ -1,7 +1,7 @@
 ---
 title: ModelKit Security - Integrity, Signing, and Verification
-description: Learn how KitOps ensures AI/ML model integrity with built-in SHA-256 verification, optional Cosign signing, and integration with transparency logs. Secure your AI supply chain from development to deployment.
-keywords: modelkit security, ai model integrity, verify model artifact, cosign signing ml, oci security mlops, secure ai packaging, reproducible ml deployment, transparency logs, digests sha256, rekor
+description: Learn how KitOps ModelKits ensure AI/ML model integrity with built-in SHA-256 verification, optional Cosign signing, and integration with transparency logs. Secure your AI supply chain from development to deployment.
+keywords: modelkit security, modelpack, ai model integrity, verify model artifact, cosign signing ml, oci security mlops, secure ai packaging, reproducible ml deployment, transparency logs, digests sha256, rekor
 ---
 
 # Securing Your Model Supply Chain with KitOps
@@ -30,9 +30,7 @@ Every time you run `kit unpack` or `kit pull` KitOps automatically:
 
 If any artifact has been modified — even by one byte — unpacking fails with a clear digest mismatch error.
 
-> Zero-lift for you: You don’t need to write or manage any checksum code. This is handled automatically by the KitOps CLI.
-
-**Assumption**: You trust your OCI-compatible registry and transport (e.g., HTTPS). KitOps ensures what comes out of the registry matches what was originally pushed — no accidental or malicious swaps.
+> Zero-lift for you: You don’t need to write or manage any checksum code. This is handled automatically by the KitOps CLI and PyKitOps SDK.
 
 ## Signing with Cosign
 
@@ -57,8 +55,6 @@ Cosign supports OIDC-based keyless signing, eliminating key file management. Sig
 ## Build it Into Your Pipeline
 
 Combine KitOps + Cosign in [any pipeline](../integrations/cicd.md) with KitOps - that's the easiest and safest way to keep things signed and secure.
-
-Then, use policies to block deployments of ModelKits that are missing required signatures or transparency log entries.
 
 ## Audit Trails & Chain of Custody
 

@@ -1,7 +1,7 @@
 ---
 title: Deploying AI with KitOps - Kubernetes, Containers, and Local LLMs
 description: Learn how to securely deploy AI/ML models to Kubernetes, container runtimes, or run LLMs. Includes init containers, custom Dockerfiles, and dev workflows.
-keywords: deploy modelkit, kitops deployment, run ml model in kubernetes, init container ml model, containerized ai model, kitops docker, run llm locally, gguf llm deploy, kit dev start, oci model deployment, ml model runtime, mlops deployment cli
+keywords: deploy modelkit, kitops deployment, run ml model in kubernetes, init container ml model, containerized ai model, kitops docker, run llm locally, gguf llm deploy, kit dev start, oci model deployment, ml model runtime, mlops deployment cli, modelpack
 ---
 # Deploying KitOps ModelKits
 

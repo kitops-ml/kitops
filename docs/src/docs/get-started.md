@@ -1,7 +1,7 @@
 ---
 title: KitOps Tutorial - Open Source AI/ML Packaging CLI
 description: Learn how to install and use the Kit CLI to package, version, and share AI/ML models using ModelKits. Follow our step-by-step guide for setup and deployment.
-keywords: kitops, kit CLI, install kitops, package ai model, version ai model, share ml models, open source ai tools, mlops cli, modelkit example, getting started with modelkit, ai model registry, deploy machine learning models
+keywords: kitops, kit CLI, install kitops, package ai model, version ai model, share ml models, open source ai tools, mlops cli, modelkit example, modelpack, getting started with modelkit, ai model registry, deploy machine learning models
 ---
 
 <script setup>

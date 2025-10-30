@@ -87,6 +87,7 @@ export default defineConfig({
           { text: 'Get Started', link: '/docs/get-started/' },
           { text: 'HuggingFace Import', link: '/docs/hf-import/' },
           { text: 'Deploy ModelKits', link: '/docs/deploy/' },
+          { text: 'Securing ModelKits', link: '/docs/security/' },
           { text: 'Why KitOps?', link: '/docs/why-kitops/' },
         ]
       },

@@ -1,5 +1,6 @@
 ---
 description: Learn how to integrate KitOps ModelKits with KServe using a ClusterStorageContainer.
+keywords: modelkit kserve, modelkit serving, modelpack kserve, modelpack serving, oci model serving, ml model serving, share ai model, deploy machine learning model, kserve kitops, modelpack
 ---
 # Integrating KitOps with KServe
 

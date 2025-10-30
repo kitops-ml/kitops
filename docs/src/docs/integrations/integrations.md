@@ -1,7 +1,7 @@
 ---
 title: KitOps Integrations - Compatible Tools & Registries
 description: Discover all the tools and platforms that work with KitOps ModelKits, including OCI registries, MLOps tools, CI/CD platforms, cloud services, and model tracking systems.
-keywords: kitops integrations, modelkit compatible tools, OCI registries ML, CI/CD for AI models, mlops platforms, kubernetes model deployment, open source AI packaging, model registry compatibility
+keywords: kitops integrations, modelkit compatible tools, OCI registries ML, CI/CD for AI models, mlops platforms, kubernetes model deployment, open source AI packaging, model registry compatibility, modelpack integrations, modelpack compatible tools
 ---
 
 # KitOps Compatible Tools

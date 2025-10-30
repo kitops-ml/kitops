@@ -1,7 +1,7 @@
 ---
 title: What is KitOps? | Open-Source AI/ML Packaging and Deployment
 description: KitOps is an open-source standard for packaging, versioning, and deploying AI/ML models. Built on OCI, it simplifies collaboration across data science, DevOps, and software teams.
-keywords: kitops, what is kitops, modelkit, ai model packaging, machine learning deployment, mlops packaging, OCI AI tools, AI reproducibility, AI CI/CD, open source ml packaging
+keywords: kitops, what is kitops, modelkit, modelpack, ai model packaging, machine learning deployment, mlops packaging, OCI AI tools, AI reproducibility, AI CI/CD, open source ml packaging
 ---
 
 # What is KitOps?
