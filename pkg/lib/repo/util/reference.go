@@ -104,7 +104,6 @@ func ParseReference(refString string) (reference *registry.Reference, extraTags 
 		ref = unprocessed[index+1:]
 	} else {
 		// No tag or digest
-		ref = "latest"
 		repo = unprocessed
 	}
 
