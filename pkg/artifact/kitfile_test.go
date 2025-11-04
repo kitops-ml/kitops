@@ -91,3 +91,109 @@ func loadAllTestCasesOrPanic[T interface{ withName(string) T }](t *testing.T, te
 	}
 	return tests
 }
+
+func TestCollectLicenses(t *testing.T) {
+	testcases := []struct {
+		desc     string
+		kitfile  string
+		licenses []string
+	}{
+		{
+			desc: "Empty kitfile",
+			kitfile: `
+manifestVersion: 1.0.0
+`,
+			licenses: nil,
+		},
+		{
+			desc: "Kitfile with no licenses",
+			kitfile: `
+manifestVersion: 1.0.0
+package:
+  name: "test-package"
+model:
+  path: model-files
+`,
+			licenses: nil,
+		},
+		{
+			desc: "Kitfile with package license",
+			kitfile: `
+manifestVersion: 1.0.0
+package:
+  name: "test-package"
+  license: "Apache-2.0"
+model:
+  path: model-files
+`,
+			licenses: []string{"Apache-2.0"},
+		},
+		{
+			desc: "Kitfile with multiple licenses, to be sorted",
+			kitfile: `
+manifestVersion: 1.0.0
+package:
+  name: "test-package"
+  license: "license-g"
+model:
+  path: model-files
+  license: "license-h"
+  parts:
+  - path: part-files
+    license: "license-f"
+  - path: part-files
+    license: "license-e"
+datasets:
+- path: dataset
+  license: "license-c"
+- path: dataset-extra
+  license: "license-d"
+code:
+- path: code
+  license: "license-b"
+- path: code-extra
+  license: "license-a"
+`,
+			licenses: []string{"license-a", "license-b", "license-c", "license-d", "license-e", "license-f", "license-g", "license-h"},
+		},
+		{
+			desc: "Kitfile with multiple licenses, to be deduplicated",
+			kitfile: `
+manifestVersion: 1.0.0
+package:
+  name: "test-package"
+  license: Apache-2.0
+model:
+  path: model-files
+  license: MIT
+  parts:
+  - path: part-files
+    license: Apache-2.0
+  - path: part-files
+    license: MIT
+datasets:
+- path: dataset
+  license: Apache-2.0
+- path: dataset-extra
+  license: MIT
+code:
+- path: code
+  license: MIT
+- path: code-extra
+  license: MIT
+`,
+			licenses: []string{"Apache-2.0", "MIT"},
+		},
+	}
+	for _, tt := range testcases {
+		t.Run(tt.desc, func(t *testing.T) {
+			kf := &KitFile{}
+			err := kf.LoadModel(io.NopCloser(strings.NewReader(tt.kitfile)))
+			if !assert.NoError(t, err, "Unexpected error loading testcase Kitfile") {
+				return
+			}
+			actualLicenses := kf.collectLicenses()
+			assert.Equal(t, actualLicenses, tt.licenses, "Licenses should match, including order")
+		})
+	}
+}

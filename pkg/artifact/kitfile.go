@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"slices"
 	"time"
 
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
@@ -191,5 +192,8 @@ func (kf *KitFile) collectLicenses() []string {
 	for _, code := range kf.Code {
 		licenses = appendNotEmpty(licenses, code.License)
 	}
+	slices.Sort(licenses)
+	licenses = slices.Compact(licenses)
+
 	return licenses
 }
