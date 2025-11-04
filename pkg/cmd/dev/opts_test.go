@@ -138,12 +138,6 @@ func TestDevStartOptions_Complete_ErrorCases(t *testing.T) {
 		expectErrorContains string
 	}{
 		{
-			name: "nonexistent directory treated as reference",
-			args: []string{"./nonexistent"},
-			// This will be treated as a ModelKit reference, not a directory
-			// So it won't error in complete(), but would fail later during extraction
-		},
-		{
 			name:                "no arguments with no kitfile in current dir",
 			args:                []string{},
 			expectErrorContains: "no Kitfile found in directory",
@@ -152,11 +146,6 @@ func TestDevStartOptions_Complete_ErrorCases(t *testing.T) {
 			name:                "empty string argument",
 			args:                []string{""},
 			expectErrorContains: "no Kitfile found in directory",
-		},
-		{
-			name: "path with many parts treated as reference",
-			args: []string{"not/a/valid/reference/with/too/many/parts"},
-			// This gets parsed as a valid reference, no error expected
 		},
 	}
 

@@ -2,9 +2,8 @@ description: "Test dev command with directory paths (legacy functionality)"
 setup:
   modelkits: []
 tests:
-  - name: "directory path gets treated as reference"
+  - name: "directory path without a Kitfile"
     args: "./test-model"  
     expectStartError: true
-    # Directory paths like "./test-model" get treated as ModelKit references
-    startErrorRegexp: "failed to extract ModelKit: failed to find reference*"
+    startErrorRegexp: "no Kitfile found in directory*"
     expectedCacheDir: false
