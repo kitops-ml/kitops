@@ -58,6 +58,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
   - id: kit-macos-zip-offline-archive
     format: zip
     builds:
@@ -71,6 +72,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
   # tar.gz archives for Mac OS:
   #   - will not be notarized
   #   - will be installable via homebrew (i.e. "brew install kitops")
@@ -87,6 +89,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
 
 git:
   ignore_tags:

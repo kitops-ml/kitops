@@ -42,6 +42,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
   - id: kit-archive-offline
     format: tar.gz
     builds:
@@ -56,6 +57,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
 
 git:
   ignore_tags:

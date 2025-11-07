@@ -42,6 +42,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
   - id: kit-archive-offline
     format: zip
     builds:
@@ -56,6 +57,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - INSTALL.md
 
 snapshot:
   name_template: "{{ .Version }}"
