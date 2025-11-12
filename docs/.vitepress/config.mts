@@ -134,6 +134,7 @@ export default defineConfig({
           { text: 'CI/CD', link: '/docs/integrations/cicd/' },
           { text: 'Kubernetes - initContainer', link: '/docs/integrations/k8s-init-container/' },
           { text: 'KServe', link: '/docs/integrations/kserve/' },
+          { text: 'ModelPack', link: '/docs/integrations/modelpack/' },
         ]
       },
       {
