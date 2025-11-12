@@ -16,7 +16,9 @@ It’s a format your tools can understand, your teams can trust, and your pipeli
 
 ## Why Use KitOps?
 
-AI/ML models involve more than just code — datasets, configuration, documentation, and model weights all need to be versioned and delivered reliably. KitOps provides a standard, OCI-compliant way to package everything your model needs for development or production.
+AI/ML models involve more than just code — model weights, datasets, configuration, prompts, and documentation all need to be versioned and delivered reliably. Today most teams store each asset in a different repository disconnected from each other. This adds AuthZ mismatch risks, and makes it hard to trace the lineage from models to datasets used to tune them, and back to Jupyter Notebooks.
+
+KitOps packages everything your model needs for development or production in a single versioned OCI Artifact that you store in your container registry.
 
 You can:
 - Package models into deployable artifacts
@@ -34,11 +36,15 @@ The KitOps ModelKit is a packaging format that bundles all the artifacts of your
 
 This means ModelKits can be stored in your existing image registry, deployed to Kubernetes (or anywhere else containers run), and managed just like any container image.
 
+KitOps can also create ModelPack-compliant packages. Both ModelPack and ModelKits are vendor-neutral standards for packaging everything needed for an AI/ML project.
+
 See how to [deploy ModelKits](../deploy.md)
 
 ### 📄 Kitfile: Config Made Easy
 
 The Kitfile is a YAML configuration that describes what goes into a KitOps ModelKit. It’s designed for clarity and security — making it easy to track what’s included, and to share AI/ML projects across environments and teams.
+
+Prefer to use ModelPack? You can simply use `kit pack --use-model-pack` and KitOps will take care of everything else behind the scenes.
 
 ### 🖥️ Kit CLI: Create, Run, Automate
 
