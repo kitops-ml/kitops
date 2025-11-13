@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kitops-ml/kitops/pkg/cmd/attest"
 	"github.com/kitops-ml/kitops/pkg/cmd/dev"
 	"github.com/kitops-ml/kitops/pkg/cmd/diff"
 	"github.com/kitops-ml/kitops/pkg/cmd/info"
@@ -37,8 +38,10 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/pull"
 	"github.com/kitops-ml/kitops/pkg/cmd/push"
 	"github.com/kitops-ml/kitops/pkg/cmd/remove"
+	"github.com/kitops-ml/kitops/pkg/cmd/sign"
 	"github.com/kitops-ml/kitops/pkg/cmd/tag"
 	"github.com/kitops-ml/kitops/pkg/cmd/unpack"
+	"github.com/kitops-ml/kitops/pkg/cmd/verify"
 	"github.com/kitops-ml/kitops/pkg/cmd/version"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
@@ -167,6 +170,9 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(diff.DiffCommand())
 	rootCmd.AddCommand(kitimport.ImportCommand())
 	rootCmd.AddCommand(kitcache.CacheCommand())
+	rootCmd.AddCommand(sign.SignCommand())
+	rootCmd.AddCommand(attest.AttestCommand())
+	rootCmd.AddCommand(verify.VerifyCommand())
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
