@@ -10,7 +10,7 @@ KitOps supports the ModelPack standard natively and transparently. To create a M
 
 ```sh
 # Create a ModelPack OCI Artifact
-kit pack --use-model-pack
+kit pack . --use-model-pack
 ```
 
 Everything else you do with the ModelPack-compliant Artifact will be handled transparently by KitOps - simple!
