@@ -3,6 +3,7 @@ package verify
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -27,52 +28,46 @@ func (opts *verifyOptions) complete(ctx context.Context, args []string) error {
 }
 
 func VerifyCommand() *cobra.Command {
-	var verifySign, verifyAttestation bool
 
 	cmd := &cobra.Command{
 		Use:     "verify",
 		Short:   "",
 		Long:    "",
 		Example: "",
-		RunE:    runCommand([]verifyOptions{}, verifySign, verifyAttestation),
+		RunE:    runCommand([]verifyOptions{}),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) >= 1 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 			return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 		},
+		DisableFlagParsing: true,
 	}
 
-	cmd.Flags().BoolVar(&verifySign, "verifysign", false, "If only modelkit signature needs to be verified")
-	cmd.Flags().BoolVar(&verifyAttestation, "verifyattestation", false, "If only attestation needs to be verified")
 	return cmd
 }
 
-func runCommand(opts []verifyOptions, verifySign, verifyAttestation bool) func(cmd *cobra.Command, args []string) error {
+func runCommand(opts []verifyOptions) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		commands := []string{"verify", "verify-attestation"}
+		argsnew := [][]string{{}, {}}
+		for _, val := range args {
+			if val, ok := strings.CutPrefix(val, "--verify."); ok {
+				argsnew[0] = append(argsnew[0], "--"+val)
+			} else if val, ok := strings.CutPrefix(val, "--verify-attestation."); ok {
+				argsnew[1] = append(argsnew[1], "--"+val)
+			} else {
+				argsnew[0] = append(argsnew[0], val)
+				argsnew[1] = append(argsnew[1], val)
+			}
+		}
 
-		if verifySign {
+		for i := range 2 {
 			opts = append(opts, verifyOptions{})
-			args = append([]string{commands[0]}, args...)
-			if err := opts[0].complete(cmd.Context(), args); err != nil {
+			argsnew[i] = append([]string{commands[i]}, argsnew[i]...)
+			if err := opts[i].complete(cmd.Context(), argsnew[i]); err != nil {
 				return output.Fatalf("Invalid arguments: %s", err)
 			}
-		} else if verifyAttestation {
-			opts = append(opts, verifyOptions{})
-			args = append([]string{commands[1]}, args...)
-			if err := opts[0].complete(cmd.Context(), args); err != nil {
-				return output.Fatalf("Invalid arguments: %s", err)
-			}
-		} else {
-			for i := range 2 {
-				opts = append(opts, verifyOptions{})
-				args = append([]string{commands[i]}, args...)
-				if err := opts[i].complete(cmd.Context(), args); err != nil {
-					return output.Fatalf("Invalid arguments: %s", err)
-				}
-			}
-
 		}
 
 		for i := range len(opts) {
