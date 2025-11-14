@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	shortDesc = "Sign the supplied container image. Use the same flags as cosign."
+	example   = `kit sign --key cosign.key --tlog-upload=false myimage:latest`
+)
+
 type signOptions struct {
 	configHome string
 	cosignArgs []string
@@ -18,10 +23,9 @@ type signOptions struct {
 func SignCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:     "sign",
-		Short:   "",
-		Long:    "",
-		Example: "",
+		Use:     "sign [flags]",
+		Short:   shortDesc,
+		Example: example,
 		RunE:    runCommand(&signOptions{}),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) >= 1 {
@@ -42,7 +46,6 @@ func (opts *signOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.configHome = configHome
 	opts.cosignArgs = append([]string{"sign"}, args...)
-	fmt.Println(opts.cosignArgs)
 	return nil
 }
 

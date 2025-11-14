@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	shortDesc = "Attest the supplied container image. Use the same flags as cosign."
+	example   = `kit attest --predicate PREDICATE_FILE --key cosign.key --tlog-upload=false IMAGE_URI`
+)
+
 type attestOptions struct {
 	configHome string
 	cosignArgs []string
@@ -21,19 +26,15 @@ func (opts *attestOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("default config path not set on command context")
 	}
 	opts.configHome = configHome
-	//opts.cosignArgs = append(args, "verify")
-	//cosignArgs :=
 	opts.cosignArgs = append([]string{"attest"}, args...)
-	fmt.Println(opts.cosignArgs)
 	return nil
 }
 
 func AttestCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "attest",
-		Short:   "",
-		Long:    "",
-		Example: "",
+		Use:     "attest [FLAGS]",
+		Short:   shortDesc,
+		Example: example,
 		RunE:    runCommand(&attestOptions{}),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) >= 1 {

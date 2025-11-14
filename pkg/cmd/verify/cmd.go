@@ -11,6 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	shortDesc = "Verify the ModelKit signature and attestation. Runs both verify and verify-attestation. Use --verify.* and --verify-attestation.* for flags specific to each step."
+	example   = `kit verify --key cosign.pub --verify.insecure-ignore-tlog=true DIGEST`
+)
+
 type verifyOptions struct {
 	configHome string
 	cosignArgs []string
@@ -30,10 +35,9 @@ func (opts *verifyOptions) complete(ctx context.Context, args []string) error {
 func VerifyCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:     "verify",
-		Short:   "",
-		Long:    "",
-		Example: "",
+		Use:     "verify [FLAGS]",
+		Short:   shortDesc,
+		Example: example,
 		RunE:    runCommand([]verifyOptions{}),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) >= 1 {
