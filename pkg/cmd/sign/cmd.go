@@ -61,12 +61,13 @@ func (opts *signOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("default config path not set on command context")
 	}
 	opts.configHome = configHome
-	opts.cosignArgs = append([]string{"sign"}, args...)
+	opts.cosignArgs = args
 	return nil
 }
 
 func runCommand(opts *signOptions) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		args = append([]string{"sign"}, args...)
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
