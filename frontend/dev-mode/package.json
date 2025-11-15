@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@speed-highlight/core": "^1.2.6",
+    "@speed-highlight/core": "^1.2.8",
     "@vueuse/components": "^10.9.0",
     "just-use-native-fetch": "^1.0.0",
     "markdown-it": "^14.1.0",
