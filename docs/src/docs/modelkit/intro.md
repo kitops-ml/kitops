@@ -43,7 +43,37 @@ ModelKit simplifies the messy handoff between data scientists, engineers, and op
 
 It’s more than a format — it’s a building block for secure, reproducible AI.
 
+## 🔄 ModelPack Format Support
+
+KitOps supports both **ModelKit** and **ModelPack** artifact formats:
+
+* **ModelKit** (default) — KitOps' native format with integrated Kitfile configuration
+* **ModelPack** — The [CNCF model-spec format](https://github.com/modelpack/model-spec) for vendor-neutral AI/ML interchange
+
+### Using ModelPack Format
+
+To pack artifacts in ModelPack format, use the `--use-model-pack` flag:
+
+```sh
+kit pack . --use-model-pack -t registry/repo:tag
+```
+
+### Compatibility
+
+All Kit CLI commands work transparently with both formats:
+
+* `kit pull` — Works with ModelKit and ModelPack artifacts
+* `kit unpack` — Extracts contents from either format
+* `kit inspect` — Shows manifests for both types
+* `kit list` — Displays artifacts regardless of format
+* `kit push` — Pushes any supported artifact type
+
+When you pack with `--use-model-pack`, your Kitfile is preserved as a manifest annotation, ensuring you can still retrieve and use it with Kit commands.
+
+**Note:** ModelPack artifacts created by other tools (not Kit) may not include a Kitfile. Kit can still unpack these artifacts if they use the `org.cncf.model.filepath` annotation to specify file paths.
+
 ---
 
 **Have feedback or questions?**
 Open an [issue on GitHub](https://github.com/kitops-ml/kitops/issues) or [join us on Discord](https://discord.gg/Tapeh8agYy).
+

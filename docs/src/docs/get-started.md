@@ -72,7 +72,17 @@ Use the [kit pack command](../cli/cli-reference.md#kit-pack):
 kit pack . -t jozu.ml/your-username/finetune:latest
 ```
 
-This saves the ModelKit locally under the `latest` tag. Verify:
+This saves the ModelKit locally under the `latest` tag.
+
+:::tip Packing as ModelPack format
+To create a [ModelPack](https://github.com/modelpack/model-spec)-formatted artifact instead, add the `--use-model-pack` flag:
+```sh
+kit pack . --use-model-pack -t jozu.ml/your-username/finetune:latest
+```
+All Kit commands work with both ModelKit and ModelPack formats.
+:::
+
+Verify your packed model:
 
 ```sh
 kit list

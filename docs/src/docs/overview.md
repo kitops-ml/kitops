@@ -36,7 +36,7 @@ The KitOps ModelKit is a packaging format that bundles all the artifacts of your
 
 This means ModelKits can be stored in your existing image registry, deployed to Kubernetes (or anywhere else containers run), and managed just like any container image.
 
-KitOps can also create ModelPack-compliant packages. Both ModelPack and ModelKits are vendor-neutral standards for packaging everything needed for an AI/ML project.
+**ModelPack Support:** KitOps can also create ModelPack-compliant packages using the [CNCF model-spec format](https://github.com/modelpack/model-spec). Both ModelPack and ModelKits are vendor-neutral standards for packaging everything needed for an AI/ML project. Kit commands (pull, push, unpack, inspect, list) work transparently with both formats.
 
 See how to [deploy ModelKits](../deploy.md)
 
@@ -44,7 +44,13 @@ See how to [deploy ModelKits](../deploy.md)
 
 The Kitfile is a YAML configuration that describes what goes into a KitOps ModelKit. It’s designed for clarity and security — making it easy to track what’s included, and to share AI/ML projects across environments and teams.
 
-Prefer to use ModelPack? You can simply use `kit pack . --use-model-pack` and KitOps will take care of everything else behind the scenes.
+**Using ModelPack format:** To pack in ModelPack format instead of ModelKit format, add the `--use-model-pack` flag:
+
+```sh
+kit pack . --use-model-pack -t myregistry/mymodel:latest
+```
+
+When packing as ModelPack, KitOps stores your Kitfile as a manifest annotation so you can still retrieve it later. Commands like `kit unpack`, `kit pull`, and `kit inspect` work the same way regardless of format.
 
 ### 🖥️ Kit CLI: Create, Run, Automate
 
