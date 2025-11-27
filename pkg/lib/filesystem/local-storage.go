@@ -168,6 +168,19 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
+
+	for idx, prompt := range kitfile.Prompt {
+		mediaType := constants.MediaType{
+			BaseType:    constants.PromptType,
+			Compression: compression,
+		}
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, prompt.Path, mediaType, ignore)
+		if err != nil {
+			return nil, err
+		}
+		layers = append(layers, layer)
+		kitfile.Prompt[idx].LayerInfo = layerInfo // should resolve this
+	}
 	for idx, dataset := range kitfile.DataSets {
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.DatasetBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)

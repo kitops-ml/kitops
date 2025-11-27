@@ -36,6 +36,7 @@ type (
 		Code            []Code    `json:"code,omitempty" yaml:"code,omitempty"`
 		DataSets        []DataSet `json:"datasets,omitempty" yaml:"datasets,omitempty"`
 		Docs            []Docs    `json:"docs,omitempty" yaml:"docs,omitempty"`
+		Prompt          []Prompt    `json:"prompt,omitempty" yaml:"prompt,omitempty"`
 	}
 
 	Package struct {
@@ -80,6 +81,13 @@ type (
 	}
 
 	Code struct {
+		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
+		Description string `json:"description,omitempty" yaml:"description,omitempty"`
+		License     string `json:"license,omitempty" yaml:"license,omitempty"`
+		*LayerInfo  `json:",inline" yaml:",inline"`
+	}
+
+	Prompt struct {
 		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
 		Description string `json:"description,omitempty" yaml:"description,omitempty"`
 		License     string `json:"license,omitempty" yaml:"license,omitempty"`

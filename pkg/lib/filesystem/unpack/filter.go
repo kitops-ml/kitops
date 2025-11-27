@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 )
 
@@ -118,6 +119,9 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 	case artifact.Code:
 		// Code does not have a ID/name field so we can only match on path
 		return matchesFilters(l.Path, mediatype.CodeBaseType, filters)
+	case artifact.Prompt:
+		return matchesFilters(l.Path, constants.PromptType, filters)	
+	
 	default:
 		return false
 	}
@@ -133,7 +137,7 @@ func matchesFilters(field string, baseType mediatype.BaseType, filterConfs []Fil
 }
 
 // FiltersFromUnpackConf converts a (deprecated) unpackConf to a set of filters to enable supporting the old flags
-func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs bool) []FilterConf {
+func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs, unpackPrompt bool) []FilterConf {
 	filter := FilterConf{}
 
 	if unpackKitfile {
@@ -149,7 +153,10 @@ func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatase
 		filter.BaseTypes = append(filter.BaseTypes, mediatype.DatasetBaseType)
 	}
 	if unpackCode {
-		filter.BaseTypes = append(filter.BaseTypes, mediatype.CodeBaseType)
+		filter.BaseTypes = append(filter.BaseTypes, constants.CodeType)
+	}
+	if (unpackPrompt) {
+		filter.BaseTypes = append(filter.BaseTypes, constants.PromptType)
 	}
 	return []FilterConf{filter}
 }

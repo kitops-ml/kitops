@@ -101,6 +101,7 @@ type unpackConf struct {
 	unpackCode     bool
 	unpackDatasets bool
 	unpackDocs     bool
+	unpackPrompt   bool
 }
 
 func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
@@ -206,7 +207,7 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		if conf.unpackKitfile || conf.unpackModels || conf.unpackCode || conf.unpackDatasets || conf.unpackDocs {
 			deprecatedFilters := unpack.FiltersFromUnpackConf(
 				conf.unpackKitfile, conf.unpackModels, conf.unpackCode,
-				conf.unpackDatasets, conf.unpackDocs)
+				conf.unpackDatasets, conf.unpackDocs, conf.unpackPrompt)
 			libOpts.FilterConfs = deprecatedFilters
 		} else if len(opts.filters) > 0 {
 			// Parse filters using library functionality

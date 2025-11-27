@@ -120,6 +120,7 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 		unpackCode        bool
 		unpackDatasets    bool
 		unpackDocs        bool
+		unpackPrompts     bool
 		expectedTypeCount int
 		expectedTypes     []mediatype.BaseType
 	}{
@@ -160,6 +161,7 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 				tt.unpackCode,
 				tt.unpackDatasets,
 				tt.unpackDocs,
+				tt.unpackPrompts,
 			)
 
 			require.Len(t, result, 1, "Should return exactly one filter config")
