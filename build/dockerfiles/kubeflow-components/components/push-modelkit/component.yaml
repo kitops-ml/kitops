@@ -17,12 +17,12 @@ inputs:
   - {name: code_commit, type: String, optional: true, description: 'Code commit hash'}
 
 outputs:
-  - {name: uri, type: String, description: 'Full ModelKit URI with digest'}
-  - {name: digest, type: String, description: 'ModelKit digest (sha256:...)'}
+  - {name: uri, type: String, description: 'Tagged ModelKit URI (e.g., registry.io/repo:tag)'}
+  - {name: digest, type: String, description: 'Digest-based ModelKit URI (e.g., registry.io/repo@sha256:...)'}
 
 implementation:
   container:
-    image: kubeflow:dev
+    image: ghcr.io/kitops-ml/kitops-kubeflow:latest
     command:
       - /bin/bash
       - -c

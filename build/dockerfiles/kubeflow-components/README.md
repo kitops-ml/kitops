@@ -31,8 +31,8 @@ If a `Kitfile` exists in `modelkit_dir`, it is used as-is. Otherwise, one is aut
 
 **Outputs**
 
-- `uri` – Full ModelKit URI with digest (e.g., `registry.io/myorg/mymodel@sha256:abc…`)
-- `digest` – ModelKit digest (e.g., `sha256:abc…`)
+- `uri` – Tagged ModelKit URI (e.g., `registry.io/myorg/mymodel:v1`)
+- `digest` – Digest-based ModelKit URI (e.g., `registry.io/myorg/mymodel@sha256:abc…`)
 
 ### unpack-modelkit
 
@@ -99,7 +99,7 @@ def push_modelkit(
     code_commit: str = '',
 ):
     return dsl.ContainerSpec(
-        image='ghcr.io/kitops-ml/kubeflow:latest',
+        image='ghcr.io/kitops-ml/kitops-kubeflow:latest',
         command=['/bin/bash', '-c'],
         args=[
             f'/scripts/push-modelkit.sh '
@@ -144,7 +144,7 @@ def simple_pipeline(
     kubernetes.use_secret_as_volume(
         push,
         secret_name='docker-config',
-        mount_path='/etc/docker-config',
+        mount_path='/home/user/.docker',
     )
 ```
 
@@ -216,7 +216,7 @@ def production_pipeline(
     kubernetes.use_secret_as_volume(
         push,
         secret_name='docker-config',
-        mount_path='/etc/docker-config',
+        mount_path='/home/user/.docker',
     )
     kubernetes.use_secret_as_volume(
         push,
@@ -254,7 +254,7 @@ Mount in your pipeline (as shown above) using:
 kubernetes.use_secret_as_volume(
     push,
     secret_name='docker-config',
-    mount_path='/etc/docker-config',
+    mount_path='/home/user/.docker',
 )
 ```
 

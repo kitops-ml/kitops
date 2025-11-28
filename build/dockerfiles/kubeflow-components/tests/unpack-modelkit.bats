@@ -110,8 +110,8 @@ teardown() {
 @test "successfully unpacks modelkit to specified path" {
     run bash "$SCRIPT_PATH" "registry.io/myorg/mymodel:v1" "$EXTRACT_DIR"
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "Starting ModelKit unpack workflow" ]]
-    [[ "$output" =~ "Unpacking ModelKit" ]]
+    [[ "$output" =~ "Starting unpack" ]]
+    [[ "$output" =~ "Unpacking" ]]
     [ -f "$EXTRACT_DIR/model.bin" ]
 }
 

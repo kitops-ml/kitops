@@ -250,8 +250,8 @@ EOF
     uri_content=$(cat "$OUTPUT_DIR/uri")
     digest_content=$(cat "$OUTPUT_DIR/digest")
 
-    [[ "$uri_content" =~ registry.io/myorg/mymodel@sha256: ]]
-    [[ "$digest_content" =~ sha256:abc123def456 ]]
+    [[ "$uri_content" == "registry.io/myorg/mymodel:v1" ]]
+    [[ "$digest_content" =~ registry.io/myorg/mymodel@sha256:abc123def456 ]]
 }
 
 @test "returns valid JSON output" {

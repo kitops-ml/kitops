@@ -9,8 +9,6 @@ Uses pure KFP v2.14.3 components without v1 compatibility.
 """
 
 from kfp import dsl, kubernetes
-from typing import NamedTuple
-
 
 @dsl.component(
     packages_to_install=['pandas', 'xgboost', 'scikit-learn'],
@@ -134,7 +132,7 @@ def push_modelkit(
     """
     # Build command using safe argument passing
     return dsl.ContainerSpec(
-        image='kubeflow:dev',
+        image='ghcr.io/kitops-ml/kitops-kubeflow:latest',
         command=['/bin/bash', '-c'],
         args=[
             '''
@@ -226,7 +224,6 @@ if __name__ == '__main__':
     print(f"Using KFP version: {kfp_version}")
 
     if kfp_version.startswith('2.'):
-        # KFP v2 - compile with v1 compatibility
         from kfp import compiler
         compiler.Compiler().compile(
             pipeline_func=house_prices_pipeline,

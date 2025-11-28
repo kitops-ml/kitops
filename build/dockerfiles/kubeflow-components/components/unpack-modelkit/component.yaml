@@ -10,7 +10,7 @@ outputs:
 
 implementation:
   container:
-    image: ghcr.io/kitops-ml/kubeflow:latest
+    image: ghcr.io/kitops-ml/kitops-kubeflow:latest
     command:
       - /bin/bash
       - /scripts/unpack-modelkit.sh
