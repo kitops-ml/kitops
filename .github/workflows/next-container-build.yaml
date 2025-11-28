@@ -12,6 +12,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   INIT_IMAGE_NAME: ${{ github.repository }}-init
   KIT_SERVE_IMAGE: ${{ github.repository }}-kserve
+  KUBEFLOW_IMAGE: ${{ github.repository }}-kubeflow
   NEXT_TAG: next
 
 permissions:
@@ -88,5 +89,22 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.KIT_SERVE_IMAGE }}:${{ env.NEXT_TAG }}
           annotations: |
             index:org.opencontainers.image.description=KitOps KServe container
+            index:org.opencontainers.image.source=https://github.com/kitops-ml/kitops
+            index:org.opencontainers.image.licenses=Apache-2.0
+
+      - name: Build and push Kubeflow Pipeline components container
+        id: build-kubeflow-container
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83    # v6.18.0
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          context: build/dockerfiles/kubeflow-components
+          file: build/dockerfiles/kubeflow-components/Dockerfile
+          build-args: |
+            KIT_BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-kit-container.outputs.digest }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.KUBEFLOW_IMAGE }}:${{ env.NEXT_TAG }}
+          annotations: |
+            index:org.opencontainers.image.description=KitOps Kubeflow Pipeline Components
             index:org.opencontainers.image.source=https://github.com/kitops-ml/kitops
             index:org.opencontainers.image.licenses=Apache-2.0

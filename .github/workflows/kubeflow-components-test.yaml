@@ -1,0 +1,72 @@
+name: Kubeflow Components Tests
+
+on:
+  pull_request:
+    paths:
+      - 'build/dockerfiles/kubeflow-components/**'
+      - '.github/workflows/kubeflow-components-test.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'build/dockerfiles/kubeflow-components/**'
+      - '.github/workflows/kubeflow-components-test.yaml'
+
+jobs:
+  test-scripts:
+    name: Run BATS tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Install jq
+        run: |
+          sudo apt-get install -y jq
+
+      - name: Run push-modelkit tests
+        working-directory: build/dockerfiles/kubeflow-components
+        run: bats tests/push-modelkit.bats
+
+      - name: Run unpack-modelkit tests
+        working-directory: build/dockerfiles/kubeflow-components
+        run: bats tests/unpack-modelkit.bats
+
+  test-container-build:
+    name: Test container build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130    # v3.7.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435  # v3.11.1
+
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Build base kit container (for build-arg)
+        id: build-kit-base
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83    # v6.18.0
+        with:
+          platforms: linux/amd64
+          push: false
+          context: .
+          file: build/dockerfiles/Dockerfile
+          load: true
+          tags: ghcr.io/kitops-ml/kitops:test
+
+      - name: Check kubeflow components container build
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83    # v6.18.0
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: false
+          context: build/dockerfiles/kubeflow-components
+          file: build/dockerfiles/kubeflow-components/Dockerfile
+          build-args: |
+            KIT_BASE_IMAGE=ghcr.io/kitops-ml/kitops:test
