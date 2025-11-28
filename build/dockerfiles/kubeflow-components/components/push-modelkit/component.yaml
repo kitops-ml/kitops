@@ -1,0 +1,51 @@
+name: push-modelkit
+description: Package and push ML artifacts as a ModelKit
+
+inputs:
+  - {name: registry, type: String, description: 'Container registry host (e.g., registry.io)'}
+  - {name: repository, type: String, description: 'Repository path (e.g., myorg/mymodel)'}
+  - {name: tag, type: String, default: 'latest', description: 'ModelKit tag'}
+
+  - {name: modelkit_dir, type: String, description: 'Directory containing ML artifacts (with or without Kitfile)'}
+
+  - {name: modelkit_name, type: String, optional: true, description: 'Name for the ModelKit'}
+  - {name: modelkit_desc, type: String, optional: true, description: 'Description for the ModelKit'}
+  - {name: modelkit_author, type: String, optional: true, description: 'Author for the ModelKit'}
+
+  - {name: dataset_uri, type: String, optional: true, description: 'Dataset URI'}
+  - {name: code_repo, type: String, optional: true, description: 'Code repository URL'}
+  - {name: code_commit, type: String, optional: true, description: 'Code commit hash'}
+
+outputs:
+  - {name: uri, type: String, description: 'Full ModelKit URI with digest'}
+  - {name: digest, type: String, description: 'ModelKit digest (sha256:...)'}
+
+implementation:
+  container:
+    image: kubeflow:dev
+    command:
+      - /bin/bash
+      - -c
+      - |
+        /scripts/push-modelkit.sh \
+          "$0" "$1" "$2" \
+          --modelkit-dir "$3" \
+          ${4:+--name "$4"} \
+          ${5:+--desc "$5"} \
+          ${6:+--author "$6"} \
+          ${7:+--dataset-uri "$7"} \
+          ${8:+--code-repo "$8"} \
+          ${9:+--code-commit "$9"}
+      - {inputValue: registry}
+      - {inputValue: repository}
+      - {inputValue: tag}
+      - {inputValue: modelkit_dir}
+      - {inputValue: modelkit_name}
+      - {inputValue: modelkit_desc}
+      - {inputValue: modelkit_author}
+      - {inputValue: dataset_uri}
+      - {inputValue: code_repo}
+      - {inputValue: code_commit}
+    fileOutputs:
+      uri: /tmp/outputs/uri
+      digest: /tmp/outputs/digest
