@@ -1,0 +1,14 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: house-prices-model
+  namespace: modelkit-demo
+  annotations:
+    serving.kserve.io/deploymentMode: RawDeployment
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: sklearn
+      storageUri: kit://jozu.ml/demo/house-prices:latest
+      protocolVersion: v2

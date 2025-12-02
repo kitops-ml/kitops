@@ -5,7 +5,7 @@ This example demonstrates the directory-based approach where the training compon
 creates a directory with well-named files (model.pkl, predictions.csv, train.py, README.md)
 and the push-modelkit component packages the entire directory as a ModelKit.
 
-Uses pure KFP v2.14.3 components without v1 compatibility.
+Uses KFP v2.14.3
 """
 
 from kfp import dsl, kubernetes
