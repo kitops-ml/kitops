@@ -66,6 +66,13 @@ var datasetSuffixes = []string{
 	".tar", ".zip", ".parquet", ".csv",
 }
 
+// Files that are considered prompt files based on their names
+var promptFilePatterns = []string{
+	"AGENTS.md",
+	"SKILL.md",
+	"CLAUDE.md",
+}
+
 // Generate a basic Kitfile by looking at the contents of a directory. Parameter
 // packageOpt can be used to define metadata for the Kitfile (i.e. the package
 // section), which is left empty if the parameter is nil.
@@ -270,6 +277,19 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 }
 
 func determineFileType(filename string) fileType {
+	// Check for exact prompt file matches
+	baseName := strings.ToLower(filepath.Base(filename))
+	for _, pattern := range promptFilePatterns {
+		if baseName == strings.ToLower(pattern) {
+			return fileTypeCode
+		}
+	}
+
+	// Check for .prompt pattern (substring match)
+	if strings.Contains(baseName, ".prompt") {
+		return fileTypeCode
+	}
+
 	if anySuffix(filename, modelWeightsSuffixes) {
 		return fileTypeModel
 	}
