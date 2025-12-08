@@ -33,7 +33,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"go.yaml.in/yaml/v4"
+	"go.yaml.in/yaml/v3"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 

@@ -25,7 +25,7 @@ import (
 
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	"github.com/opencontainers/go-digest"
-	"go.yaml.in/yaml/v4"
+	"go.yaml.in/yaml/v3"
 )
 
 type (
