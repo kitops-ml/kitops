@@ -239,7 +239,7 @@ EOF
 @test "creates output files in /tmp/outputs" {
     run bash "$SCRIPT_PATH" "registry.io" "myorg/mymodel" "v1" --modelkit-dir "$MODEL_DIR"
     [ "$status" -eq 0 ]
-    [ -f "$OUTPUT_DIR/uri" ]
+    [ -f "$OUTPUT_DIR/reference" ]
     [ -f "$OUTPUT_DIR/digest" ]
 }
 
@@ -247,10 +247,10 @@ EOF
     run bash "$SCRIPT_PATH" "registry.io" "myorg/mymodel" "v1" --modelkit-dir "$MODEL_DIR"
     [ "$status" -eq 0 ]
 
-    uri_content=$(cat "$OUTPUT_DIR/uri")
+    ref_content=$(cat "$OUTPUT_DIR/reference")
     digest_content=$(cat "$OUTPUT_DIR/digest")
 
-    [[ "$uri_content" == "registry.io/myorg/mymodel:v1" ]]
+    [[ "$ref_content" == "registry.io/myorg/mymodel:v1" ]]
     [[ "$digest_content" =~ registry.io/myorg/mymodel@sha256:abc123def456 ]]
 }
 
@@ -260,7 +260,7 @@ EOF
 
     # Extract final JSON output
     json_output=$(echo "$output" | awk '/^{$/,/^}$/' | jq -s '.[] | select(.status != null)')
-    echo "$json_output" | jq -e '.uri'
+    echo "$json_output" | jq -e '.reference'
     echo "$json_output" | jq -e '.digest'
     echo "$json_output" | jq -e '.status == "success"'
 }
@@ -301,13 +301,6 @@ EOF
     run bash "$SCRIPT_PATH" "registry.io" "myorg/mymodel" "v1" --modelkit-dir "$MODEL_DIR"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Required command not found: kit" ]]
-}
-
-@test "fails when DOCKER_CONFIG not set" {
-    unset DOCKER_CONFIG
-    run bash "$SCRIPT_PATH" "registry.io" "myorg/mymodel" "v1" --modelkit-dir "$MODEL_DIR"
-    [ "$status" -eq 1 ]
-    [[ "$output" =~ "Required environment variable not set: DOCKER_CONFIG" ]]
 }
 
 @test "retries on push failure and eventually fails" {

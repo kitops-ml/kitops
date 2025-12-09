@@ -91,13 +91,12 @@ if [ ! -d "$MODELKIT_DIR" ]; then
     die "ModelKit directory not found: $MODELKIT_DIR"
 fi
 
-# Construct ModelKit URI
-MODELKIT_URI="${REGISTRY}/${REPOSITORY}:${TAG}"
+# Construct ModelKit reference
+MODELKIT_REF="${REGISTRY}/${REPOSITORY}:${TAG}"
 
-log_info "Starting ModelKit push" "{\"uri\":\"$MODELKIT_URI\"}"
+log_info "Starting ModelKit push" "{\"reference\":\"$MODELKIT_REF\"}"
 
 require_cmd kit cosign jq
-require_env DOCKER_CONFIG
 
 # Disable kit update notifications
 kit version --show-update-notifications=false >/dev/null 2>&1 || true
@@ -126,47 +125,41 @@ fi
 
 # Pack the ModelKit
 log_info "Packing ModelKit artifacts"
-kit pack "$WORK_DIR" -t "$MODELKIT_URI" || die "Failed to pack ModelKit"
+kit pack "$WORK_DIR" -t "$MODELKIT_REF" || die "Failed to pack ModelKit"
 
 # Push to registry with retry
 log_info "Pushing to registry"
-retry 3 2 kit push "$MODELKIT_URI" || die "Failed to push ModelKit"
+retry 3 2 kit push "$MODELKIT_REF" || die "Failed to push ModelKit"
 
-# Extract digest from kit inspect
-log_debug "Extracting digest"
-MODELKIT_DIGEST=$(echo "$MODELKIT_URI" | grep -oE '@sha256:[a-f0-9]+' | sed 's/@sha256://' || echo "")
+# Fetch digest from registry
+log_debug "Fetching digest from registry"
+
+set +e
+INSPECT_OUTPUT=$(kit inspect "$MODELKIT_REF" --remote 2>&1)
+INSPECT_EXIT_CODE=$?
+set -e
+
+log_debug "Kit inspect completed" "{\"exit_code\":$INSPECT_EXIT_CODE}"
+
+if [ $INSPECT_EXIT_CODE -eq 0 ]; then
+    MODELKIT_DIGEST=$(echo "$INSPECT_OUTPUT" | jq -r '.digest' 2>/dev/null || echo "")
+fi
 
 if [ -z "$MODELKIT_DIGEST" ]; then
-    log_debug "No digest in URI, fetching from registry"
-
-    set +e
-    INSPECT_OUTPUT=$(kit inspect "$MODELKIT_URI" --remote 2>&1)
-    INSPECT_EXIT_CODE=$?
-    set -e
-
-    log_debug "Kit inspect completed" "{\"exit_code\":$INSPECT_EXIT_CODE}"
-
-    if [ $INSPECT_EXIT_CODE -eq 0 ]; then
-        # Extract digest from JSON output, filtering out any log lines
-        MODELKIT_DIGEST=$(echo "$INSPECT_OUTPUT" | grep -v '^{"timestamp"' | jq -r '.digest' 2>/dev/null | sed 's/sha256://' || echo "")
-    fi
-
-    if [ -z "$MODELKIT_DIGEST" ]; then
-        die "Could not determine ModelKit digest" "{\"reference\":\"$MODELKIT_URI\",\"exit_code\":$INSPECT_EXIT_CODE}"
-    fi
+    die "Could not determine ModelKit digest" "{\"reference\":\"$MODELKIT_REF\",\"exit_code\":$INSPECT_EXIT_CODE}"
 fi
 
 log_debug "ModelKit digest: $MODELKIT_DIGEST"
 
-# Construct full URI with digest
-FULL_URI="${REGISTRY}/${REPOSITORY}@sha256:${MODELKIT_DIGEST}"
+# Construct full reference with digest
+FULL_REF="${REGISTRY}/${REPOSITORY}@${MODELKIT_DIGEST}"
 
-log_info "Push completed" "{\"uri\":\"$FULL_URI\"}"
+log_info "Push completed" "{\"reference\":\"$FULL_REF\"}"
 
 # Create in-toto attestation predicate
 ATTESTATION_PREDICATE=$(jq -nc \
-    --arg uri "$FULL_URI" \
-    --arg digest "sha256:$MODELKIT_DIGEST" \
+    --arg reference "$FULL_REF" \
+    --arg digest "$MODELKIT_DIGEST" \
     --arg dataset_uri "$DATASET_URI" \
     --arg code_repo "$CODE_REPO" \
     --arg code_commit "$CODE_COMMIT" \
@@ -175,7 +168,7 @@ ATTESTATION_PREDICATE=$(jq -nc \
         predicateType: "https://kitops.ml/attestation/v1",
         predicate: {
             modelkit: {
-                uri: $uri,
+                reference: $reference,
                 digest: $digest
             },
             metadata: {
@@ -201,7 +194,7 @@ if [ -f "/etc/cosign/cosign.key" ]; then
         --predicate "$PREDICATE_FILE" \
         --tlog-upload=false \
         --yes \
-        "$FULL_URI" 2>&1; then
+        "$FULL_REF" 2>&1; then
         log_info "Signed with cosign"
     else
         log_warn "Failed to sign with cosign, continuing"
@@ -214,16 +207,16 @@ fi
 
 # Output results
 # Write to KFP output files
-echo -n "$MODELKIT_URI" > /tmp/outputs/uri         # Tagged URI (e.g., jozu.ml/repo:tag)
-echo -n "$FULL_URI" > /tmp/outputs/digest          # Digest URI (e.g., jozu.ml/repo@sha256:...)
+echo -n "$MODELKIT_REF" > /tmp/outputs/reference         # Tagged reference (e.g., jozu.ml/repo:tag)
+echo -n "$FULL_REF" > /tmp/outputs/digest          # Digest reference (e.g., jozu.ml/repo@sha256:...)
 
 # Output JSON to stdout
 jq -n \
-    --arg uri "$FULL_URI" \
-    --arg digest "sha256:$MODELKIT_DIGEST" \
+    --arg reference "$FULL_REF" \
+    --arg digest "$MODELKIT_DIGEST" \
     --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
     '{
-        "uri": $uri,
+        "reference": $reference,
         "digest": $digest,
         "timestamp": $timestamp,
         "status": "success"

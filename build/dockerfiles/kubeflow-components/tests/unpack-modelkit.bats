@@ -96,10 +96,10 @@ teardown() {
     run bash "$SCRIPT_PATH"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Usage:" ]]
-    [[ "$output" =~ "modelkit_uri" ]]
+    [[ "$output" =~ "modelkit_reference" ]]
 }
 
-@test "succeeds with only modelkit_uri (uses default extract path)" {
+@test "succeeds with only modelkit_reference (uses default extract path)" {
     run bash "$SCRIPT_PATH" "registry.io/myorg/mymodel:v1"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Unpack workflow completed" ]]
@@ -136,7 +136,7 @@ teardown() {
     # Extract final JSON output (the one with "status" field)
     json_output=$(echo "$output" | awk '/^{$/,/^}$/' | jq -s '.[] | select(.status != null)')
     echo "$json_output" | jq -e '.model_path'
-    echo "$json_output" | jq -e '.modelkit_uri'
+    echo "$json_output" | jq -e '.modelkit_reference'
     echo "$json_output" | jq -e '.status == "success"'
 }
 

@@ -31,8 +31,8 @@ If a `Kitfile` exists in `modelkit_dir`, it is used as-is. Otherwise, one is aut
 
 **Outputs**
 
-- `uri` – Tagged ModelKit URI (e.g., `registry.io/myorg/mymodel:v1`)
-- `digest` – Digest-based ModelKit URI (e.g., `registry.io/myorg/mymodel@sha256:abc…`)
+- `ref` – Tagged ModelKit reference (e.g., `registry.io/myorg/mymodel:v1`)
+- `digest` – Digest-based ModelKit reference (e.g., `registry.io/myorg/mymodel@sha256:abc…`)
 
 ### unpack-modelkit
 
@@ -40,7 +40,7 @@ Pulls a ModelKit from a registry and extracts it.
 
 **Inputs**
 
-- `modelkit_uri` – ModelKit reference (e.g., `registry.io/repo:tag` or `registry.io/repo@sha256:…`)
+- `modelkit_reference` – ModelKit reference (e.g., `registry.io/repo:tag` or `registry.io/repo@sha256:…`)
 - `extract_path` – Directory to extract contents (default: `/tmp/model`)
 
 **Outputs**
@@ -89,7 +89,7 @@ def push_modelkit(
     repository: str,
     tag: str,
     input_modelkit_dir: dsl.Input[dsl.Artifact],
-    output_uri: dsl.Output[dsl.Artifact],
+    output_ref: dsl.Output[dsl.Artifact],
     output_digest: dsl.Output[dsl.Artifact],
     modelkit_name: str = '',
     modelkit_desc: str = '',
@@ -111,7 +111,7 @@ def push_modelkit(
             f'--dataset-uri "{dataset_uri}" '
             f'--code-repo "{code_repo}" '
             f'--code-commit "{code_commit}" '
-            f'&& cp /tmp/outputs/uri "{output_uri.path}" '
+            f'&& cp /tmp/outputs/reference "{output_ref.path}" '
             f'&& cp /tmp/outputs/digest "{output_digest.path}"'
         ],
     )

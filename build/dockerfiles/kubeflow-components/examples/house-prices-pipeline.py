@@ -114,7 +114,7 @@ def push_modelkit(
     registry: str,
     repository: str,
     tag: str,
-    output_uri: dsl.Output[dsl.Artifact],
+    output_ref: dsl.Output[dsl.Artifact],
     output_digest: dsl.Output[dsl.Artifact],
     input_modelkit_dir: dsl.Input[dsl.Artifact],
     modelkit_name: str = '',
@@ -127,8 +127,8 @@ def push_modelkit(
     """Package and push model as ModelKit with attestation.
 
     Outputs:
-        output_uri: Tagged URI (e.g., jozu.ml/repo:tag)
-        output_digest: Digest URI (e.g., jozu.ml/repo@sha256:...)
+        output_ref: Tagged reference (e.g., jozu.ml/repo:tag)
+        output_digest: Digest reference (e.g., jozu.ml/repo@sha256:...)
     """
     # Build command using safe argument passing
     return dsl.ContainerSpec(
@@ -146,7 +146,7 @@ def push_modelkit(
             ${7:+--dataset-uri "$7"} \
             ${8:+--code-repo "$8"} \
             ${9:+--code-commit "$9"} \
-            && cp /tmp/outputs/uri "${10}" \
+            && cp /tmp/outputs/reference "${10}" \
             && cp /tmp/outputs/digest "${11}"
             ''',
             registry,
@@ -159,7 +159,7 @@ def push_modelkit(
             dataset_uri,
             code_repo,
             code_commit,
-            output_uri.path,
+            output_ref.path,
             output_digest.path
         ]
     )

@@ -69,8 +69,8 @@ die() {
 
 # Retry logic
 retry() {
-    local max_attempts=${1:-3}
-    local delay=${2:-2}
+    local max_attempts=$1
+    local delay=$2
     shift 2
     local attempt=1
 

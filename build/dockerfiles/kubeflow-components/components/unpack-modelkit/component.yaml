@@ -2,7 +2,7 @@ name: unpack-modelkit
 description: Unpack ModelKit artifacts from a registry
 
 inputs:
-  - {name: modelkit_uri, type: String, description: 'ModelKit reference (e.g., registry.io/repo:tag or registry.io/repo@sha256:...)'}
+  - {name: modelkit_reference, type: String, description: 'ModelKit reference (e.g., registry.io/repo:tag or registry.io/repo@sha256:...)'}
   - {name: extract_path, type: String, default: '/tmp/model', description: 'Directory to extract ModelKit artifacts'}
 
 outputs:
@@ -14,7 +14,7 @@ implementation:
     command:
       - /bin/bash
       - /scripts/unpack-modelkit.sh
-      - {inputValue: modelkit_uri}
+      - {inputValue: modelkit_reference}
       - {inputValue: extract_path}
     fileOutputs:
       model_path: /tmp/outputs/model_path

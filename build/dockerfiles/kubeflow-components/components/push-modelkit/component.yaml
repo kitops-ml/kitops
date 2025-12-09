@@ -17,8 +17,8 @@ inputs:
   - {name: code_commit, type: String, optional: true, description: 'Code commit hash'}
 
 outputs:
-  - {name: uri, type: String, description: 'Tagged ModelKit URI (e.g., registry.io/repo:tag)'}
-  - {name: digest, type: String, description: 'Digest-based ModelKit URI (e.g., registry.io/repo@sha256:...)'}
+  - {name: ref, type: String, description: 'Tagged ModelKit reference (e.g., registry.io/repo:tag)'}
+  - {name: digest, type: String, description: 'Digest-based ModelKit reference(e.g., registry.io/repo@sha256:...)'}
 
 implementation:
   container:
@@ -47,5 +47,5 @@ implementation:
       - {inputValue: code_repo}
       - {inputValue: code_commit}
     fileOutputs:
-      uri: /tmp/outputs/uri
+      ref: /tmp/outputs/reference
       digest: /tmp/outputs/digest
