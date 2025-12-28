@@ -69,12 +69,12 @@ func runCommand(opts *signOptions) func(cmd *cobra.Command, args []string) error
 	return func(cmd *cobra.Command, args []string) error {
 		args = append([]string{"sign"}, args...)
 		if err := opts.complete(cmd.Context(), args); err != nil {
-			return output.Fatalf("Invalid arguments: %s", err)
+			return output.Fatalf("Invalid arguments: %w", err)
 		}
 
 		err := RunSign(cmd.Context(), opts)
 		if err != nil {
-			return output.Fatalf("Failed to sign: %s", err)
+			return output.Fatalf("Failed to sign: %w", err)
 		}
 		output.Infof("Modelkit signed")
 		return nil

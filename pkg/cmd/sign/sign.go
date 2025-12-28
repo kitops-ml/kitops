@@ -24,15 +24,21 @@ import (
 )
 
 func RunSign(ctx context.Context, options *signOptions) error {
+	_, err := exec.LookPath("cosign")
+	if err != nil {
+		fmt.Println()
+		return fmt.Errorf("cosign not found, please install cosign")
+	}
+
 	cmd := exec.CommandContext(ctx, "cosign", options.cosignArgs...)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("signing failed %s", err)
+		return fmt.Errorf("signing failed: %w", err)
 	}
 	return nil
 }

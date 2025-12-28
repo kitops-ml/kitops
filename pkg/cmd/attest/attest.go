@@ -23,16 +23,21 @@ import (
 	"os/exec"
 )
 
-func RunAttest(context context.Context, options *attestOptions) any {
+func RunAttest(context context.Context, options *attestOptions) error {
+	_, err := exec.LookPath("cosign")
+	if err != nil {
+		fmt.Println()
+		return fmt.Errorf("cosign not found, please install cosign")
+	}
 	cmd := exec.CommandContext(context, "cosign", options.cosignArgs...)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("attestation failed %s", err)
+		return fmt.Errorf("attestation failed: %w", err)
 	}
 	return nil
 }

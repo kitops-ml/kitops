@@ -48,7 +48,7 @@ func (opts *attestOptions) complete(ctx context.Context, args []string) error {
 
 func AttestCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "attest [FLAGS]",
+		Use:     "attest [flags]",
 		Short:   shortDesc,
 		Example: example,
 		RunE:    runCommand(&attestOptions{}),
@@ -68,12 +68,12 @@ func runCommand(opts *attestOptions) func(cmd *cobra.Command, args []string) err
 	return func(cmd *cobra.Command, args []string) error {
 		args = append([]string{"attest"}, args...)
 		if err := opts.complete(cmd.Context(), args); err != nil {
-			return output.Fatalf("Invalid arguments: %s", err)
+			return output.Fatalf("Invalid arguments: %w", err)
 		}
 
 		err := RunAttest(cmd.Context(), opts)
 		if err != nil {
-			return output.Fatalf("Failed to attest: %s", err)
+			return output.Fatalf("Failed to attest: %w", err)
 		}
 		output.Infof("Attestation successful")
 		return nil

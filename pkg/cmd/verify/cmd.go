@@ -51,10 +51,10 @@ func (opts *verifyOptions) complete(ctx context.Context, args []string) error {
 func VerifyCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:     "verify [FLAGS]",
+		Use:     "verify [flags]",
 		Short:   shortDesc,
 		Example: example,
-		RunE:    runCommand([]verifyOptions{}),
+		RunE:    runCommand(),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) >= 1 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
@@ -67,7 +67,7 @@ func VerifyCommand() *cobra.Command {
 	return cmd
 }
 
-func runCommand(opts []verifyOptions) func(cmd *cobra.Command, args []string) error {
+func runCommand() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		commands := []string{"verify", "verify-attestation"}
 		argsnew := [][]string{{}, {}}
@@ -82,21 +82,23 @@ func runCommand(opts []verifyOptions) func(cmd *cobra.Command, args []string) er
 			}
 		}
 
+		opts := make([]verifyOptions, 2)
+
 		for i := range 2 {
 			opts = append(opts, verifyOptions{})
 			argsnew[i] = append([]string{commands[i]}, argsnew[i]...)
 			if err := opts[i].complete(cmd.Context(), argsnew[i]); err != nil {
-				return output.Fatalf("Invalid arguments: %s", err)
+				return output.Fatalf("Invalid arguments: %w", err)
 			}
 		}
 
 		for i := range len(opts) {
 			err := RunVerify(cmd.Context(), opts[i])
 			if err != nil {
-				return output.Fatalf("Failed to %s: %s", commands[i], err)
+				return output.Fatalf("Failed to %s: %w", commands[i], err)
 			}
 		}
-		output.Infof("Modelkit signed")
+		output.Infof("Verification successful")
 		return nil
 	}
 }
