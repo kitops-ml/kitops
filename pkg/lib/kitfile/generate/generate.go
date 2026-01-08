@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -37,6 +38,7 @@ const (
 	fileTypeCode
 	fileTypeDocs
 	fileTypeMetadata
+	fileTypePrompt
 	fileTypeUnknown
 )
 
@@ -66,11 +68,12 @@ var datasetSuffixes = []string{
 	".tar", ".zip", ".parquet", ".csv",
 }
 
-// Files that are considered prompt files based on their names
+// Files that are considered prompt files based on their names; entries should be in lowercase to support
+// case-insensitive comparison.
 var promptFilePatterns = []string{
-	"AGENTS.md",
-	"SKILL.md",
-	"CLAUDE.md",
+	"agents.md",
+	"skill.md",
+	"claude.md",
 }
 
 // Generate a basic Kitfile by looking at the contents of a directory. Parameter
@@ -143,6 +146,8 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package) (*arti
 			kitfile.Docs = append(kitfile.Docs, artifact.Docs{Path: file.Path})
 		case fileTypeDataset:
 			kitfile.DataSets = append(kitfile.DataSets, artifact.DataSet{Path: file.Path})
+		case fileTypePrompt:
+			kitfile.Prompts = append(kitfile.Prompts, artifact.Prompt{Path: file.Path})
 		default:
 			output.Logf(output.LogLevelTrace, "File %s is either code or unknown type. Will be added as a catch-all section", file.Path)
 			// File is either code or unknown; we'll have to include it in a catch-all section
@@ -266,6 +271,9 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 	case fileTypeDocs:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as a docs directory", dir.Path)
 		kitfile.Docs = append(kitfile.Docs, artifact.Docs{Path: dir.Path})
+	case fileTypePrompt:
+		output.Logf(output.LogLevelTrace, "Interpreting directory %s as a prompts directory", dir.Path)
+		kitfile.Prompts = append(kitfile.Prompts, artifact.Prompt{Path: dir.Path})
 	default:
 		output.Logf(output.LogLevelTrace, "Could not determine type for directory %s", dir.Path)
 		// If it's overall code, metadata, or unknown, just return it as unprocessed and let it be added as a Code section
@@ -277,17 +285,11 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 }
 
 func determineFileType(filename string) fileType {
-	// Check for exact prompt file matches
+	// Check for prompt file matches: either exact name or containing '.prompt'. This has to come first
+	// as the prompt may have colliding suffixes.
 	baseName := strings.ToLower(filepath.Base(filename))
-	for _, pattern := range promptFilePatterns {
-		if baseName == strings.ToLower(pattern) {
-			return fileTypeCode
-		}
-	}
-
-	// Check for .prompt pattern (substring match)
-	if strings.Contains(baseName, ".prompt") {
-		return fileTypeCode
+	if slices.Contains(promptFilePatterns, baseName) || strings.Contains(baseName, ".prompt") {
+		return fileTypePrompt
 	}
 
 	if anySuffix(filename, modelWeightsSuffixes) {

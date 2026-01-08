@@ -26,57 +26,57 @@ func TestDetermineFileType(t *testing.T) {
 		filename     string
 		expectedType fileType
 	}{
-		// Prompt files - should be recognized as code
+		// Prompt files - should be recognized as prompts
 		{
 			name:         "prompt file without extension",
 			filename:     "system.prompt",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "prompt file with .md extension",
 			filename:     "chain.prompt.md",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "prompt file with .yaml extension",
 			filename:     "my.prompt.yaml",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "prompt file with .txt extension",
 			filename:     "instruction.prompt.txt",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "prompt file in subdirectory",
 			filename:     "prompts/user.prompt",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
-		// Agent files - should be recognized as code
+		// Agent files - should be recognized as prompts
 		{
 			name:         "AGENTS.md file",
 			filename:     "AGENTS.md",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "agents.md lowercase",
 			filename:     "agents.md",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "SKILL.md file",
 			filename:     "SKILL.md",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "skill.md lowercase",
 			filename:     "skill.md",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		{
 			name:         "AGENTS.md in subdirectory",
 			filename:     "docs/AGENTS.md",
-			expectedType: fileTypeCode,
+			expectedType: fileTypePrompt,
 		},
 		// Edge cases - should NOT be recognized as prompt/code
 		{
