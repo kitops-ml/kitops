@@ -124,9 +124,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		// layer path). For current ModelKits, this will be empty
 		var relPath string
 
-		// Grab path + layer info from the config object corresponding to this layer
-		var layerPath string
-		var layerInfo *artifact.LayerInfo
 		mediaType, err := mediatype.ParseMediaType(layerDesc.MediaType)
 		if err != nil {
 			// We may encounter unknown media types while unpacking ModelPacks, e.g. we include Kitfiles
@@ -134,78 +131,72 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
 			continue
 		}
+
+		// Grab path + layer info from the config object corresponding to this layer
+		var layerPath string
+		var layerInfo *artifact.LayerInfo
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
-			if !shouldUnpackLayer(config.Model, opts.FilterConfs) {
+			entry := config.Model
+			if !shouldUnpackLayer(entry, opts.FilterConfs) {
 				continue
 			}
-			layerInfo = config.Model.LayerInfo
-			layerPath = config.Model.Path
-			output.Infof("Unpacking model %s to %s", config.Model.Name, filepath.Join(opts.UnpackDir, config.Model.Path))
+			layerInfo, layerPath = entry.LayerInfo, entry.Path
+			output.Infof("Unpacking model %s to %s", config.Model.Name, config.Model.Path)
 
 		case mediatype.ModelPartBaseType:
-			part := config.Model.Parts[modelPartIdx]
-			if !shouldUnpackLayer(part, opts.FilterConfs) {
-				modelPartIdx += 1
+			entry := config.Model.Parts[modelPartIdx]
+			modelPartIdx += 1
+			if !shouldUnpackLayer(entry, opts.FilterConfs) {
 				continue
 			}
-			layerInfo = part.LayerInfo
-			layerPath = part.Path
-			output.Infof("Unpacking model part %s to %s", part.Name, part.Path)
-			modelPartIdx += 1
+			layerInfo, layerPath = entry.LayerInfo, entry.Path
+			output.Infof("Unpacking model part %s to %s", entry.Name, entry.Path)
 
 		case mediatype.CodeBaseType:
 			// Code-type layers may be either regular code or prompts
 			if layerDesc.Annotations[constants.LayerSubtypeAnnotation] == constants.LayerSubtypePrompt {
-				promptEntry := config.Prompts[promptIdx]
-				if !shouldUnpackLayer(promptEntry, opts.FilterConfs) {
-					promptIdx += 1
-					continue
-				}
-				layerInfo = promptEntry.LayerInfo
-				layerPath = promptEntry.Path
-				output.Infof("Unpacking prompt to %s", promptEntry.Path)
+				entry := config.Prompts[promptIdx]
 				promptIdx += 1
-			} else {
-				codeEntry := config.Code[codeIdx]
-				if !shouldUnpackLayer(codeEntry, opts.FilterConfs) {
-					codeIdx += 1
+				if !shouldUnpackLayer(entry, opts.FilterConfs) {
 					continue
 				}
-				layerInfo = codeEntry.LayerInfo
-				layerPath = codeEntry.Path
-				output.Infof("Unpacking code to %s", codeEntry.Path)
+				layerInfo, layerPath = entry.LayerInfo, entry.Path
+				output.Infof("Unpacking prompt to %s", entry.Path)
+			} else {
+				entry := config.Code[codeIdx]
 				codeIdx += 1
+				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+					continue
+				}
+				layerInfo, layerPath = entry.LayerInfo, entry.Path
+				output.Infof("Unpacking code to %s", entry.Path)
 			}
 
 		case mediatype.DatasetBaseType:
-			datasetEntry := config.DataSets[datasetIdx]
-			if !shouldUnpackLayer(datasetEntry, opts.FilterConfs) {
-				datasetIdx += 1
+			entry := config.DataSets[datasetIdx]
+			datasetIdx += 1
+			if !shouldUnpackLayer(entry, opts.FilterConfs) {
 				continue
 			}
-			layerInfo = datasetEntry.LayerInfo
-			layerPath = datasetEntry.Path
-			output.Infof("Unpacking dataset %s to %s", datasetEntry.Name, datasetEntry.Path)
-			datasetIdx += 1
+			layerInfo, layerPath = entry.LayerInfo, entry.Path
+			output.Infof("Unpacking dataset %s to %s", entry.Name, entry.Path)
 
 		case mediatype.DocsBaseType:
-			docsEntry := config.Docs[docsIdx]
-			if !shouldUnpackLayer(docsEntry, opts.FilterConfs) {
-				docsIdx += 1
+			entry := config.Docs[docsIdx]
+			docsIdx += 1
+			if !shouldUnpackLayer(entry, opts.FilterConfs) {
 				continue
 			}
-			layerInfo = docsEntry.LayerInfo
-			layerPath = docsEntry.Path
-			output.Infof("Unpacking docs to %s", docsEntry.Path)
-			docsIdx += 1
+			layerInfo, layerPath = entry.LayerInfo, entry.Path
+			output.Infof("Unpacking docs to %s", entry.Path)
 
 		case mediatype.ConfigBaseType:
 			// ModelPacks may contain a Kitfile in their layers, which is unpacked separately
 			continue
 
-		// Should never happen as we check earlier, but for completeness' sake:
 		case mediatype.UnknownBaseType:
+			// Should never happen as we check earlier, but for completeness' sake:
 			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
 		}
 
