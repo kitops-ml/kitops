@@ -58,6 +58,13 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 		return fmt.Errorf("failed to list files from HuggingFace API: %w", err)
 	}
 
+	if len(opts.filters) > 0 {
+		dirListing = filterDirectoryListing(dirListing, opts.filters)
+		if len(dirListing.Files) == 0 && len(dirListing.Subdirs) == 0 {
+			return fmt.Errorf("no files match the provided filters: %v", opts.filters)
+		}
+	}
+
 	var kitfile *artifact.KitFile
 	if opts.kitfilePath == "-" {
 		kitfile = &artifact.KitFile{}
@@ -172,3 +179,4 @@ func kitfileHasCatchallLayer(kitfile *artifact.KitFile) bool {
 	}
 	return false
 }
+

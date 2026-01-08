@@ -66,7 +66,10 @@ kit import myorg/myrepo --ref v1.0.0
 kit import myorg/myrepo --tag myrepository:mytag
 
 # Download repository and pack it using an existing Kitfile
-kit import myorg/myrepo --file ./path/to/Kitfile`
+kit import myorg/myrepo --file ./path/to/Kitfile
+
+# Download only GGUF files from a repository
+kit import myorg/myrepo --filter "*.gguf"`
 )
 
 type importOptions struct {
@@ -78,6 +81,7 @@ type importOptions struct {
 	kitfilePath  string
 	downloadTool string
 	concurrency  int
+	filters      []string
 	modelKitRef  *registry.Reference
 }
 
@@ -99,6 +103,7 @@ func ImportCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.kitfilePath, "file", "f", "", "Path to Kitfile to use for packing (use '-' to read from standard input)")
 	cmd.Flags().StringVar(&opts.downloadTool, "tool", "", "Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)")
 	cmd.Flags().IntVar(&opts.concurrency, "concurrency", 5, "Maximum number of simultaneous downloads (for huggingface)")
+	cmd.Flags().StringSliceVar(&opts.filters, "filter", []string{}, "Filter files to import using glob patterns (e.g. --filter \"*.gguf\")")
 	cmd.Flags().SortFlags = false
 	return cmd
 }

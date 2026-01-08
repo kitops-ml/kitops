@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -185,4 +186,36 @@ func extractRepoFromURL(rawUrl string) (string, error) {
 	}
 
 	return path, nil
+}
+
+func filterDirectoryListing(listing *kfgen.DirectoryListing, filters []string) *kfgen.DirectoryListing {
+	newListing := &kfgen.DirectoryListing{
+		Name: listing.Name,
+		Path: listing.Path,
+	}
+
+	for _, file := range listing.Files {
+		for _, filter := range filters {
+			match, err := path.Match(filter, file.Name)
+			if err == nil && match {
+				newListing.Files = append(newListing.Files, file)
+				break
+			}
+			// Also check against full path relative to repo root
+			match, err = path.Match(filter, file.Path)
+			if err == nil && match {
+				newListing.Files = append(newListing.Files, file)
+				break
+			}
+		}
+	}
+
+	for _, subdir := range listing.Subdirs {
+		filteredSubdir := filterDirectoryListing(&subdir, filters)
+		if len(filteredSubdir.Files) > 0 || len(filteredSubdir.Subdirs) > 0 {
+			newListing.Subdirs = append(newListing.Subdirs, *filteredSubdir)
+		}
+	}
+
+	return newListing
 }

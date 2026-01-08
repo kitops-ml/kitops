@@ -77,6 +77,16 @@ func importUsingGit(ctx context.Context, opts *importOptions) error {
 		if err != nil {
 			return fmt.Errorf("error processing directory: %w", err)
 		}
+		if len(opts.filters) > 0 {
+			dirContents = filterDirectoryListing(dirContents, opts.filters)
+			if len(dirContents.Files) == 0 && len(dirContents.Subdirs) == 0 {
+				return fmt.Errorf("no files match the provided filters: %v", opts.filters)
+			}
+			// For git, we need to actually remove files from disk that don't match the filter
+			if err := removeUnmatchedFiles(tmpDir, dirContents); err != nil {
+				return fmt.Errorf("failed to remove unmatched files: %w", err)
+			}
+		}
 		kf, err := generateKitfile(dirContents, opts.repo, tmpDir)
 		if err != nil {
 			return err
@@ -130,4 +140,37 @@ func cloneRepository(repo, repoRef, destDir, token string) error {
 		return err
 	}
 	return nil
+}
+
+func removeUnmatchedFiles(tmpDir string, filteredListing *kfgen.DirectoryListing) error {
+	// Create a map of files to keep for efficient lookup
+	filesToKeep := make(map[string]bool)
+	var addToListing func(*kfgen.DirectoryListing)
+	addToListing = func(l *kfgen.DirectoryListing) {
+		for _, f := range l.Files {
+			filesToKeep[filepath.Join(tmpDir, f.Path)] = true
+		}
+		for _, s := range l.Subdirs {
+			addToListing(&s)
+		}
+	}
+	addToListing(filteredListing)
+
+	// In addition to files, we need to keep the Kitfile if it was generated
+	filesToKeep[filepath.Join(tmpDir, constants.DefaultKitfileName)] = true
+
+	return filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if !filesToKeep[path] {
+			if err := os.Remove(path); err != nil {
+				return fmt.Errorf("failed to remove %s: %w", path, err)
+			}
+		}
+		return nil
+	})
 }

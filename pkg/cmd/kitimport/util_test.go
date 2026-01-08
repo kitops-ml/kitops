@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 )
 
 func TestExtractRepoFromURL(t *testing.T) {
@@ -57,4 +58,92 @@ func TestExtractRepoFromURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFilterDirectoryListing(t *testing.T) {
+	listing := &kfgen.DirectoryListing{
+		Name: ".",
+		Path: ".",
+		Files: []kfgen.FileListing{
+			{Name: "model.safetensors", Path: "model.safetensors"},
+			{Name: "config.json", Path: "config.json"},
+			{Name: "README.md", Path: "README.md"},
+		},
+		Subdirs: []kfgen.DirectoryListing{
+			{
+				Name: "onnx",
+				Path: "onnx",
+				Files: []kfgen.FileListing{
+					{Name: "model.onnx", Path: "onnx/model.onnx"},
+				},
+			},
+			{
+				Name: "gguf",
+				Path: "gguf",
+				Files: []kfgen.FileListing{
+					{Name: "model-q4_0.gguf", Path: "gguf/model-q4_0.gguf"},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		filters   []string
+		wantFiles []string
+		wantDirs  []string
+	}{
+		{
+			name:      "Filter by extension",
+			filters:   []string{"*.gguf"},
+			wantFiles: []string{"model-q4_0.gguf"},
+			wantDirs:  []string{"gguf"},
+		},
+		{
+			name:      "Filter by path",
+			filters:   []string{"onnx/*"},
+			wantFiles: []string{"model.onnx"},
+			wantDirs:  []string{"onnx"},
+		},
+		{
+			name:      "Multiple filters",
+			filters:   []string{"*.safetensors", "config.json"},
+			wantFiles: []string{"model.safetensors", "config.json"},
+			wantDirs:  []string{},
+		},
+		{
+			name:      "No matches",
+			filters:   []string{"*.pth"},
+			wantFiles: []string{},
+			wantDirs:  []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := filterDirectoryListing(listing, tt.filters)
+			assert.Equal(t, tt.wantFiles, collectFiles(got))
+			assert.Equal(t, tt.wantDirs, collectDirs(got))
+		})
+	}
+}
+
+func collectFiles(l *kfgen.DirectoryListing) []string {
+	files := []string{}
+	for _, f := range l.Files {
+		files = append(files, f.Name)
+	}
+	for _, s := range l.Subdirs {
+		files = append(files, collectFiles(&s)...)
+	}
+	return files
+}
+
+func collectDirs(l *kfgen.DirectoryListing) []string {
+	dirs := []string{}
+	for _, s := range l.Subdirs {
+		dirs = append(dirs, s.Name)
+		dirs = append(dirs, collectDirs(&s)...)
+	}
+	return dirs
 }
