@@ -1,0 +1,31 @@
+description: Pack and unpack a modelkit with prompts
+kitfile: |
+  manifestVersion: 1.0.0
+  package:
+    name: test-prompts
+  model:
+    name: test-model
+    path: ./model
+  datasets:
+    - name: test-dataset
+      path: ./datasets
+  code:
+    - path: ./code
+  prompts:
+    - path: CLAUDE.md
+    - path: AGENTS.md
+    - path: prompts/sample.prompt.txt
+    - path: prompts/another.prompt.txt
+    - path: prompts-dir/
+    - path: ./code/SKILL.md
+files:
+  - ./model/my-model.bin
+  - ./datasets/my-dataset.bin
+  - ./code/my-code.py
+  - CLAUDE.md
+  - AGENTS.md
+  - ./prompts/sample.prompt.txt
+  - ./prompts/another.prompt.txt
+  - ./prompts-dir/test.prompt.one
+  - ./prompts-dir/test.prompt.two
+  - ./code/SKILL.md

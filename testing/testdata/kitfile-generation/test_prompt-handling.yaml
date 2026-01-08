@@ -1,0 +1,44 @@
+description: "Handles prompt files"
+
+files:
+  # Special-cased names
+  - AGENTS.md
+  - CLAUDE.md
+  - SKILL.md
+  # filenames containing .prompt
+  - my.prompt.md
+  - test.prompt.pdf
+  - suffix.prompt
+  # directory of prompts
+  - prompts-dir/my.prompt.one
+  - prompts-dir/my.prompt.two
+  # mixed directory of prompts and non-prompts
+  - mixed-prompts/my.prompt.mixed
+  - mixed-prompts/notes.md
+  - mixed-prompts/template.html
+  # non-prompt files that should be handled as such
+  - prompt.md
+  - notes.md
+  - README.md
+
+modelName: test-prompt-handling
+expectedKitfile:
+  manifestVersion: "1.0.0"
+  package:
+    name: test-prompt-handling
+    description: "Handles prompt files"
+  prompts:
+    - path: AGENTS.md
+    - path: CLAUDE.md
+    - path: SKILL.md
+    - path: my.prompt.md
+    - path: suffix.prompt
+    - path: test.prompt.pdf
+    - path: prompts-dir
+  docs:
+    - path: README.md
+      description: Readme file
+    - path: notes.md
+    - path: prompt.md
+  code:
+    - path: mixed-prompts
