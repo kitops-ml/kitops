@@ -118,7 +118,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	// through the config's relevant field to get the correct path for unpacking
 	// We need to support older ModelKits (that were packed without diffIDs and digest
 	// in the config) for now, so we need to continue using the old structure.
-	var modelPartIdx, codeIdx, datasetIdx, docsIdx int
+	var modelPartIdx, codeIdx, datasetIdx, docsIdx, promptIdx int
 	for _, layerDesc := range manifest.Layers {
 		// This variable supports older-format tar layers (that don't include the
 		// layer path). For current ModelKits, this will be empty
@@ -132,6 +132,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			// We may encounter unknown media types while unpacking ModelPacks, e.g. we include Kitfiles
 			// which are not ModelPack mediatypes
 			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
+			continue
 		}
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
@@ -154,15 +155,28 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			modelPartIdx += 1
 
 		case mediatype.CodeBaseType:
-			codeEntry := config.Code[codeIdx]
-			if !shouldUnpackLayer(codeEntry, opts.FilterConfs) {
+			// Code-type layers may be either regular code or prompts
+			if layerDesc.Annotations[constants.LayerSubtypeAnnotation] == constants.LayerSubtypePrompt {
+				promptEntry := config.Prompts[promptIdx]
+				if !shouldUnpackLayer(promptEntry, opts.FilterConfs) {
+					promptIdx += 1
+					continue
+				}
+				layerInfo = promptEntry.LayerInfo
+				layerPath = promptEntry.Path
+				output.Infof("Unpacking prompt to %s", promptEntry.Path)
+				promptIdx += 1
+			} else {
+				codeEntry := config.Code[codeIdx]
+				if !shouldUnpackLayer(codeEntry, opts.FilterConfs) {
+					codeIdx += 1
+					continue
+				}
+				layerInfo = codeEntry.LayerInfo
+				layerPath = codeEntry.Path
+				output.Infof("Unpacking code to %s", codeEntry.Path)
 				codeIdx += 1
-				continue
 			}
-			layerInfo = codeEntry.LayerInfo
-			layerPath = codeEntry.Path
-			output.Infof("Unpacking code to %s", codeEntry.Path)
-			codeIdx += 1
 
 		case mediatype.DatasetBaseType:
 			datasetEntry := config.DataSets[datasetIdx]
@@ -216,6 +230,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	output.Debugf("Unpacked %d code layers", codeIdx)
 	output.Debugf("Unpacked %d dataset layers", datasetIdx)
 	output.Debugf("Unpacked %d docs layers", docsIdx)
+	output.Debugf("Unpacked %d prompt layers", promptIdx)
 
 	return nil
 }

@@ -188,6 +188,21 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 		kitfile.Docs[idx].LayerInfo = layerInfo
 	}
+	for idx, prompt := range kitfile.Prompts {
+		// Prompt layers are saved as `code` layers with an annotation to distinguish them
+		mediaType := mediatype.New(opts.ModelFormat, mediatype.CodeBaseType, opts.LayerFormat, opts.Compression)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, prompt.Path, mediaType, ignore)
+		if err != nil {
+			return nil, nil, err
+		}
+		if layer.Annotations == nil {
+			layer.Annotations = map[string]string{}
+		}
+		layer.Annotations[constants.LayerSubtypeAnnotation] = constants.LayerSubtypePrompt
+		layers = append(layers, layer)
+		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+		kitfile.Prompts[idx].LayerInfo = layerInfo
+	}
 
 	return layers, diffIDs, nil
 }

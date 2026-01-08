@@ -54,6 +54,11 @@ const (
 	CliVersionAnnotation  = "ml.kitops.modelkit.cli-version"
 	KitfileJsonAnnotation = "ml.kitops.modelkit.kitfile"
 
+	// LayerSubtypeAnnotation stores additional type information for a given OCI manifest
+	// layer within its annotations (e.g. storing prompts within code-type layers)
+	LayerSubtypeAnnotation = "ml.kitops.modelkit.layer-subtype"
+	LayerSubtypePrompt     = "prompt"
+
 	// MaxModelRefChain is the maximum number of "parent" modelkits a modelkit may have
 	// by e.g. referring to another modelkit in its .model.path
 	MaxModelRefChain = 10

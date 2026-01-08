@@ -36,6 +36,7 @@ type (
 		Code            []Code    `json:"code,omitempty" yaml:"code,omitempty"`
 		DataSets        []DataSet `json:"datasets,omitempty" yaml:"datasets,omitempty"`
 		Docs            []Docs    `json:"docs,omitempty" yaml:"docs,omitempty"`
+		Prompts         []Prompt  `json:"prompts,omitempty" yaml:"prompts,omitempty"`
 	}
 
 	Package struct {
@@ -100,6 +101,12 @@ type (
 		//  * It's recommended to store metadata like preprocessing steps, formats, etc.
 		Parameters any `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 		*LayerInfo `json:",inline" yaml:",inline"`
+	}
+
+	Prompt struct {
+		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
+		Description string `json:"description,omitempty" yaml:"description,omitempty"`
+		*LayerInfo  `json:",inline" yaml:",inline"`
 	}
 
 	LayerInfo struct {
