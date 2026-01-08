@@ -23,30 +23,22 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 )
+
+var validFilterTypes = []string{"kitfile", "model", "datasets", "code", "prompts", "docs"}
 
 // FilterConf represents filter configuration for unpacking operations.
 type FilterConf struct {
-	BaseTypes []mediatype.BaseType
+	BaseTypes []string
 	Filters   []string
 }
 
-func (fc *FilterConf) matches(baseType mediatype.BaseType, field string) bool {
+func (fc *FilterConf) matches(baseType, field string) bool {
 	return fc.matchesBaseType(baseType) && fc.matchesField(field)
 }
 
-func (fc *FilterConf) matchesBaseType(baseType mediatype.BaseType) bool {
-	// Treat modelparts as covered by the 'model' filter
-	if baseType == mediatype.ModelPartBaseType {
-		baseType = mediatype.ModelBaseType
-	}
-	for _, t := range fc.BaseTypes {
-		if t == baseType {
-			return true
-		}
-	}
-	return false
+func (fc *FilterConf) matchesBaseType(baseType string) bool {
+	return slices.Contains(fc.BaseTypes, baseType)
 }
 
 func (fc *FilterConf) matchesField(field string) bool {
@@ -67,12 +59,11 @@ func ParseFilter(filter string) (*FilterConf, error) {
 
 	conf := &FilterConf{}
 
-	for _, filterType := range strings.Split(typesAndIds[0], ",") {
-		baseType, err := filterToMediaBaseType(filterType)
-		if err != nil {
-			return nil, err
+	for filterType := range strings.SplitSeq(typesAndIds[0], ",") {
+		if !slices.Contains(validFilterTypes, filterType) {
+			return nil, fmt.Errorf("invalid filter type %s (must be one of %s)", filterType, strings.Join(validFilterTypes, ", "))
 		}
-		conf.BaseTypes = append(conf.BaseTypes, baseType)
+		conf.BaseTypes = append(conf.BaseTypes, filterType)
 	}
 
 	// Check for additional filtering based on name/path
@@ -101,29 +92,32 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 	switch l := layer.(type) {
 	case artifact.KitFile:
 		for _, filter := range filters {
-			if slices.Contains(filter.BaseTypes, mediatype.ConfigBaseType) {
+			if filter.matchesBaseType("kitfile") {
 				return true
 			}
 		}
 		return false
 	case artifact.Model:
-		return matchesFilters(l.Name, mediatype.ModelBaseType, filters) || matchesFilters(l.Path, mediatype.ModelBaseType, filters)
+		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
 	case artifact.ModelPart:
-		return matchesFilters(l.Name, mediatype.ModelPartBaseType, filters) || matchesFilters(l.Path, mediatype.ModelPartBaseType, filters)
+		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
 	case artifact.Docs:
 		// Docs does not have an ID/name field so we can only match on path
-		return matchesFilters(l.Path, mediatype.DocsBaseType, filters)
+		return matchesFilters("docs", l.Path, filters)
 	case artifact.DataSet:
-		return matchesFilters(l.Name, mediatype.DatasetBaseType, filters) || matchesFilters(l.Path, mediatype.DatasetBaseType, filters)
+		return matchesFilters("datasets", l.Name, filters) || matchesFilters("datasets", l.Path, filters)
 	case artifact.Code:
 		// Code does not have a ID/name field so we can only match on path
-		return matchesFilters(l.Path, mediatype.CodeBaseType, filters)
+		return matchesFilters("code", l.Path, filters)
+	case artifact.Prompt:
+		// Prompts do not have a ID/name field so we can only match on path
+		return matchesFilters("prompts", l.Path, filters)
 	default:
 		return false
 	}
 }
 
-func matchesFilters(field string, baseType mediatype.BaseType, filterConfs []FilterConf) bool {
+func matchesFilters(baseType, field string, filterConfs []FilterConf) bool {
 	for _, filterConf := range filterConfs {
 		if filterConf.matches(baseType, field) {
 			return true
@@ -137,35 +131,19 @@ func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatase
 	filter := FilterConf{}
 
 	if unpackKitfile {
-		filter.BaseTypes = append(filter.BaseTypes, mediatype.ConfigBaseType)
+		filter.BaseTypes = append(filter.BaseTypes, "kitfile")
 	}
 	if unpackModels {
-		filter.BaseTypes = append(filter.BaseTypes, mediatype.ModelBaseType)
+		filter.BaseTypes = append(filter.BaseTypes, "model")
 	}
 	if unpackDocs {
-		filter.BaseTypes = append(filter.BaseTypes, mediatype.DocsBaseType)
+		filter.BaseTypes = append(filter.BaseTypes, "docs")
 	}
 	if unpackDatasets {
-		filter.BaseTypes = append(filter.BaseTypes, mediatype.DatasetBaseType)
+		filter.BaseTypes = append(filter.BaseTypes, "datasets")
 	}
 	if unpackCode {
-		filter.BaseTypes = append(filter.BaseTypes, mediatype.CodeBaseType)
+		filter.BaseTypes = append(filter.BaseTypes, "code")
 	}
 	return []FilterConf{filter}
-}
-
-func filterToMediaBaseType(filterType string) (mediatype.BaseType, error) {
-	switch filterType {
-	case "kitfile":
-		return mediatype.ConfigBaseType, nil
-	case "datasets":
-		// annoyingly, the mediatype is dataset, but for the filter we want the plural
-		return mediatype.DatasetBaseType, nil
-	default:
-		baseType, err := mediatype.ParseKitBaseType(filterType)
-		if err != nil {
-			return mediatype.UnknownBaseType, fmt.Errorf("invalid filter type %s (must be one of 'kitfile', 'model', 'datasets', 'code', or 'docs')", filterType)
-		}
-		return baseType, nil
-	}
 }

@@ -19,7 +19,6 @@ package unpack
 import (
 	"testing"
 
-	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,29 +29,29 @@ func TestParseFilter_EdgeCases(t *testing.T) {
 		filter          string
 		expectError     bool
 		errorContains   string
-		expectedTypes   []mediatype.BaseType
+		expectedTypes   []string
 		expectedFilters []string
 	}{
 		{
 			name:          "simple model filter",
 			filter:        "model",
-			expectedTypes: []mediatype.BaseType{mediatype.ModelBaseType},
+			expectedTypes: []string{"model"},
 		},
 		{
 			name:            "model with specific filters",
 			filter:          "model:llama-7b,gpt-3",
-			expectedTypes:   []mediatype.BaseType{mediatype.ModelBaseType},
+			expectedTypes:   []string{"model"},
 			expectedFilters: []string{"llama-7b", "gpt-3"},
 		},
 		{
 			name:          "multiple types",
 			filter:        "model,datasets,code",
-			expectedTypes: []mediatype.BaseType{mediatype.ModelBaseType, mediatype.DatasetBaseType, mediatype.CodeBaseType},
+			expectedTypes: []string{"model", "datasets", "code"},
 		},
 		{
 			name:            "multiple types with filters",
 			filter:          "datasets:training-data,validation",
-			expectedTypes:   []mediatype.BaseType{mediatype.DatasetBaseType},
+			expectedTypes:   []string{"datasets"},
 			expectedFilters: []string{"training-data", "validation"},
 		},
 		{
@@ -121,30 +120,30 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 		unpackDatasets    bool
 		unpackDocs        bool
 		expectedTypeCount int
-		expectedTypes     []mediatype.BaseType
+		expectedTypes     []string
 	}{
 		{
 			name:              "only models",
 			unpackModels:      true,
 			expectedTypeCount: 1,
-			expectedTypes:     []mediatype.BaseType{mediatype.ModelBaseType},
+			expectedTypes:     []string{"model"},
 		},
 		{
 			name:              "models and datasets",
 			unpackModels:      true,
 			unpackDatasets:    true,
 			expectedTypeCount: 2,
-			expectedTypes:     []mediatype.BaseType{mediatype.ModelBaseType, mediatype.DatasetBaseType},
+			expectedTypes:     []string{"model", "datasets"},
 		},
 		{
-			name:              "all types",
+			name:              "all legacy types (no prompts)",
 			unpackKitfile:     true,
 			unpackModels:      true,
 			unpackCode:        true,
 			unpackDatasets:    true,
 			unpackDocs:        true,
 			expectedTypeCount: 5,
-			expectedTypes:     []mediatype.BaseType{mediatype.ConfigBaseType, mediatype.ModelBaseType, mediatype.DocsBaseType, mediatype.DatasetBaseType, mediatype.CodeBaseType},
+			expectedTypes:     []string{"kitfile", "model", "code", "datasets", "docs"},
 		},
 		{
 			name:              "none selected",

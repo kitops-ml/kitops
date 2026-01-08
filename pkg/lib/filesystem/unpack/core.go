@@ -258,9 +258,9 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	} else {
 		var filterConfs []FilterConf
 		for _, conf := range opts.FilterConfs {
-			if conf.matchesBaseType(mediatype.ModelBaseType) {
+			if conf.matchesBaseType("model") {
 				// Drop any other base types from this filter
-				conf.BaseTypes = []mediatype.BaseType{mediatype.ModelBaseType}
+				conf.BaseTypes = []string{"model"}
 				filterConfs = append(filterConfs, conf)
 			}
 		}
