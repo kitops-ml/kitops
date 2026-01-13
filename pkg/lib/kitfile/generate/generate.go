@@ -43,7 +43,7 @@ const (
 var modelWeightsSuffixes = []string{
 	".safetensors", ".pkl", ".joblib",
 	// Pytorch suffixes
-	".bin", ".pth", ".pt", ".mar", ".pt2", ".ptl",
+	".pth", ".pt", ".mar", ".pt2", ".ptl",
 	// Tensorflow
 	".pb", ".ckpt", ".tflite", ".tfrecords",
 	// NumPy
@@ -52,6 +52,12 @@ var modelWeightsSuffixes = []string{
 	".keras", ".h5", ".caffemodel", ".pmml", ".coreml",
 	// Other suffixes
 	".gguf", ".ggml", ".ggmf", ".llamafile", ".onnx",
+}
+
+// patterns (not just suffixes) matching model weights. Patterns are specified
+// in filepath.Glob format
+var modelWeightsPatterns = []string{
+	"*pytorch_model*.bin",
 }
 
 var docsSuffixes = []string{
@@ -293,6 +299,9 @@ func determineFileType(filename string) fileType {
 	if anySuffix(filename, modelWeightsSuffixes) {
 		return fileTypeModel
 	}
+	if anyPattern(filename, modelWeightsPatterns) {
+		return fileTypeModel
+	}
 	// Metadata should be included in either Model or Datasets, depending on
 	// other contents
 	if anySuffix(filename, metadataSuffixes) {
@@ -381,6 +390,21 @@ func detectLicense(licensePath string) (string, error) {
 func anySuffix(query string, suffixes []string) bool {
 	for _, suffix := range suffixes {
 		if strings.HasSuffix(query, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func anyPattern(query string, patterns []string) bool {
+	for _, pattern := range patterns {
+		matched, err := filepath.Match(pattern, query)
+		if err != nil {
+			// Should not happen, filepath.Match only returns an error if pattern is bad
+			output.Logf(output.LogLevelWarn, "Error matching patterns for file %s: %s", query, err)
+			continue
+		}
+		if matched {
 			return true
 		}
 	}
