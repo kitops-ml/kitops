@@ -18,12 +18,15 @@ package network
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/output"
 
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
@@ -66,6 +69,15 @@ func ClientWithAuth(store credentials.Store, opts *options.NetworkOptions) (*aut
 func DefaultClient(opts *options.NetworkOptions) (*auth.Client, error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig.InsecureSkipVerify = !opts.TLSVerify
+
+	if len(opts.TLSTrustCertPaths) > 0 {
+		certPool, err := getCertsTrust(opts)
+		if err != nil {
+			return nil, err
+		}
+		transport.TLSClientConfig.RootCAs = certPool
+	}
+
 	if opts.Proxy != "" {
 		proxyURL, err := url.Parse(opts.Proxy)
 		if err != nil {
@@ -73,6 +85,7 @@ func DefaultClient(opts *options.NetworkOptions) (*auth.Client, error) {
 		}
 		transport.Proxy = http.ProxyURL(proxyURL)
 	}
+
 	if opts.ClientCertKeyPath != "" && opts.ClientCertPath != "" {
 		cert, err := tls.LoadX509KeyPair(opts.ClientCertPath, opts.ClientCertKeyPath)
 		if err != nil {
@@ -92,4 +105,23 @@ func DefaultClient(opts *options.NetworkOptions) (*auth.Client, error) {
 	}
 
 	return client, nil
+}
+
+func getCertsTrust(opts *options.NetworkOptions) (*x509.CertPool, error) {
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		output.Logf(output.LogLevelWarn, "Error reading system certificates: %s", err)
+		rootCAs = x509.NewCertPool()
+	}
+
+	for _, path := range opts.TLSTrustCertPaths {
+		certsPEM, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("error reading certificate at path %s: %w", path, err)
+		}
+		if !rootCAs.AppendCertsFromPEM(certsPEM) {
+			output.Logf(output.LogLevelWarn, "Failed to add certificate at path %s to pool", path)
+		}
+	}
+	return rootCAs, nil
 }

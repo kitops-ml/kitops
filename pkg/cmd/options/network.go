@@ -31,6 +31,7 @@ import (
 type NetworkOptions struct {
 	PlainHTTP         bool
 	TLSVerify         bool
+	TLSTrustCertPaths []string
 	CredentialsPath   string
 	ClientCertPath    string
 	ClientCertKeyPath string
@@ -41,6 +42,7 @@ type NetworkOptions struct {
 func (o *NetworkOptions) AddNetworkFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.PlainHTTP, "plain-http", false, "Use plain HTTP when connecting to remote registries")
 	cmd.Flags().BoolVar(&o.TLSVerify, "tls-verify", true, "Require TLS and verify certificates when connecting to remote registries")
+	cmd.Flags().StringSliceVar(&o.TLSTrustCertPaths, "tls-cert", nil, "Path to TLS cert to add to trust store (flag can be repeated)")
 	cmd.Flags().StringVar(&o.ClientCertPath, "cert", "",
 		fmt.Sprintf("Path to client certificate used for authentication (can also be set via environment variable %s)", constants.ClientCertEnvVar))
 	cmd.Flags().StringVar(&o.ClientCertKeyPath, "key", "",
