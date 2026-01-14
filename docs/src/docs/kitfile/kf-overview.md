@@ -31,6 +31,7 @@ Each Kitfile includes one or more of the following sections:
 | `model`       | The serialized model and framework info |
 | `datasets`    | Training, validation, or other datasets |
 | `docs`        | Additional documentation to include |
+| `prompts`     | Prompt files for use with LLMs |
 
 You can extract the Kitfile from any existing ModelKit:
 
@@ -42,7 +43,7 @@ kit unpack [registry/repo:tag] --config -d .
 
 The only required fields are:
 - `manifestVersion`
-- At least one of `code`, `model`, `datasets`, or `docs` section
+- At least one of `code`, `model`, `datasets`, `docs`, or `prompts` section
 
 Example:
 ```yaml
@@ -91,6 +92,10 @@ datasets:
   - name: validation data
     description: validation data (tabular)
     path: ./data/test.csv
+
+prompts:
+  - path: system.prompt.md
+    description: System prompt for model inference
 ```
 
 ## Learn More
