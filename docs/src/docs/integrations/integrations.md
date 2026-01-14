@@ -18,6 +18,7 @@ The KitOps community has built some great integrations:
 - Outputting ModelKits directly from [MLFlow](../mlflow.md)
 - Deploying to any [Kubernetes distribution](../k8s-init-container.md)
 - Working with ML in [KServe](../kserve.md)
+- Building ML pipelines with [Kubeflow Pipeline components](../kubeflow.md)
 
 ## 🗄️ KitOps Compliant OCI Registries (A-Z)
 
