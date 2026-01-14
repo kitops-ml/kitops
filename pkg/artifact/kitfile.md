@@ -4,7 +4,7 @@ The Kitfile manifest for AI/ML is a YAML file designed to encapsulate all the ne
 
 ## Overview
 
-The manifest is structured into several key sections: `manifestVersion`, `package`, `code`, `datasets`, `docs`, and `model`. Each section serves a specific purpose in describing the AI/ML package components and requirements.
+The manifest is structured into several key sections: `manifestVersion`, `package`, `code`, `datasets`, `docs`, `prompts`, and `model`. Each section serves a specific purpose in describing the AI/ML package components and requirements.
 
 ### `manifestVersion`
 
@@ -62,6 +62,13 @@ This section provides general information about the AI/ML project.
   - `description`: Description of the documentation
   - `path`: Location of the documentation relative to the context
 
+### `prompts`
+
+- **Description**: Information about prompt files intended for use with LLMs
+- **Type**: Object Array
+  - `path`: Location of the prompt file or directory relative to the context
+  - `description`: Description of the prompt
+
 ### `model`
 
 - **Description**: Details of the trained models included in the package.
@@ -98,6 +105,9 @@ datasets:
     path: data/dataset.csv
     description: Description of the dataset.
     license: CC-BY-4.0
+prompts:
+  - path: system.prompt.md
+    description: System prompt for the LLM.
 model:
     name: ModelName
     path: models/model.h5
