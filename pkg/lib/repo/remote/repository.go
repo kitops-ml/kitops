@@ -87,7 +87,7 @@ func (r *Repository) Push(ctx context.Context, expected ocispec.Descriptor, cont
 	if err != nil {
 		return err
 	}
-	output.SafeDebugf("Blob uploaded, available at url %s", blobUrl)
+	output.SafeDebugf("[%s] Blob uploaded, available at url %s", expected.Digest.Encoded()[0:8], blobUrl)
 
 	return nil
 }
@@ -170,7 +170,7 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 		req.Header.Set("Authorization", auth)
 	}
 
-	output.SafeDebugf("Uploading blob as one chunk")
+	output.SafeDebugf("[%s] Uploading blob as one chunk", expected.Digest.Encoded()[0:8])
 	// TODO: Handle warnings from remote
 	// References:
 	//   - https://github.com/opencontainers/distribution-spec/blob/v1.1.0-rc4/spec.md#warnings
@@ -187,7 +187,7 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 
 	blobLocation, err := resp.Location()
 	if err != nil {
-		output.Errorf("Warning: remote registry did not return blob location")
+		output.Errorf("Warning: remote registry did not return blob location (layer digest %s)", expected.Digest.Encoded()[0:8])
 	}
 
 	return blobLocation.String(), nil
@@ -206,7 +206,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 	rangeEnd := min(uploadChunkDefaultSize-1, expected.Size-1)
 	nextLocation := location
 	for i := 0; i < numChunks; i++ {
-		output.SafeDebugf("Uploading chunk %d/%d, range %d-%d", i+1, numChunks, rangeStart, rangeEnd)
+		output.SafeDebugf("[%s] Uploading chunk %d/%d, range %d-%d", expected.Digest.Encoded()[0:8], i+1, numChunks, rangeStart, rangeEnd)
 
 		bodyLength := rangeEnd - rangeStart + 1
 		lr := io.LimitReader(content, int64(bodyLength))
@@ -280,7 +280,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 		req.Header.Set("Authorization", auth)
 	}
 
-	output.SafeDebugf("Finalizing upload")
+	output.SafeDebugf("[%s] Finalizing upload", expected.Digest.Encoded()[0:8])
 	resp, err := r.client().Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to finalize blob upload: %w", err)
