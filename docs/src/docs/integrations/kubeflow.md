@@ -324,55 +324,6 @@ def unpack_pipeline(modelkit_ref: str = 'jozu.ml/team/model:v1'):
     deploy = deploy_model(model_path=unpack.outputs['output_model_path'])
 ```
 
-## Troubleshooting
-
-### Authentication Errors
-
-**Symptom:** `Failed to push ModelKit` or `401 Unauthorized`
-
-**Solution:** Verify your registry credentials are properly configured:
-
-```bash
-kubectl get secret docker-config -n kubeflow
-kubectl get secret docker-config -n kubeflow \
-  -o jsonpath='{.data.config\.json}' | base64 -d
-```
-
-The `config.json` should contain authentication for your registry:
-
-```json
-{
-  "auths": {
-    "jozu.ml": {
-      "auth": "base64(username:password)"
-    }
-  }
-}
-```
-
-### Directory Not Found
-
-**Symptom:** `ModelKit directory does not exist`
-
-**Solution:** Ensure your training component creates the `modelkit_dir.path` directory and writes artifacts to it. The directory must exist and contain at least one file before the push component runs.
-
-### Component Image Not Found
-
-**Symptom:** `Failed to pull image ghcr.io/kitops-ml/kitops-kubeflow`
-
-**Solution:** Use a specific version tag instead of `latest` to ensure availability:
-
-```python
-image='ghcr.io/kitops-ml/kitops-kubeflow:v1.5.1'
-```
-
 ## Complete Example
 
 A full working example including training, packaging, and deployment is available in the [KitOps repository](https://github.com/kitops-ml/kitops/tree/main/build/dockerfiles/kubeflow-components/examples).
-
-## Next Steps
-
-- Learn more about [Kitfile format](../../kitfile/format/)
-- Explore [ModelKit deployment patterns](../deploy)
-- See [KServe integration](../kserve/) for serving ModelKits
-- Join our [Discord community](https://discord.gg/Tapeh8agYy) for support
