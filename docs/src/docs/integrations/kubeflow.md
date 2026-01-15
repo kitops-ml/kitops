@@ -373,6 +373,6 @@ A full working example including training, packaging, and deployment is availabl
 ## Next Steps
 
 - Learn more about [Kitfile format](../../kitfile/format/)
-- Explore [ModelKit deployment patterns](../deploy/)
+- Explore [ModelKit deployment patterns](../deploy)
 - See [KServe integration](../kserve/) for serving ModelKits
 - Join our [Discord community](https://discord.gg/Tapeh8agYy) for support
