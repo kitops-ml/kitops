@@ -26,6 +26,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -33,6 +34,7 @@ import (
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras-go/v2/registry/remote/retry"
 )
 
 type Repository struct {
@@ -205,18 +207,15 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 	rangeStart := int64(0)
 	rangeEnd := min(uploadChunkDefaultSize-1, expected.Size-1)
 	nextLocation := location
-	for i := 0; i < numChunks; i++ {
+	for i := range numChunks {
 		output.SafeDebugf("[%s] Uploading chunk %d/%d, range %d-%d", expected.Digest.Encoded()[0:8], i+1, numChunks, rangeStart, rangeEnd)
 
-		bodyLength := rangeEnd - rangeStart + 1
-		lr := io.LimitReader(content, int64(bodyLength))
-
-		// Set up request reading from the LimitReader
-		req, err := http.NewRequestWithContext(ctx, http.MethodPatch, nextLocation.String(), lr)
+		// Set up request without body to allow rewinding/retries
+		req, err := http.NewRequestWithContext(ctx, http.MethodPatch, nextLocation.String(), nil)
 		if err != nil {
 			return "", err
 		}
-		req.ContentLength = bodyLength
+		req.ContentLength = rangeEnd - rangeStart + 1
 		req.Header.Set("Content-Range", fmt.Sprintf("%d-%d", rangeStart, rangeEnd))
 		req.Header.Set("Content-Type", "application/octet-stream")
 		if authHeader != "" {
@@ -225,7 +224,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 
 		// Submit the chunk as a PATCH
 		// TODO: Handle 416 response code (range not satisfiable)
-		resp, err := r.client().Do(req)
+		resp, err := r.uploadBlobChunkWithRetry(ctx, req, content, rangeStart, rangeEnd)
 		if err != nil {
 			return "", fmt.Errorf("failed to upload blob chunk: %w", err)
 		}
@@ -297,6 +296,67 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 	}
 
 	return blobLocation.String(), nil
+}
+
+func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Request, content io.Reader, rangeStart, rangeEnd int64) (*http.Response, error) {
+	seekableContent, isSeekable := content.(io.Seeker)
+
+	attempt := 0
+	for {
+		bodyLength := rangeEnd - rangeStart + 1
+		lr := io.LimitReader(content, bodyLength)
+		req.Body = io.NopCloser(lr)
+
+		resp, respErr := r.client().Do(req)
+		if respErr == nil && resp.StatusCode == http.StatusAccepted {
+			return resp, respErr
+		}
+		if respErr != nil {
+			output.SafeLogf(output.LogLevelTrace, "[%s] Request failed with error %s. Attempting to retry", expected.Digest.Encoded()[0:8], respErr)
+		} else {
+			output.SafeLogf(output.LogLevelTrace, "[%s] Request failed with status %s. Attempting to retry", expected.Digest.Encoded()[0:8], resp.Status)
+		}
+		if !isSeekable {
+			output.SafeDebugf("[%s] Cannot retry request: body is not seekable", expected.Digest.Encoded()[0:8])
+			return resp, respErr
+		}
+
+		delay, err := retry.DefaultPolicy.Retry(attempt, resp, respErr)
+		if err != nil {
+			output.SafeDebugf("[%s] Error calculating retries left: %s", expected.Digest.Encoded()[0:8], err)
+			if respErr == nil {
+				resp.Body.Close()
+			}
+			return nil, err
+		}
+		if delay < 0 {
+			// No retries left or request is not retryable. Have to guess at why though
+			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+				output.SafeDebugf("[%s] Response code (%s) is not retryable", expected.Digest.Encoded()[0:8], resp.Status)
+			} else {
+				output.SafeDebugf("[%s] Cannot retry request: no retries remaining", expected.Digest.Encoded()[0:8])
+			}
+			return resp, respErr
+		}
+
+		if _, err := seekableContent.Seek(rangeStart, io.SeekStart); err != nil {
+			output.SafeLogf(output.LogLevelError, "Failed to seek content for retry: %s", err)
+			return resp, respErr
+		}
+		if respErr == nil {
+			resp.Body.Close()
+		}
+
+		output.SafeDebugf("[%s] Request failed. Retrying in %d ms", expected.Digest.Encoded()[0:8], delay/time.Millisecond)
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
+		attempt++
+	}
 }
 
 // client returns an HTTP client used to access the remote repository.
