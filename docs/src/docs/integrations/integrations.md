@@ -97,7 +97,7 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 * GitHub Actions
 * GitLab Pipelines
 * Jenkins CI/CD
-* Kubeflow
+* [Kubeflow](kubeflow.md)
 * Spinnaker
 * Tekton
 * Travis CI
