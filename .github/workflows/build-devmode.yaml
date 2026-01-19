@@ -22,7 +22,7 @@ jobs:
 
       ## install build dependencies for frontend generation
       - name: Install Node.js
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: './frontend/dev-mode/.nvmrc'
 
@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "PNPM_CACHE_STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         name: Setup pnpm cache
         with:
           path: ${{ env.PNPM_CACHE_STORE_PATH }}

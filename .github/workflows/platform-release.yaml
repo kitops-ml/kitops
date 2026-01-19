@@ -39,7 +39,7 @@ jobs:
 
       ## install build dependencies for frontend generation
       - name: Install Node.js
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: './frontend/dev-mode/.nvmrc'
 
@@ -49,7 +49,7 @@ jobs:
           package_json_file: './docs/package.json'
 
       - name: Setup Go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
             go-version-file: 'go.mod'
 
@@ -107,7 +107,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Setup Go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
             go-version-file: 'go.mod'
 
@@ -141,7 +141,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Setup Go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
             go-version-file: 'go.mod'
 
@@ -472,7 +472,7 @@ jobs:
           push-to-registry: true
 
       - name: Generate artifact attestation for kubeflow container
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a   # v3.0.0
+        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8   # v3.1.0
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.KUBEFLOW_IMAGE }}
           subject-digest: ${{ steps.build-kubeflow-container.outputs.digest }}
