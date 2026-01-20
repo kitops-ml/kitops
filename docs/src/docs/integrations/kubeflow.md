@@ -52,4 +52,3 @@ If you want fully reproducible pipelines, build a container image that includes 
 - ModelKit references can be any OCI reference supported by your registry (tagged or digested).
 - For air‑gapped clusters or private registries, make sure the pipeline runtime can pull the container image used by the step and authenticate to the ModelKit registry.
 
-<!-- AGENT_MODIFIED: Human review required before merge -->
