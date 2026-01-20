@@ -102,6 +102,22 @@ jobs:
           path: |
             ./kit*
 
+  check-licenses:
+    name: Check dependency licenses
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Run Trivy license scanner
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'license'
+          severity: 'UNKNOWN,HIGH,CRITICAL'
+          exit-code: '1'
+
   check-container-build:
     runs-on: ubuntu-latest
     steps:
