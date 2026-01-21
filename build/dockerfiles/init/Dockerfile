@@ -8,6 +8,8 @@ FROM $KIT_BASE_IMAGE
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --from=cosign-install /ko-app/cosign /usr/local/bin/cosign
 
+USER nobody
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 LABEL org.opencontainers.image.description="Kit CLI init container"

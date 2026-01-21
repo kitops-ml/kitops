@@ -6,7 +6,10 @@ WORKDIR /app
 COPY ./dockerfiles/KServe/entrypoint.sh ./entrypoint.sh
 COPY tests ./tests
 
-# ensure entrypoint is executable
-RUN chmod +x entrypoint.sh
+# ensure entrypoint is executable and tests dir is writable
+RUN chmod +x entrypoint.sh && \
+    chown -R nobody:nogroup /app
+
+USER nobody
 
 ENTRYPOINT ["bats", "tests"]
