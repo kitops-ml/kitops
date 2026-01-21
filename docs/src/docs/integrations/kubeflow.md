@@ -214,37 +214,6 @@ with open(os.path.join(modelkit_dir.path, 'Kitfile'), 'w') as f:
 
 When a `Kitfile` is present, the component uses it instead of generating one automatically.
 
-## Adding Attestation Metadata
-
-For production pipelines, add attestation metadata to track data sources and code versions:
-
-```python
-push = push_modelkit(
-    registry='jozu.ml',
-    repository='team/prod-model',
-    tag='v1.0.0',
-    input_modelkit_dir=train.outputs['modelkit_dir'],
-    modelkit_name='Production Model',
-    modelkit_desc='Production model v1.0.0',
-    modelkit_author='ML Team',
-    dataset_uri='s3://bucket/data.csv',
-    code_repo='github.com/org/repo',
-    code_commit='abc123',
-)
-
-# Mount both registry credentials and cosign keys
-kubernetes.use_secret_as_volume(
-    push,
-    secret_name='docker-config',
-    mount_path='/home/user/.docker',
-)
-kubernetes.use_secret_as_volume(
-    push,
-    secret_name='cosign-keys',
-    mount_path='/etc/cosign',
-)
-```
-
 ## Unpacking ModelKits
 
 Use the `unpack-modelkit` component to pull and extract ModelKits in downstream pipeline steps:
