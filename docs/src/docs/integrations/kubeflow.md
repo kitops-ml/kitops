@@ -24,6 +24,66 @@ The KitOps Kubeflow components enable you to:
 - `kubectl` configured to access your cluster
 - Kubernetes secrets configured for registry authentication
 
+## Complete Example
+
+A full working example including training, packaging, and deployment is available in the [KitOps repository](https://github.com/kitops-ml/kitops/tree/main/build/dockerfiles/kubeflow-components/examples).
+
+## Registry Authentication
+
+Before using the KitOps components, set up registry authentication by creating a Kubernetes secret with your Docker registry credentials:
+
+```bash
+kubectl create secret generic docker-config \
+  --from-file=config.json="$HOME/.docker/config.json" \
+  --namespace=kubeflow
+```
+
+Or create a Docker registry secret:
+
+```bash
+kubectl create secret docker-registry docker-config \
+  --docker-server=jozu.ml \
+  --docker-username=myuser \
+  --docker-password=mypassword \
+  --docker-email=user@example.com \
+  --namespace=kubeflow
+```
+
+Mount the secret in your pipeline component using:
+
+```python
+kubernetes.use_secret_as_volume(
+    component_task,
+    secret_name='docker-config',
+    mount_path='/home/user/.docker',
+)
+```
+
+## Cosign Signing (Optional)
+
+To sign ModelKit attestations with Cosign, first generate signing keys and create a Kubernetes secret:
+
+```bash
+cosign generate-key-pair
+
+kubectl create secret generic cosign-keys \
+  --from-file=cosign.key=cosign.key \
+  --from-file=cosign.pub=cosign.pub \
+  --namespace=kubeflow
+```
+
+Mount the secret in your pipeline component:
+
+```python
+kubernetes.use_secret_as_volume(
+    component_task,
+    secret_name='cosign-keys',
+    mount_path='/etc/cosign',
+)
+```
+
+If cosign keys are not available, the signing step logs a warning and continues without failing the pipeline.
+
 ## Available Components
 
 ### push-modelkit
@@ -71,27 +131,10 @@ Pulls a ModelKit from a registry and extracts its contents.
 
 ## Quick Start Example
 
-Here's a minimal pipeline that trains a model and packages it as a ModelKit:
+Here's how to use the `push-modelkit` component in your pipeline. The component wraps your trained model artifacts into a ModelKit and pushes it to a registry:
 
 ```python
 from kfp import dsl, kubernetes
-
-@dsl.component(
-    packages_to_install=['pandas', 'scikit-learn'],
-    base_image='python:3.11-slim',
-)
-def train_model(modelkit_dir: dsl.Output[dsl.Artifact]):
-    """Train model and save to directory."""
-    import os
-    import pickle
-    
-    # Train your model
-    model = train_your_model()
-    os.makedirs(modelkit_dir.path, exist_ok=True)
-    
-    # Save model and artifacts
-    with open(os.path.join(modelkit_dir.path, 'model.pkl'), 'wb') as f:
-        pickle.dump(model, f)
 
 @dsl.container_component
 def push_modelkit(
@@ -119,61 +162,23 @@ def push_modelkit(
             f'&& cp /tmp/outputs/digest "{output_digest.path}"'
         ],
     )
-
-@dsl.pipeline(
-    name='simple-modelkit-pipeline',
-    description='Train and package as ModelKit',
-)
-def simple_pipeline(
-    registry: str = 'jozu.ml',
-    repository: str = 'team/model',
-    tag: str = 'latest',
-):
-    train = train_model()
-    
-    push = push_modelkit(
-        registry=registry,
-        repository=repository,
-        tag=tag,
-        input_modelkit_dir=train.outputs['modelkit_dir'],
-        modelkit_name='My Model',
-        modelkit_desc='Description of my model',
-        modelkit_author='Data Science Team',
-    )
-    
-    kubernetes.use_secret_as_volume(
-        push,
-        secret_name='docker-config',
-        mount_path='/home/user/.docker',
-    )
 ```
 
-## Configuration
-
-### Registry Authentication
-
-Create a Kubernetes secret with Docker registry credentials:
-
-```bash
-kubectl create secret generic docker-config \
-  --from-file=config.json="$HOME/.docker/config.json" \
-  --namespace=kubeflow
-```
-
-Or create a Docker registry secret:
-
-```bash
-kubectl create secret docker-registry docker-config \
-  --docker-server=jozu.ml \
-  --docker-username=myuser \
-  --docker-password=mypassword \
-  --docker-email=user@example.com \
-  --namespace=kubeflow
-```
-
-Mount the secret in your pipeline component:
+Use it in your pipeline after your training step:
 
 ```python
+# After your training component produces model artifacts
+push = push_modelkit(
+    registry='jozu.ml',
+    repository='team/model',
+    tag='latest',
+    input_modelkit_dir=train.outputs['modelkit_dir'],
+    modelkit_name='My Model',
+    modelkit_desc='Description of my model',
+    modelkit_author='Data Science Team',
+)
+
+# Mount registry credentials
 kubernetes.use_secret_as_volume(
     push,
     secret_name='docker-config',
@@ -181,19 +186,12 @@ kubernetes.use_secret_as_volume(
 )
 ```
 
-### Using Custom Kitfiles
+## Using Custom Kitfiles
 
-If you need full control over the Kitfile structure, create one alongside your artifacts:
+If you need full control over the Kitfile structure, create one in your training component alongside your artifacts:
 
 ```python
-@dsl.component(base_image='python:3.11-slim')
-def train_with_kitfile(modelkit_dir: dsl.Output[dsl.Artifact]):
-    """Train and create custom Kitfile."""
-    import os
-    
-    train_and_save_model(modelkit_dir.path)
-    
-    kitfile_content = """
+kitfile_content = """
 manifestVersion: 1.0
 package:
   name: Custom Model
@@ -210,80 +208,42 @@ code:
 docs:
   - path: README.md
 """
-    with open(os.path.join(modelkit_dir.path, 'Kitfile'), 'w') as f:
-        f.write(kitfile_content)
+with open(os.path.join(modelkit_dir.path, 'Kitfile'), 'w') as f:
+    f.write(kitfile_content)
 ```
 
 When a `Kitfile` is present, the component uses it instead of generating one automatically.
 
-### Production Pipeline with Attestation
+## Adding Attestation Metadata
 
 For production pipelines, add attestation metadata to track data sources and code versions:
 
 ```python
-@dsl.pipeline(
-    name='production-pipeline',
-    description='Production pipeline with attestation',
+push = push_modelkit(
+    registry='jozu.ml',
+    repository='team/prod-model',
+    tag='v1.0.0',
+    input_modelkit_dir=train.outputs['modelkit_dir'],
+    modelkit_name='Production Model',
+    modelkit_desc='Production model v1.0.0',
+    modelkit_author='ML Team',
+    dataset_uri='s3://bucket/data.csv',
+    code_repo='github.com/org/repo',
+    code_commit='abc123',
 )
-def production_pipeline(
-    registry: str = 'jozu.ml',
-    repository: str = 'team/prod-model',
-    tag: str = 'v1.0.0',
-    dataset_uri: str = 's3://bucket/data.csv',
-    code_repo: str = 'github.com/org/repo',
-    code_commit: str = 'abc123',
-):
-    train = train_model()
-    
-    push = push_modelkit(
-        registry=registry,
-        repository=repository,
-        tag=tag,
-        input_modelkit_dir=train.outputs['modelkit_dir'],
-        modelkit_name='Production Model',
-        modelkit_desc='Production model v1.0.0',
-        modelkit_author='ML Team',
-        dataset_uri=dataset_uri,
-        code_repo=code_repo,
-        code_commit=code_commit,
-    )
-    
-    kubernetes.use_secret_as_volume(
-        push,
-        secret_name='docker-config',
-        mount_path='/home/user/.docker',
-    )
-    kubernetes.use_secret_as_volume(
-        push,
-        secret_name='cosign-keys',
-        mount_path='/etc/cosign',
-    )
-```
 
-### Cosign Signing (Optional)
-
-To sign ModelKit attestations with Cosign, create a secret with your signing keys:
-
-```bash
-cosign generate-key-pair
-
-kubectl create secret generic cosign-keys \
-  --from-file=cosign.key=cosign.key \
-  --from-file=cosign.pub=cosign.pub \
-  --namespace=kubeflow
-```
-
-Mount it in your pipeline:
-
-```python
+# Mount both registry credentials and cosign keys
+kubernetes.use_secret_as_volume(
+    push,
+    secret_name='docker-config',
+    mount_path='/home/user/.docker',
+)
 kubernetes.use_secret_as_volume(
     push,
     secret_name='cosign-keys',
     mount_path='/etc/cosign',
 )
 ```
-
-If cosign keys are not available, the signing step logs a warning and continues without failing the pipeline.
 
 ## Unpacking ModelKits
 
@@ -306,24 +266,22 @@ def unpack_modelkit(
             f'&& cp /tmp/outputs/model_path "{output_model_path.path}"'
         ],
     )
-
-@dsl.pipeline(name='unpack-and-deploy')
-def unpack_pipeline(modelkit_ref: str = 'jozu.ml/team/model:v1'):
-    unpack = unpack_modelkit(
-        modelkit_reference=modelkit_ref,
-        extract_path='/tmp/model',
-    )
-    
-    kubernetes.use_secret_as_volume(
-        unpack,
-        secret_name='docker-config',
-        mount_path='/home/user/.docker',
-    )
-    
-    # Use unpacked model in subsequent steps
-    deploy = deploy_model(model_path=unpack.outputs['output_model_path'])
 ```
 
-## Complete Example
+Use it in your pipeline:
 
-A full working example including training, packaging, and deployment is available in the [KitOps repository](https://github.com/kitops-ml/kitops/tree/main/build/dockerfiles/kubeflow-components/examples).
+```python
+unpack = unpack_modelkit(
+    modelkit_reference='jozu.ml/team/model:v1',
+    extract_path='/tmp/model',
+)
+
+kubernetes.use_secret_as_volume(
+    unpack,
+    secret_name='docker-config',
+    mount_path='/home/user/.docker',
+)
+
+# Use unpacked model in subsequent steps
+deploy = deploy_model(model_path=unpack.outputs['output_model_path'])
+```
