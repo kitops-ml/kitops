@@ -42,7 +42,7 @@ See how to [deploy ModelKits](../deploy.md)
 
 ### 📄 Kitfile: Config Made Easy
 
-The Kitfile is a YAML configuration that describes what goes into a KitOps ModelKit. It’s designed for clarity and security — making it easy to track what’s included, and to share AI/ML projects across environments and teams.
+The Kitfile is a YAML configuration that describes what goes into a KitOps ModelKit. It defines all components of your AI/ML project including models, datasets, code, prompts, and documentation. It’s designed for clarity and security — making it easy to track what’s included, and to share AI/ML projects across environments and teams.
 
 **Using ModelPack format:** To pack in ModelPack format instead of ModelKit format, add the `--use-model-pack` flag:
 
