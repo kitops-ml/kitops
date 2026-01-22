@@ -437,10 +437,6 @@ Examine the contents of a directory and attempt to generate a basic Kitfile
 based on common file formats. Any files whose type (i.e. model, dataset, etc.)
 cannot be determined will be included in a code layer.
 
-Prompt files are automatically detected based on naming patterns such as files
-containing ".prompt" in their name, or specific filenames like AGENTS.md, SKILL.md,
-or CLAUDE.md. These files will be added to the prompts section of the Kitfile.
-
 By default the command will prompt for input for a name and description for the Kitfile
 
 ```
@@ -994,8 +990,8 @@ to unpack only the dataset named 'my-dataset'.
 
 Valid filters have the format
     [types]:[filters]
-where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets,
-code, prompts, or docs) and [filters] is an optional comma-separated list of additional filters
+where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets
+code, or docs) and [filters] is an optional comma-separated list of additional filters
 to apply, which are matched against the Kitfile to further restrict what is extracted.
 Additional filters match elements of the Kitfile on either the name (if present) or
 the path used.
@@ -1024,12 +1020,6 @@ kit unpack myrepo/my-model:latest --filter=docs:./README.md
 
 # Unpack the model and the dataset named "validation"
 kit unpack myrepo/my-model:latest --filter=model --filter=datasets:validation
-
-# Unpack only prompts from a modelkit
-kit unpack myrepo/my-model:latest --filter=prompts
-
-# Unpack only a specific prompt file
-kit unpack myrepo/my-model:latest --filter=prompts:system.prompt.md
 
 # Unpack a modelkit from a remote registry with overwrite enabled
 kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked
