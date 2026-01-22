@@ -32,7 +32,7 @@ You can:
 
 ### 🎁 ModelKit: Standardized Model Packaging
 
-The KitOps ModelKit is a packaging format that bundles all the artifacts of your AI/ML project — including datasets, code, configs, documentation, and the model itself — into an OCI-compliant Artifact.
+The KitOps ModelKit is a packaging format that bundles all the artifacts of your AI/ML project — including datasets, code, configs, prompts, documentation, and the model itself — into an OCI-compliant Artifact.
 
 This means ModelKits can be stored in your existing image registry, deployed to Kubernetes (or anywhere else containers run), and managed just like any container image.
 
