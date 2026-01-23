@@ -7,6 +7,8 @@
 [![LICENSE](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](./LICENSE)
 [![Discord](https://img.shields.io/discord/1098133460310294528?logo=Discord)](https://discord.gg/Tapeh8agYy)
 [![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Twitter)](https://twitter.com/kit_ops)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/kitops-ml/kitops/total)
+
 
 ## 📚 Table of Contents
 - [What is KitOps?](#what-is-kitops)
