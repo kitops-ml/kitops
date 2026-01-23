@@ -71,6 +71,12 @@ func DefaultClient(opts *options.NetworkOptions) (*auth.Client, error) {
 	transport.TLSClientConfig.InsecureSkipVerify = !opts.TLSVerify
 
 	if len(opts.TLSTrustCertPaths) > 0 {
+		if opts.PlainHTTP {
+			output.Logf(output.LogLevelWarn, "Flag '--tls-cert' has no effect when --plain-http is specified")
+		}
+		if !opts.TLSVerify {
+			output.Logf(output.LogLevelWarn, "Flag '--tls-cert' has no effect when --tls-verify=false is specified")
+		}
 		certPool, err := getCertsTrust(opts)
 		if err != nil {
 			return nil, err
