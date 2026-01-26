@@ -35,7 +35,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       ## install build dependencies for frontend generation
       - name: Install Node.js
@@ -61,7 +61,7 @@ jobs:
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@0b82b0b1a22399a1c542d4d656f70cd903571b5c #v0.21.1
+        uses: anchore/sbom-action/download-syft@62ad5284b8ced813296287a0b63906cb364b73ee #v0.22.0
         with:
           syft-version: v1.32.0
 
@@ -104,7 +104,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Go
         uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
@@ -112,7 +112,7 @@ jobs:
             go-version-file: 'go.mod'
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@0b82b0b1a22399a1c542d4d656f70cd903571b5c #v0.21.1
+        uses: anchore/sbom-action/download-syft@62ad5284b8ced813296287a0b63906cb364b73ee #v0.22.0
         with:
           syft-version: v1.32.0
 
@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Go
         uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
@@ -146,7 +146,7 @@ jobs:
             go-version-file: 'go.mod'
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@0b82b0b1a22399a1c542d4d656f70cd903571b5c #v0.21.1
+        uses: anchore/sbom-action/download-syft@62ad5284b8ced813296287a0b63906cb364b73ee #v0.22.0
         with:
           syft-version: v1.32.0
 
@@ -178,7 +178,7 @@ jobs:
     steps:
       # checkout the current repository
       - name: Checkout kitops
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: kitops
 
@@ -290,7 +290,7 @@ jobs:
           owner: kitops-ml
       # checkout the homebrew-kitops repository (kitops-ml/homebrew-kitops)
       - name: Checkout homebrew-kitops
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kitops-ml/homebrew-kitops
           ref: 'main'
@@ -376,7 +376,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Build and push base Kit container
         id: build-kit-container
@@ -451,28 +451,28 @@ jobs:
             index:org.opencontainers.image.licenses=Apache-2.0
 
       - name: Generate artifact attestation for base container
-        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8   # v3.1.0
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f   # v3.2.0
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.build-kit-container.outputs.digest }}
           push-to-registry: true
 
       - name: Generate artifact attestation for kit init container
-        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8   # v3.1.0
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f   # v3.2.0
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.INIT_IMAGE_NAME }}
           subject-digest: ${{ steps.build-kit-init-container.outputs.digest }}
           push-to-registry: true
 
       - name: Generate artifact attestation for kit kserve container
-        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8   # v3.1.0
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f   # v3.2.0
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.KIT_SERVE_IMAGE }}
           subject-digest: ${{ steps.build-kit-serve-container.outputs.digest }}
           push-to-registry: true
 
       - name: Generate artifact attestation for kubeflow container
-        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8   # v3.1.0
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f   # v3.2.0
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.KUBEFLOW_IMAGE }}
           subject-digest: ${{ steps.build-kubeflow-container.outputs.digest }}
