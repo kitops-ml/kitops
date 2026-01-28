@@ -19,26 +19,7 @@ package output
 import (
 	"net/http"
 	"time"
-
-	"oras.land/oras-go/v2/registry/remote"
-	"oras.land/oras-go/v2/registry/remote/auth"
 )
-
-type LoggingClient struct {
-	remote.Client
-}
-
-func (c *LoggingClient) Do(req *http.Request) (*http.Response, error) {
-	start := time.Now()
-	resp, err := c.Client.Do(req)
-	duration := float64(time.Since(start)) / float64(time.Millisecond)
-	if err != nil {
-		SafeLogf(LogLevelTrace, "%s %s -> ERROR -- duration %.2f ms", req.Method, req.URL, duration)
-	} else {
-		SafeLogf(LogLevelTrace, "%s %s -> %d -- duration %.2f ms", req.Method, req.URL, resp.StatusCode, duration)
-	}
-	return resp, err
-}
 
 type LoggingTransport struct {
 	http.RoundTripper
@@ -60,25 +41,9 @@ func (t *LoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return resp, err
 }
 
-// WrapClient returns a remote.Client that logs every request at a 'trace' level.
-// If the currently set logging level would not print 'trace' logs, this is a no-op.
-func WrapClient(c remote.Client) remote.Client {
+func WrapHTTPTransport(rt http.RoundTripper) http.RoundTripper {
 	if !logLevel.shouldPrint(LogLevelTrace) {
-		return c
+		return rt
 	}
-
-	// If the client is an *auth.Client, we need to wrap the underlying http.Client Transport
-	if authClient, ok := c.(*auth.Client); ok {
-		if authClient.Client == nil {
-			authClient.Client = &http.Client{}
-		}
-		authClient.Client.Transport = &LoggingTransport{
-			RoundTripper: authClient.Client.Transport,
-		}
-		return authClient
-	}
-
-	return &LoggingClient{
-		Client: c,
-	}
+	return &LoggingTransport{rt}
 }

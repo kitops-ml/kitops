@@ -45,7 +45,8 @@ func NewRegistry(hostname string, opts *options.NetworkOptions) (*remote.Registr
 	if err != nil {
 		return nil, err
 	}
-	reg.Client = output.WrapClient(authClient)
+	authClient.Client.Transport = output.WrapHTTPTransport(authClient.Client.Transport)
+	reg.Client = authClient
 
 	return reg, nil
 }
