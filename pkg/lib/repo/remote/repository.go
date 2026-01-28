@@ -304,7 +304,11 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, a
 
 func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Request, content io.Reader, expected ocispec.Descriptor, rangeStart, rangeEnd int64) (*http.Response, error) {
 	seekableContent, isSeekable := content.(io.Seeker)
-
+	shortDigest := expected.Digest.Encoded()[0:8]
+	// We need to be able to retry on 401 Unauthorized in case the upload is taking a long time and the token expires.
+	// We only want to refetch credentials once during this process to prevent looping on retries, as a 401 is expected
+	// when e.g. pushing to a repo we don't have access to.
+	didReauth := false
 	attempt := 0
 	for {
 		bodyLength := rangeEnd - rangeStart + 1
@@ -316,29 +320,50 @@ func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Req
 			return resp, respErr
 		}
 		if respErr != nil {
-			output.SafeLogf(output.LogLevelTrace, "[%s] Request failed with error %s. Attempting to retry", expected.Digest.Encoded()[0:8], respErr)
+			output.SafeLogf(output.LogLevelTrace, "[%s] Request failed with error %s. Attempting to retry", shortDigest, respErr)
 		} else {
-			output.SafeLogf(output.LogLevelTrace, "[%s] Request failed with status %s. Attempting to retry", expected.Digest.Encoded()[0:8], resp.Status)
+			output.SafeLogf(output.LogLevelTrace, "[%s] Request failed with status %s. Attempting to retry", shortDigest, resp.Status)
 		}
 		if !isSeekable {
-			output.SafeDebugf("[%s] Cannot retry request: body is not seekable", expected.Digest.Encoded()[0:8])
+			output.SafeDebugf("[%s] Cannot retry request: body is not seekable", shortDigest)
 			return resp, respErr
+		}
+
+		if respErr == nil && resp.StatusCode == http.StatusUnauthorized && !didReauth {
+			output.SafeDebugf("[%s] Received 401 response code. Attempting to refetch token", shortDigest)
+
+			// We cannot rely on oras' automatic token handling here since the request body is not rewindable
+			// Instead, we issue a new request without a body (to the /v2/ endpoint) to make oras refresh its
+			// own internal cache.
+			newAuth, err := r.tryFetchNewAuth(ctx)
+			if err != nil {
+				output.SafeDebugf("[%s] Failed to fetch new token: %s", shortDigest, err)
+				return resp, respErr
+			}
+			req.Header.Set("Authorization", newAuth)
+			didReauth = true
+
+			if _, err := seekableContent.Seek(rangeStart, io.SeekStart); err != nil {
+				output.SafeLogf(output.LogLevelError, "Failed to seek content for retry: %s", err)
+				return resp, respErr
+			}
+
+			output.SafeDebugf("[%s] Retrying with new auth token", shortDigest)
+			resp.Body.Close()
+			continue
 		}
 
 		delay, err := retryPolicy.Retry(attempt, resp, respErr)
 		if err != nil {
-			output.SafeDebugf("[%s] Error calculating retries left: %s", expected.Digest.Encoded()[0:8], err)
-			if respErr == nil {
-				resp.Body.Close()
-			}
+			output.SafeDebugf("[%s] Error calculating retries left: %s", shortDigest, err)
 			return resp, respErr
 		}
 		if delay < 0 {
 			// No retries left or request is not retryable. Have to guess at why though
-			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
-				output.SafeDebugf("[%s] Response code (%s) is not retryable", expected.Digest.Encoded()[0:8], resp.Status)
+			if respErr == nil && resp.StatusCode >= 400 && resp.StatusCode < 500 {
+				output.SafeDebugf("[%s] Response code (%s) is not retryable", shortDigest, resp.Status)
 			} else {
-				output.SafeDebugf("[%s] Cannot retry request: no retries remaining", expected.Digest.Encoded()[0:8])
+				output.SafeDebugf("[%s] Cannot retry request: no retries remaining", shortDigest)
 			}
 			return resp, respErr
 		}
@@ -347,11 +372,12 @@ func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Req
 			output.SafeLogf(output.LogLevelError, "Failed to seek content for retry: %s", err)
 			return resp, respErr
 		}
+
 		if respErr == nil {
 			resp.Body.Close()
 		}
 
-		output.SafeDebugf("[%s] Request failed. Retrying in %d ms", expected.Digest.Encoded()[0:8], delay/time.Millisecond)
+		output.SafeDebugf("[%s] Request failed. Retrying in %d ms", shortDigest, delay/time.Millisecond)
 		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
@@ -361,6 +387,44 @@ func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Req
 		}
 		attempt++
 	}
+}
+
+// tryFetchNewAuth implicitly refreshes the current auth token in the oras
+// library's cache by making a new request to the registry's /v2/ endpoint.
+// This function is required in contexts where the active request cannot be
+// automatically rewound (by oras) to retry with a new token.
+func (r *Repository) tryFetchNewAuth(ctx context.Context) (string, error) {
+	scheme := "https"
+	if r.PlainHttp {
+		scheme = "http"
+	}
+	v2URL := fmt.Sprintf("%s://%s/v2/", scheme, r.Reference.Registry)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v2URL, nil)
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Since this is a /v2/ request, oras won't automatically add the expected
+	// scopes. We have to do it ourselves
+	scopes := auth.GetAllScopesForHost(ctx, r.Reference.Registry)
+	query := req.URL.Query()
+	for _, scope := range scopes {
+		query.Add("scope", scope)
+	}
+	req.URL.RawQuery = query.Encode()
+
+	// This call internally will make a number of requests: once to detect the
+	// 401 status, requests to obtain a new token, then a final request to see the
+	// 200 OK with the new token. We extract the new token from the response
+	resp, err := r.client().Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error fetching /v2/: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("got %s status from /v2/ endpoint", resp.Status)
+	}
+	return resp.Request.Header.Get("Authorization"), nil
 }
 
 // client returns an HTTP client used to access the remote repository.
