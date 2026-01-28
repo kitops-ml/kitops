@@ -66,9 +66,10 @@ func NewRepository(ctx context.Context, hostname, repository string, opts *optio
 	}
 
 	return &Repository{
-		Repository: repo,
-		Reference:  ref,
-		PlainHttp:  opts.PlainHTTP,
-		Client:     reg.Client,
+		Repository:      repo,
+		Reference:       ref,
+		PlainHttp:       opts.PlainHTTP,
+		Client:          reg.Client,
+		uploadChunkSize: uploadChunkDefaultSize,
 	}, nil
 }

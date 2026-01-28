@@ -39,10 +39,14 @@ import (
 
 type Repository struct {
 	registry.Repository
-	Reference registry.Reference
-	PlainHttp bool
-	Client    remote.Client
+	Reference       registry.Reference
+	PlainHttp       bool
+	Client          remote.Client
+	uploadChunkSize int64
 }
+
+// Make this available for subbing out in tests
+var retryPolicy = retry.DefaultPolicy
 
 func (r *Repository) Untag(ctx context.Context, reference string) error {
 	if err := r.Reference.ValidateReferenceAsDigest(); err == nil {
@@ -134,12 +138,13 @@ func (r *Repository) initiateUploadSession(ctx context.Context) (*url.URL, *http
 
 func (r *Repository) uploadBlob(ctx context.Context, location *url.URL, postResp *http.Response, expected ocispec.Descriptor, content io.Reader) (string, error) {
 	output.SafeDebugf("Size: %d", expected.Size)
-	uploadFormat := getUploadFormat(location.Hostname(), expected.Size)
+	uploadFormat := getUploadFormat(location.Hostname(), expected.Size, r.uploadChunkSize)
+	authHeader := postResp.Request.Header.Get("Authorization")
 	switch uploadFormat {
 	case uploadMonolithicPut:
-		return r.uploadBlobMonolithic(ctx, location, postResp, expected, content)
+		return r.uploadBlobMonolithic(ctx, location, authHeader, expected, content)
 	case uploadChunkedPatch:
-		return r.uploadBlobChunked(ctx, location, postResp, expected, content)
+		return r.uploadBlobChunked(ctx, location, authHeader, expected, content)
 	default:
 		return "", fmt.Errorf("unknown registry %s, cannot upload", location.Hostname())
 	}
@@ -147,7 +152,7 @@ func (r *Repository) uploadBlob(ctx context.Context, location *url.URL, postResp
 
 // uploadBlobMonolithic performs a monolithic blob upload as per the distribution spec. The content of the blob is uploaded
 // in one PUT request at the provided location.
-func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL, postResp *http.Response, expected ocispec.Descriptor, content io.Reader) (string, error) {
+func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL, authHeader string, expected ocispec.Descriptor, content io.Reader) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, location.String(), content)
 	if err != nil {
 		return "", err
@@ -168,8 +173,8 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 	req.URL.RawQuery = q.Encode()
 
 	// Reuse credentials from POST request that initiated upload
-	if auth := postResp.Request.Header.Get("Authorization"); auth != "" {
-		req.Header.Set("Authorization", auth)
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
 	}
 
 	output.SafeDebugf("[%s] Uploading blob as one chunk", expected.Digest.Encoded()[0:8])
@@ -199,13 +204,12 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 // in size and uploaded sequentially through PATCH requests. Once entire blob is uploaded, a PUT request marks the upload as complete.
 // Note that the distribution spec 1) requires blobs to uploaded in-order, and 2) does not have a way of specifying maximum blob
 // size.
-func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, postResp *http.Response, expected ocispec.Descriptor, content io.Reader) (string, error) {
+func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, authHeader string, expected ocispec.Descriptor, content io.Reader) (string, error) {
 	// TODO: Handle 'OCI-Chunk-Min-Length' header in post response
-	numChunks := int(math.Ceil(float64(expected.Size) / float64(uploadChunkDefaultSize)))
-	authHeader := postResp.Request.Header.Get("Authorization")
+	numChunks := int(math.Ceil(float64(expected.Size) / float64(r.uploadChunkSize)))
 
 	rangeStart := int64(0)
-	rangeEnd := min(uploadChunkDefaultSize-1, expected.Size-1)
+	rangeEnd := min(r.uploadChunkSize-1, expected.Size-1)
 	nextLocation := location
 	for i := range numChunks {
 		output.SafeDebugf("[%s] Uploading chunk %d/%d, range %d-%d", expected.Digest.Encoded()[0:8], i+1, numChunks, rangeStart, rangeEnd)
@@ -224,7 +228,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 
 		// Submit the chunk as a PATCH
 		// TODO: Handle 416 response code (range not satisfiable)
-		resp, err := r.uploadBlobChunkWithRetry(ctx, req, content, rangeStart, rangeEnd)
+		resp, err := r.uploadBlobChunkWithRetry(ctx, req, content, expected, rangeStart, rangeEnd)
 		if err != nil {
 			return "", fmt.Errorf("failed to upload blob chunk: %w", err)
 		}
@@ -261,7 +265,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 
 		// Prepare next range
 		rangeStart = rangeEnd + 1
-		rangeEnd = min(expected.Size-1, rangeEnd+uploadChunkDefaultSize)
+		rangeEnd = min(expected.Size-1, rangeEnd+r.uploadChunkSize)
 	}
 
 	// Final PUT request to mark upload as completed for server. Note that the final chunk _could_ be included in this
@@ -275,8 +279,8 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 	q.Set("digest", expected.Digest.String())
 	req.URL.RawQuery = q.Encode()
 	// Reuse credentials from POST request that initiated upload
-	if auth := postResp.Request.Header.Get("Authorization"); auth != "" {
-		req.Header.Set("Authorization", auth)
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
 	}
 
 	output.SafeDebugf("[%s] Finalizing upload", expected.Digest.Encoded()[0:8])
@@ -298,7 +302,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, p
 	return blobLocation.String(), nil
 }
 
-func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Request, content io.Reader, rangeStart, rangeEnd int64) (*http.Response, error) {
+func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Request, content io.Reader, expected ocispec.Descriptor, rangeStart, rangeEnd int64) (*http.Response, error) {
 	seekableContent, isSeekable := content.(io.Seeker)
 
 	attempt := 0
@@ -321,13 +325,13 @@ func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Req
 			return resp, respErr
 		}
 
-		delay, err := retry.DefaultPolicy.Retry(attempt, resp, respErr)
+		delay, err := retryPolicy.Retry(attempt, resp, respErr)
 		if err != nil {
 			output.SafeDebugf("[%s] Error calculating retries left: %s", expected.Digest.Encoded()[0:8], err)
 			if respErr == nil {
 				resp.Body.Close()
 			}
-			return nil, err
+			return resp, respErr
 		}
 		if delay < 0 {
 			// No retries left or request is not retryable. Have to guess at why though

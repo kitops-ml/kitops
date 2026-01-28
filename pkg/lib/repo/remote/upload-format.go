@@ -41,7 +41,7 @@ var (
 	amazonElasticContainerRegistryRegexp = regexp.MustCompile(`.*\.?amazonaws\.com(\.cn)?$`)
 )
 
-func getUploadFormat(registry string, size int64) uploadFormat {
+func getUploadFormat(registry string, size int64, chunkSize int64) uploadFormat {
 	output.SafeDebugf("Getting upload format for: %s", registry)
 	registry = strings.ToLower(registry)
 	switch {
@@ -60,7 +60,7 @@ func getUploadFormat(registry string, size int64) uploadFormat {
 		return uploadMonolithicPut
 	default:
 		// No matches above, use heuristic
-		if size < uploadChunkDefaultSize {
+		if size < chunkSize {
 			return uploadMonolithicPut
 		} else {
 			return uploadChunkedPatch

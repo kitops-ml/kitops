@@ -34,6 +34,10 @@ func SetLogLevel(level LogLevel) {
 	logLevel = level
 }
 
+func GetLogLevel() LogLevel {
+	return logLevel
+}
+
 func SetLogLevelFromString(level string) error {
 	switch level {
 	case "trace":
@@ -65,6 +69,14 @@ func SetOut(w io.Writer) {
 	stdout = w
 }
 
+func GetOut() io.Writer {
+	return stdout
+}
+
 func SetErr(w io.Writer) {
 	stderr = w
+}
+
+func GetErr() io.Writer {
+	return stderr
 }

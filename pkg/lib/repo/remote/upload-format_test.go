@@ -73,7 +73,7 @@ func TestGetUploadFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.registry, func(t *testing.T) {
-			actualFormat := getUploadFormat(tt.registry, tt.size)
+			actualFormat := getUploadFormat(tt.registry, tt.size, uploadChunkDefaultSize)
 			assert.Equal(t, tt.expectedFormat, actualFormat)
 		})
 	}
@@ -97,9 +97,9 @@ func TestGetUploadFormatGoogleArtifactRegistry(t *testing.T) {
 	}
 
 	for _, registry := range testRegistries {
-		uploadFormatSmall := getUploadFormat(registry, 100)
+		uploadFormatSmall := getUploadFormat(registry, 100, uploadChunkDefaultSize)
 		assert.Equal(t, uploadMonolithicPut, uploadFormatSmall, "Small layers should use monolithic put")
-		uploadFormatLarge := getUploadFormat(registry, uploadChunkDefaultSize)
+		uploadFormatLarge := getUploadFormat(registry, uploadChunkDefaultSize, uploadChunkDefaultSize)
 		assert.Equal(t, uploadMonolithicPut, uploadFormatLarge, "Large layers should use monolithic put")
 	}
 }
@@ -126,9 +126,9 @@ func TestGetUploadFormatAmazonECR(t *testing.T) {
 	}
 
 	for _, registry := range testRegistries {
-		uploadFormatSmall := getUploadFormat(registry, 100)
+		uploadFormatSmall := getUploadFormat(registry, 100, uploadChunkDefaultSize)
 		assert.Equal(t, uploadMonolithicPut, uploadFormatSmall, "Small layers should use monolithic put")
-		uploadFormatLarge := getUploadFormat(registry, uploadChunkDefaultSize)
+		uploadFormatLarge := getUploadFormat(registry, uploadChunkDefaultSize, uploadChunkDefaultSize)
 		assert.Equal(t, uploadMonolithicPut, uploadFormatLarge, "Large layers should use monolithic put")
 	}
 }
