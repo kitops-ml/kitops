@@ -1,6 +1,4 @@
-
 <img width="1270" alt="KitOps" src="https://github.com/kitops-ml/kitops/assets/10517533/41295471-fe49-4011-adf6-a215f29890c2" id="top">
-
 
 ## KitOps: Standards-based packaging & versioning for AI/ML projects
 
@@ -9,6 +7,7 @@
 [![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Twitter)](https://twitter.com/kit_ops)
 
 ## 📚 Table of Contents
+
 - [What is KitOps?](#what-is-kitops)
 - [KitOps Architecture](#kitops-architecture)
 - [Try KitOps](#try-kitops-in-under-15-minutes)
@@ -26,7 +25,6 @@ It’s the preferred solution for packaging, versioning, and managing assets in 
 KitOps is a CNCF project, and is governed by the same organization and policies that manage Kubernetes, OpenTelemetry, and Prometheus. [This video provides an outline of KitOps in the CNCF](https://youtu.be/iK9mnU0prRU?feature=shared).
 
 KitOps is also the reference implementation of the [CNCF's ModelPack specification](https://github.com/modelpack/model-spec) for a vendor-neutral AI/ML interchange format.
-
 
 [![Official Website](<https://img.shields.io/badge/-Visit%20the%20Official%20Website%20%E2%86%92-rgb(255,175,82)?style=for-the-badge>)](https://kitops.org?utm_source=github&utm_medium=kitops-readme)
 
@@ -48,6 +46,7 @@ ModelKits are:
 > *ModelKits elevate AI artifacts to first-class, governed assets — just like application code.*
 
 ### Kitfile
+
 A [Kitfile](https://kitops.org/docs/kitfile/kf-overview/) defines your ModelKit. Written in YAML, it maps where each artifact lives and how it fits into the project.
 
 ### Kit CLI
@@ -63,7 +62,7 @@ This video shows how KitOps streamlines collaboration between data scientists, d
 ## 🚀 Try KitOps in under 15 Minutes
 
 1. **Install the CLI**: [for MacOS, Windows, and Linux](https://kitops.org/docs/cli/installation/).
-2. **Pack your first ModelKit**: Learn how to pack, push, and pull using our [Getting Started](...) guide.
+2. **Pack your first ModelKit**: Learn how to pack, push, and pull using our [Getting Started](https://kitops.org/docs/get-started/) guide.
 3. **Explore a Quick Start**: [Try pre-built ModelKits](https://jozu.ml/organization/jozu-quickstarts) for LLMs, CVs, and more.
 
 For those who prefer to build from the source, follow [these steps](https://kitops.org/docs/cli/installation/#🛠️-install-from-source) to get the latest version from our repository.
@@ -124,7 +123,6 @@ Your insights help KitOps evolve as an open standard for AI/ML. We *deeply value
 - 🔗 [Google Meet](https://meet.google.com/zfq-uprp-csd)  
 - ☎️ +1 647-736-3184 (PIN: 144 931 404#)  
 - 🌐 [More numbers](https://tel.meet/zfq-uprp-csd?pin=1283456375953)
-</details>
 
 ### A Community Built on Respect
 
@@ -137,6 +135,3 @@ At KitOps, inclusivity, empathy, and responsibility are at our core. Please read
             <img src="https://img.shields.io/badge/Back_to_Top-black?style=for-the-badge&logo=github&logoColor=white" alt="Back to Top">
         </a>
 </div>
-
-
-
