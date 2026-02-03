@@ -205,16 +205,17 @@ kit dev start registry.example.com/models/llama2:7b --host 0.0.0.0 --port 8080
 ### Options
 
 ```
-  -f, --file string       Path to the kitfile
-      --host string       Host for the development server (default "127.0.0.1")
-      --port int          Port for development server to listen on
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for start
+  -f, --file string        Path to the kitfile
+      --host string        Host for the development server (default "127.0.0.1")
+      --port int           Port for development server to listen on
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for start
 ```
 
 ### Options inherited from parent commands
@@ -288,13 +289,14 @@ kit diff local://jozu.ml/foo:latest remote://jozu.ml/foo:latest
 ### Options
 
 ```
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for diff
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for diff
 ```
 
 ### Options inherited from parent commands
@@ -407,15 +409,16 @@ kit info --remote registry.example.com/my-model:1.0.0
 ### Options
 
 ```
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -r, --remote            Check remote registry instead of local storage
-  -f, --filter string     filter with node selectors
-  -h, --help              help for info
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -r, --remote             Check remote registry instead of local storage
+  -f, --filter string      filter with node selectors
+  -h, --help               help for info
 ```
 
 ### Options inherited from parent commands
@@ -506,14 +509,15 @@ kit inspect --remote registry.example.com/my-model:1.0.0
 ### Options
 
 ```
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -r, --remote            Check remote registry instead of local storage
-  -h, --help              help for inspect
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -r, --remote             Check remote registry instead of local storage
+  -h, --help               help for inspect
 ```
 
 ### Options inherited from parent commands
@@ -579,14 +583,15 @@ kit list registry.example.com/my-namespace/my-model
 ### Options
 
 ```
-      --format string     Output format: table, json, or Go template string (default "table")
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for list
+      --format string      Output format: table, json, or Go template string (default "table")
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for list
 ```
 
 ### Options inherited from parent commands
@@ -624,16 +629,17 @@ kit login docker.io --password-stdin -u docker_user
 ### Options
 
 ```
-  -u, --username string   registry username
-  -p, --password string   registry password or token
-      --password-stdin    read password from stdin
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for login
+  -u, --username string    registry username
+  -p, --password string    registry password or token
+      --password-stdin     read password from stdin
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for login
 ```
 
 ### Options inherited from parent commands
@@ -754,13 +760,14 @@ kit pull registry.example.com/my-model:latest
 ### Options
 
 ```
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for pull
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for pull
 ```
 
 ### Options inherited from parent commands
@@ -803,13 +810,14 @@ kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest
 ### Options
 
 ```
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for push
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for push
 ```
 
 ### Options inherited from parent commands
@@ -878,16 +886,17 @@ kit remove --remote --force my-registry.com/my-org/my-repo:my-tag
 ### Options
 
 ```
-  -f, --force             remove modelkit and all other tags that refer to it
-  -a, --all               remove all untagged modelkits
-  -r, --remote            remove modelkit from remote registry
-      --plain-http        Use plain HTTP when connecting to remote registries
-      --tls-verify        Require TLS and verify certificates when connecting to remote registries (default true)
-      --cert string       Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string        Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int   Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string      Proxy to use for connections (overrides proxy set by environment)
-  -h, --help              help for remove
+  -f, --force              remove modelkit and all other tags that refer to it
+  -a, --all                remove all untagged modelkits
+  -r, --remote             remove modelkit from remote registry
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for remove
 ```
 
 ### Options inherited from parent commands
@@ -1039,6 +1048,7 @@ kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked
       --docs                 Unpack only docs (deprecated: use --filter=docs)
       --plain-http           Use plain HTTP when connecting to remote registries
       --tls-verify           Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings     Path to TLS cert to add to trust store (flag can be repeated)
       --cert string          Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
       --key string           Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
       --concurrency int      Maximum number of simultaneous uploads/downloads (default 5)
