@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -82,7 +82,7 @@ func (opts *tagOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("default config path not set on command context")
 	}
 	opts.configHome = configHome
-	modelRef, _, err := util.ParseReference(args[0])
+	modelRef, _, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
@@ -91,7 +91,7 @@ func (opts *tagOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.sourceRef = modelRef
 
-	modelRef, _, err = util.ParseReference(args[1])
+	modelRef, _, err = artifact.ParseReference(args[1])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}

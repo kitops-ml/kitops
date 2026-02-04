@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
@@ -107,7 +108,7 @@ func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, ref 
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to add manifest to shared index: %w", err)
 	}
 
-	if !util.ReferenceIsDigest(ref.Reference) {
+	if !artifact.ReferenceIsDigest(ref.Reference) {
 		if err := l.localIndex.tag(desc, ref.Reference); err != nil {
 			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to save tag: %w", err)
 		}

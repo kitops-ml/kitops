@@ -29,7 +29,6 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -106,7 +105,7 @@ func runCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 		config, err := getInfo(cmd.Context(), opts)
 		if err != nil {
 			if errors.Is(err, errdef.ErrNotFound) {
-				return output.Fatalf("Could not find modelkit %s", util.FormatRepositoryForDisplay(opts.modelRef.String()))
+				return output.Fatalf("Could not find modelkit %s", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
 			}
 			return output.Fatalf("Error resolving modelkit: %s", err)
 		}
@@ -136,7 +135,7 @@ func (opts *infoOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.configHome = configHome
 
-	ref, extraTags, err := util.ParseReference(args[0])
+	ref, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return err
 	}
@@ -148,8 +147,8 @@ func (opts *infoOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.modelRef = ref
 
-	if opts.modelRef.Registry == util.DefaultRegistry && opts.checkRemote {
-		return fmt.Errorf("can not check remote: %s does not contain registry", util.FormatRepositoryForDisplay(opts.modelRef.String()))
+	if opts.modelRef.Registry == artifact.DefaultRegistry && opts.checkRemote {
+		return fmt.Errorf("can not check remote: %s does not contain registry", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {

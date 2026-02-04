@@ -22,11 +22,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -109,7 +109,7 @@ func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("default config path not set on command context")
 	}
 	opts.configHome = configHome
-	modelRef, extraTags, err := util.ParseReference(args[0])
+	modelRef, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}

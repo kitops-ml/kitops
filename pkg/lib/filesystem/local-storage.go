@@ -30,7 +30,6 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
@@ -137,7 +136,7 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 
 func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (layers []ocispec.Descriptor, diffIDs []digest.Digest, err error) {
 	if kitfile.Model != nil {
-		if kitfile.Model.Path != "" && !util.IsModelKitReference(kitfile.Model.Path) {
+		if kitfile.Model.Path != "" && !artifact.IsModelKitReference(kitfile.Model.Path) {
 			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelBaseType, opts.LayerFormat, opts.Compression)
 			layer, layerInfo, err := saveContentLayer(ctx, localRepo, kitfile.Model.Path, mediaType, ignore)
 			if err != nil {

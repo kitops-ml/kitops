@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
@@ -40,7 +40,7 @@ func removeAllModels(ctx context.Context, opts *removeOptions) error {
 		return fmt.Errorf("failed to read local storage: %w", err)
 	}
 	for _, localRepo := range localRepos {
-		repository := util.FormatRepositoryForDisplay(localRepo.GetRepoName())
+		repository := artifact.FormatRepositoryForDisplay(localRepo.GetRepoName())
 
 		models := localRepo.GetAllModels()
 
@@ -82,7 +82,7 @@ func removeUntaggedModels(ctx context.Context, opts *removeOptions) error {
 	}
 	for _, localRepo := range localRepos {
 		manifests := localRepo.GetAllModels()
-		repo := util.FormatRepositoryForDisplay(localRepo.GetRepoName())
+		repo := artifact.FormatRepositoryForDisplay(localRepo.GetRepoName())
 		for _, manifestDesc := range manifests {
 			tags := localRepo.GetTags(manifestDesc)
 			if len(tags) > 0 {
@@ -109,13 +109,13 @@ func removeModel(ctx context.Context, opts *removeOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to remove: %s", err)
 	}
-	displayRef := util.FormatRepositoryForDisplay(opts.modelRef.String())
+	displayRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 	output.Infof("Removed %s (digest %s)", displayRef, desc.Digest)
 
 	for _, tag := range opts.extraTags {
 		ref := *opts.modelRef
 		ref.Reference = tag
-		displayRef := util.FormatRepositoryForDisplay(ref.String())
+		displayRef := artifact.FormatRepositoryForDisplay(ref.String())
 		desc, err := removeModelRef(ctx, localRepo, &ref, opts.forceDelete)
 		if err != nil {
 			output.Errorf("Failed to remove tag %s: %s", tag, err)
@@ -130,7 +130,7 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 	desc, err := oras.Resolve(ctx, localRepo, ref.Reference, oras.ResolveOptions{})
 	if err != nil {
 		if err == errdef.ErrNotFound {
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("model %s not found", util.FormatRepositoryForDisplay(ref.String()))
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("model %s not found", artifact.FormatRepositoryForDisplay(ref.String()))
 		}
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("error resolving model: %s", err)
 	}

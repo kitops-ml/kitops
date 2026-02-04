@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -51,7 +51,7 @@ func (opts *pullOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.configHome = configHome
 
-	modelRef, extraTags, err := util.ParseReference(args[0])
+	modelRef, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}

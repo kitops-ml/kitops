@@ -33,7 +33,7 @@ import (
 )
 
 func GetKitfileForRefString(ctx context.Context, configHome string, ref string) (*artifact.KitFile, error) {
-	modelRef, _, err := util.ParseReference(ref)
+	modelRef, _, err := artifact.ParseReference(ref)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func ResolveKitfile(ctx context.Context, configHome, kitfileRef, baseRef string)
 			return nil, err
 		}
 		resolved = mergeKitfiles(resolved, kitfile)
-		if resolved.Model == nil || !util.IsModelKitReference(resolved.Model.Path) {
+		if resolved.Model == nil || !artifact.IsModelKitReference(resolved.Model.Path) {
 			if err := ValidateKitfile(resolved); err != nil {
 				return nil, err
 			}

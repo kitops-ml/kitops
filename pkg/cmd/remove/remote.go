@@ -22,13 +22,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-	"github.com/kitops-ml/kitops/pkg/output"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote/errcode"
+
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/output"
 )
 
 func removeRemoteModel(ctx context.Context, opts *removeOptions) error {
@@ -40,21 +41,21 @@ func removeRemoteModel(ctx context.Context, opts *removeOptions) error {
 	desc, err := repository.Resolve(ctx, opts.modelRef.Reference)
 	if err != nil {
 		if errors.Is(err, errdef.ErrNotFound) {
-			return fmt.Errorf("model %s not found", util.FormatRepositoryForDisplay(opts.modelRef.String()))
+			return fmt.Errorf("model %s not found", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
 		}
 		return fmt.Errorf("error resolving modelkit: %w", err)
 	}
 
 	// If user supplied a tag instead of a digest, only do an untag; assume the remote will prune untagged ModelKits
-	if !util.ReferenceIsDigest(opts.modelRef.Reference) && !opts.forceDelete {
-		output.Infof("Untagging remote ModelKit %s", util.FormatRepositoryForDisplay(opts.modelRef.String()))
+	if !artifact.ReferenceIsDigest(opts.modelRef.Reference) && !opts.forceDelete {
+		output.Infof("Untagging remote ModelKit %s", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
 		return untagRemoteModel(ctx, opts.modelRef.Reference, repository)
 	}
 
 	// Otherwise, delete the ModelKit itself, which will delete all tags that point to it
 	deleteRef := *opts.modelRef
 	deleteRef.Reference = desc.Digest.String()
-	output.Infof("Deleting remote ModelKit %s", util.FormatRepositoryForDisplay(deleteRef.String()))
+	output.Infof("Deleting remote ModelKit %s", artifact.FormatRepositoryForDisplay(deleteRef.String()))
 	if err := repository.Delete(ctx, desc); err != nil {
 		if errResp, ok := err.(*errcode.ErrorResponse); ok && errResp.StatusCode == http.StatusMethodNotAllowed {
 			return fmt.Errorf("removing models is unsupported by registry %s", opts.modelRef.Registry)

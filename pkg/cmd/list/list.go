@@ -21,6 +21,7 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -63,7 +64,7 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]modelInfo, e
 		}
 		tags := repo.GetTags(manifestDesc)
 		// Strip localhost from repo if present, since we added it
-		repository := util.FormatRepositoryForDisplay(repo.GetRepoName())
+		repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
 		if repository == "" {
 			repository = "<none>"
 		}

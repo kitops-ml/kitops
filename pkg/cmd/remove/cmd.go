@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -92,7 +92,7 @@ func (opts *removeOptions) complete(ctx context.Context, args []string) error {
 	opts.configHome = configHome
 
 	if len(args) > 0 {
-		modelRef, extraTags, err := util.ParseReference(args[0])
+		modelRef, extraTags, err := artifact.ParseReference(args[0])
 		if err != nil {
 			return fmt.Errorf("failed to parse reference: %w", err)
 		}
@@ -187,7 +187,7 @@ func runCommand(opts *removeOptions) func(*cobra.Command, []string) error {
 
 func printConfig(opts *removeOptions) {
 	if opts.modelRef != nil {
-		displayRef := util.FormatRepositoryForDisplay(opts.modelRef.String())
+		displayRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 		output.Debugf("Removing %s and additional tags: [%s]", displayRef, strings.Join(opts.extraTags, ", "))
 	}
 	if opts.removeAll {

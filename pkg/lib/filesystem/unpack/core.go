@@ -74,7 +74,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	ref := opts.ModelRef
 	store, err := getStoreForRef(ctx, opts)
 	if err != nil {
-		ref := util.FormatRepositoryForDisplay(opts.ModelRef.String())
+		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 		return fmt.Errorf("failed to find reference %s: %s", ref, err)
 	}
 	manifestDesc, err := store.Resolve(ctx, ref.Reference)
@@ -101,7 +101,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		config = genconfig
 	} else {
 		// These steps only make sense if we have a legitimate Kitfile available
-		if config.Model != nil && util.IsModelKitReference(config.Model.Path) {
+		if config.Model != nil && artifact.IsModelKitReference(config.Model.Path) {
 			output.Infof("Unpacking referenced modelkit %s", config.Model.Path)
 			if err := unpackParent(ctx, config.Model.Path, opts, visitedRefs); err != nil {
 				return err
@@ -232,7 +232,7 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 		return fmt.Errorf("found cycle in modelkit references: %s", cycleStr)
 	}
 
-	parentRef, _, err := util.ParseReference(ref)
+	parentRef, _, err := artifact.ParseReference(ref)
 	if err != nil {
 		return err
 	}

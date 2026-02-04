@@ -26,10 +26,10 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
@@ -160,14 +160,14 @@ func (opts *diffOptions) complete(ctx context.Context, args []string) error {
 	opts.configHome = configHome
 
 	imageName := removePrefix(args[0])
-	refA, _, err := util.ParseReference(imageName)
+	refA, _, err := artifact.ParseReference(imageName)
 	if err != nil {
 		return fmt.Errorf("failed to parse reference for ref1: %w", err)
 	}
 	opts.refA = refA
 
 	imageName = removePrefix(args[1])
-	refB, _, err := util.ParseReference(imageName)
+	refB, _, err := artifact.ParseReference(imageName)
 	if err != nil {
 		return fmt.Errorf("failed to parse reference for ref2: %w", err)
 	}

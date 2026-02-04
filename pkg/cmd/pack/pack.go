@@ -79,8 +79,8 @@ func runPack(ctx context.Context, options *packOptions) error {
 
 func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, localRepo local.LocalRepo) (*ocispec.Descriptor, error) {
 	var extraLayerPaths []string
-	if kitfile.Model != nil && util.IsModelKitReference(kitfile.Model.Path) {
-		baseRef := util.FormatRepositoryForDisplay(opts.modelRef.String())
+	if kitfile.Model != nil && artifact.IsModelKitReference(kitfile.Model.Path) {
+		baseRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 		parentKitfile, err := kfutils.ResolveKitfile(ctx, opts.configHome, kitfile.Model.Path, baseRef)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to resolve referenced modelkit %s: %w", kitfile.Model.Path, err)

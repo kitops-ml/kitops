@@ -21,10 +21,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/errdef"
@@ -43,7 +43,7 @@ func getStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, erro
 		return localRepo, nil
 	}
 
-	if opts.ModelRef.Registry == util.DefaultRegistry {
+	if opts.ModelRef.Registry == artifact.DefaultRegistry {
 		return nil, fmt.Errorf("not found")
 	}
 	// Not in local storage, check remote

@@ -23,10 +23,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/git"
 	"github.com/kitops-ml/kitops/pkg/lib/hf"
-	repoutils "github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -147,7 +147,7 @@ func (opts *importOptions) complete(ctx context.Context, args []string) error {
 		output.Infof("Using tag %s. Use flag --tag to override", opts.tag)
 	}
 
-	ref, _, err := repoutils.ParseReference(opts.tag)
+	ref, _, err := artifact.ParseReference(opts.tag)
 	if err != nil {
 		return fmt.Errorf("invalid argument: tag '%s' is invalid: %w", opts.tag, err)
 	}

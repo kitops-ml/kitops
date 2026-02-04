@@ -22,12 +22,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -66,7 +66,7 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.configHome = configHome
 
-	srcRef, extraTags, err := util.ParseReference(args[0])
+	srcRef, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference %s: %w", args[0], err)
 	}
@@ -81,7 +81,7 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 	if len(args) == 1 {
 		opts.destModelRef = srcRef
 	} else {
-		destRef, extraTags, err := util.ParseReference(args[1])
+		destRef, extraTags, err := artifact.ParseReference(args[1])
 		if err != nil {
 			return fmt.Errorf("failed to parse target reference %s: %w", args[1], err)
 		}

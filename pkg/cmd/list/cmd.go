@@ -25,9 +25,9 @@ import (
 	"text/tabwriter"
 	gotemplate "text/template"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -89,7 +89,7 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.configHome = configHome
 	if len(args) > 0 {
-		remoteRef, extraTags, err := util.ParseReference(args[0])
+		remoteRef, extraTags, err := artifact.ParseReference(args[0])
 		if err != nil {
 			return fmt.Errorf("invalid reference: %w", err)
 		}
