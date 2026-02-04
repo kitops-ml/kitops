@@ -19,13 +19,25 @@ package artifact
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/url"
 	"slices"
 	"time"
 
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	"github.com/opencontainers/go-digest"
 	"go.yaml.in/yaml/v3"
+)
+
+// PathType represents different types of paths in Kitfile fields, e.g. local on-disk paths or remote S3 URLs.
+type PathType int
+
+const (
+	UnknownPathType PathType = iota
+	LocalPathType
+	ModelReferencePathType
+	S3PathType
 )
 
 type (
@@ -90,6 +102,8 @@ type (
 	DataSet struct {
 		Name        string `json:"name,omitempty" yaml:"name,omitempty"`
 		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
+		RemotePath  string `json:"remotePath,omitempty" yaml:"remotePath,omitempty"`
+		RemoteHash  string `json:"remoteHash,omitempty" yaml:"remoteHash,omitempty"`
 		Description string `json:"description,omitempty" yaml:"description,omitempty"`
 		License     string `json:"license,omitempty" yaml:"license,omitempty"`
 		// Parameters is an arbitrary section of yaml that can be used to store any additional
@@ -144,6 +158,81 @@ func (kf *KitFile) MarshalToYAML() ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (kf *KitFile) Validate() error {
+	if kf.ManifestVersion != "1.0.0" {
+		return fmt.Errorf("invalid manifestVersion: expect 1.0.0 but got %s", kf.ManifestVersion)
+	}
+
+	if kf.Model != nil {
+		modelPathType, err := GetPathType(kf.Model.Path)
+		if err != nil {
+			return fmt.Errorf("invalid path for model: %w", err)
+		}
+		if modelPathType != LocalPathType && modelPathType != ModelReferencePathType {
+			return fmt.Errorf("invalid path for model: only local paths and ModelKit references are permitted")
+		}
+		for _, part := range kf.Model.Parts {
+			partPathType, err := GetPathType(part.Path)
+			if err != nil {
+				return fmt.Errorf("invalid path for model part (%s): %w", part.Path, err)
+			}
+			if partPathType != LocalPathType {
+				return fmt.Errorf("invalid path for model part (%s): only local paths are permitted", part.Path)
+			}
+		}
+	}
+	for _, code := range kf.Code {
+		pathType, err := GetPathType(code.Path)
+		if err != nil {
+			return fmt.Errorf("invalid path for code (%s): %w", code.Path, err)
+		}
+		if pathType != LocalPathType {
+			return fmt.Errorf("invalid path for code (%s): only local paths are permitted", code.Path)
+		}
+	}
+	for _, dataset := range kf.DataSets {
+		pathType, err := GetPathType(dataset.Path)
+		if err != nil {
+			return fmt.Errorf("invalid path for dataset (%s): %w", dataset.Path, err)
+		}
+		if pathType != LocalPathType {
+			return fmt.Errorf("invalid path for dataset (%s): only local paths are permitted", dataset.Path)
+		}
+		if dataset.RemotePath != "" {
+			remotePathType, err := GetPathType(dataset.RemotePath)
+			if err != nil {
+				return fmt.Errorf("invalid remote path for dataset (%s): %w", dataset.RemotePath, err)
+			}
+			if remotePathType != S3PathType {
+				return fmt.Errorf("only S3 URLs are supported for remote dataset paths (%s)", dataset.RemotePath)
+			}
+			if dataset.RemoteHash == "" {
+				return fmt.Errorf("remoteHash is required when remote dataset paths are used (%s)", dataset.RemotePath)
+			}
+		}
+	}
+	for _, doc := range kf.Docs {
+		pathType, err := GetPathType(doc.Path)
+		if err != nil {
+			return fmt.Errorf("invalid path for doc (%s): %w", doc.Path, err)
+		}
+		if pathType != LocalPathType {
+			return fmt.Errorf("invalid path for doc (%s): only local paths are permitted", doc.Path)
+		}
+	}
+	for _, prompt := range kf.Prompts {
+		pathType, err := GetPathType(prompt.Path)
+		if err != nil {
+			return fmt.Errorf("invalid path for prompt (%s): %w", prompt.Path, err)
+		}
+		if pathType != LocalPathType {
+			return fmt.Errorf("invalid path for prompt (%s): only local paths are permitted", prompt.Path)
+		}
+	}
+
+	return nil
 }
 
 func (kf *KitFile) ToModelPackConfig(diffIDs []digest.Digest) modelspecv1.Model {
@@ -204,4 +293,25 @@ func (kf *KitFile) collectLicenses() []string {
 	licenses = slices.Compact(licenses)
 
 	return licenses
+}
+
+func GetPathType(path string) (PathType, error) {
+	if IsModelKitReference(path) {
+		return ModelReferencePathType, nil
+	}
+
+	// Treat things that don't parse as URLs as local paths
+	parsed, err := url.Parse(path)
+	if err != nil || (parsed.Scheme == "" && parsed.Host == "") {
+		return LocalPathType, nil
+	}
+
+	switch parsed.Scheme {
+	case "s3":
+		return S3PathType, nil
+	case "http", "https":
+		return UnknownPathType, fmt.Errorf("HTTP urls are not supported in paths (%s)", path)
+	}
+
+	return UnknownPathType, fmt.Errorf("unrecognized URL in path: %s", path)
 }
