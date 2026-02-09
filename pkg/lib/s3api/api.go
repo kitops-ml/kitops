@@ -19,6 +19,7 @@ package s3api
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -66,14 +67,10 @@ func ParseS3ObjectReference(ref string, hash string) (*S3ObjectReference, error)
 }
 
 func VerifyObjectExists(ctx context.Context, client *s3.Client, ref *S3ObjectReference) error {
-	var refVersion *string
-	if ref.Version != "" {
-		refVersion = &ref.Version
-	}
 	obj, err := client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket:    &ref.Bucket,
 		Key:       &ref.Key,
-		VersionId: refVersion,
+		VersionId: stringOrNil(ref.Version),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to HEAD object in S3 bucket: %w", err)
@@ -85,6 +82,29 @@ func VerifyObjectExists(ctx context.Context, client *s3.Client, ref *S3ObjectRef
 	// ETags as returned by the API are strings containing quotation marks, which we need to strip
 	if strings.Trim(*obj.ETag, `"`) != ref.Hash {
 		return fmt.Errorf("object in s3 bucket does not match hash: ETag = %s, hash = %s", *obj.ETag, ref.Hash)
+	}
+
+	return nil
+}
+
+func DownloadObject(ctx context.Context, client *s3.Client, ref *S3ObjectReference, outputPath string) error {
+	obj, err := client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket:    &ref.Bucket,
+		Key:       &ref.Key,
+		VersionId: stringOrNil(ref.Version),
+		IfMatch:   &ref.Hash,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get object from S3 bucket: %w", err)
+	}
+
+	outfile, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %w", outputPath, err)
+	}
+	defer outfile.Close()
+	if _, err := io.Copy(outfile, obj.Body); err != nil {
+		return fmt.Errorf("failed to write file %s: %w", outputPath, err)
 	}
 
 	return nil
@@ -126,4 +146,11 @@ func SetUpClient(ctx context.Context) (*s3.Client, error) {
 	client := s3.NewFromConfig(s3cfg, clientOpts...)
 
 	return client, nil
+}
+
+func stringOrNil(s string) *string {
+	if s != "" {
+		return &s
+	}
+	return nil
 }

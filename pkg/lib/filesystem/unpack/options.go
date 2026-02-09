@@ -17,8 +17,9 @@
 package unpack
 
 import (
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"oras.land/oras-go/v2/registry"
+
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
 )
 
 // UnpackOptions represents the configuration for unpacking operations.
@@ -32,4 +33,5 @@ type UnpackOptions struct {
 	ModelRef       *registry.Reference
 	Overwrite      bool
 	IgnoreExisting bool
+	IncludeRemote  bool
 }

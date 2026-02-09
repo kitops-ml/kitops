@@ -33,6 +33,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/s3api"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
@@ -174,8 +175,17 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			}
 
 		case mediatype.DatasetBaseType:
-			entry := config.DataSets[datasetIdx]
-			datasetIdx += 1
+			// Since some datasets may be remote, we need to search the Kitfile for the next non-remote dataset
+			var entry artifact.DataSet
+			for idx := datasetIdx; idx < len(config.DataSets); idx++ {
+				dataset := config.DataSets[idx]
+				if dataset.RemotePath != "" {
+					continue
+				}
+				entry = dataset
+				datasetIdx = idx + 1
+				break
+			}
 			if !shouldUnpackLayer(entry, opts.FilterConfs) {
 				continue
 			}
@@ -217,6 +227,44 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
+
+	// Handle remotely stored files: first build a list so we can show a warning if remote files are skipped
+	remoteFiles := map[string]s3api.S3ObjectReference{}
+	for _, dataset := range config.DataSets {
+		if dataset.RemotePath == "" || !shouldUnpackLayer(dataset, opts.FilterConfs) {
+			continue
+		}
+		ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
+		if err != nil {
+			return fmt.Errorf("failed to parse S3 object reference for dataset %s: %w", dataset.Path, err)
+		}
+		remoteFiles[dataset.Path] = *ref
+	}
+	if len(remoteFiles) > 0 {
+		if !opts.IncludeRemote {
+			output.Logf(output.LogLevelWarn, "ModelKit contains remote datasets. To unpack, specify the --include-remote flag")
+		} else {
+			client, err := s3api.SetUpClient(ctx)
+			if err != nil {
+				return err
+			}
+			for path, s3Ref := range remoteFiles {
+				output.Debugf("Downloading remote dataset: Bucket: %s, Key: %s", s3Ref.Bucket, s3Ref.Key)
+				if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) && !opts.Overwrite {
+					return fmt.Errorf("failed to unpack remote dataset: path '%s' already exists", path)
+				}
+				pathDir := filepath.Dir(path)
+				if err := os.MkdirAll(pathDir, 0755); err != nil {
+					return fmt.Errorf("failed to create directory %s: %w", pathDir, err)
+				}
+				if err := s3api.DownloadObject(ctx, client, &s3Ref, path); err != nil {
+					return fmt.Errorf("failed to download remote dataset for path %s: %w", path, err)
+				}
+				output.Infof("Downloaded remote S3 dataset for path %s", path)
+			}
+		}
+	}
+
 	output.Debugf("Unpacked %d model part layers", modelPartIdx)
 	output.Debugf("Unpacked %d code layers", codeIdx)
 	output.Debugf("Unpacked %d dataset layers", datasetIdx)
