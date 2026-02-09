@@ -1,0 +1,3 @@
+kitfile: |
+  manifestVersion: v99.99.99
+errRegexp: "invalid manifestVersion"

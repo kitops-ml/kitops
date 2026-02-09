@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  code:
+    - path: s3://test-s3/key
+errRegexp: "invalid path for code.*only local paths are permitted"

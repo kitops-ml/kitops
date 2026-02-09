@@ -1,0 +1,7 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  datasets:
+    - path: some/local/path
+      remotePath: mybucket.s3.us-east-2.amazonaws.com
+      remoteHash: testhash
+errRegexp: "only S3 URLs are supported for remote dataset paths"

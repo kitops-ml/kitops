@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  datasets:
+    - path: https://example.com
+errRegexp: "invalid path for dataset.*HTTP urls are not supported in paths"

@@ -28,6 +28,7 @@ import (
 	s3config "github.com/aws/aws-sdk-go-v2/config"
 	s3credentials "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
@@ -36,6 +37,12 @@ type S3ObjectReference struct {
 	Key     string
 	Hash    string
 	Version string
+}
+
+// S3ClientAPI is a wrapper over s3.Client to allow mocking intests
+type S3ClientAPI interface {
+	HeadObject(context.Context, *s3.HeadObjectInput, ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+	GetObject(context.Context, *s3.GetObjectInput, ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 }
 
 // ParseS3ObjectReference parses a Kit-spec 's3://' reference and hash into an S3ObjectReference. For filling
@@ -66,11 +73,11 @@ func ParseS3ObjectReference(ref string, hash string) (*S3ObjectReference, error)
 	}, nil
 }
 
-func VerifyObjectExists(ctx context.Context, client *s3.Client, ref *S3ObjectReference) error {
+func VerifyObjectExists(ctx context.Context, client S3ClientAPI, ref *S3ObjectReference) error {
 	obj, err := client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket:    &ref.Bucket,
 		Key:       &ref.Key,
-		VersionId: stringOrNil(ref.Version),
+		VersionId: stringPtrOrNil(ref.Version),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to HEAD object in S3 bucket: %w", err)
@@ -87,11 +94,11 @@ func VerifyObjectExists(ctx context.Context, client *s3.Client, ref *S3ObjectRef
 	return nil
 }
 
-func DownloadObject(ctx context.Context, client *s3.Client, ref *S3ObjectReference, outputPath string) error {
+func DownloadObject(ctx context.Context, client S3ClientAPI, ref *S3ObjectReference, outputPath string) error {
 	obj, err := client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket:    &ref.Bucket,
 		Key:       &ref.Key,
-		VersionId: stringOrNil(ref.Version),
+		VersionId: stringPtrOrNil(ref.Version),
 		IfMatch:   &ref.Hash,
 	})
 	if err != nil {
@@ -110,7 +117,7 @@ func DownloadObject(ctx context.Context, client *s3.Client, ref *S3ObjectReferen
 	return nil
 }
 
-func SetUpClient(ctx context.Context) (*s3.Client, error) {
+func SetUpClient(ctx context.Context) (S3ClientAPI, error) {
 	var cfgOpts []func(*s3config.LoadOptions) error
 	var clientOpts []func(*s3.Options)
 
@@ -148,7 +155,7 @@ func SetUpClient(ctx context.Context) (*s3.Client, error) {
 	return client, nil
 }
 
-func stringOrNil(s string) *string {
+func stringPtrOrNil(s string) *string {
 	if s != "" {
 		return &s
 	}

@@ -1,0 +1,7 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  model:
+    path: testpath
+    parts:
+    - path: docker.io/kit-org/kit-repo:latest
+errRegexp: "invalid path for model part.*only local paths are permitted"
