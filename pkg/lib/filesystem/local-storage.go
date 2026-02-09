@@ -30,6 +30,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/s3api"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
@@ -135,6 +136,7 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 }
 
 func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (layers []ocispec.Descriptor, diffIDs []digest.Digest, err error) {
+	toVerifyRemote := map[string]s3api.S3ObjectReference{}
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !artifact.IsModelKitReference(kitfile.Model.Path) {
 			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelBaseType, opts.LayerFormat, opts.Compression)
@@ -168,6 +170,17 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
 	for idx, dataset := range kitfile.DataSets {
+		// First check if dataset is stored remotely
+		if dataset.RemotePath != "" {
+			ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to parse S3 object reference for dataset %s: %w", dataset.Path, err)
+			}
+			toVerifyRemote[dataset.Path] = *ref
+			continue
+		}
+
+		// Otherwise, pack a locally-stored dataset
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.DatasetBaseType, opts.LayerFormat, opts.Compression)
 		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)
 		if err != nil {
@@ -201,6 +214,20 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		layers = append(layers, layer)
 		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
 		kitfile.Prompts[idx].LayerInfo = layerInfo
+	}
+
+	if len(toVerifyRemote) > 0 {
+		client, err := s3api.SetUpClient(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		for path, toVerify := range toVerifyRemote {
+			output.Debugf("Verifying S3 object: Bucket: %s, Key: %s", toVerify.Bucket, toVerify.Key)
+			if err := s3api.VerifyObjectExists(ctx, client, &toVerify); err != nil {
+				return nil, nil, fmt.Errorf("failed to verify remote object for %s: %w", path, err)
+			}
+			output.Infof("Verified remote S3 dataset for path %s", path)
+		}
 	}
 
 	return layers, diffIDs, nil
