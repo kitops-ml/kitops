@@ -26,9 +26,9 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/external/git"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
-	"github.com/kitops-ml/kitops/pkg/lib/git"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	"github.com/kitops-ml/kitops/pkg/lib/util"

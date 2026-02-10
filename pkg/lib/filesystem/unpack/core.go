@@ -31,9 +31,9 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/external/s3api"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-	"github.com/kitops-ml/kitops/pkg/lib/s3api"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"

@@ -25,8 +25,8 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/git"
-	"github.com/kitops-ml/kitops/pkg/lib/hf"
+	"github.com/kitops-ml/kitops/pkg/lib/external/git"
+	"github.com/kitops-ml/kitops/pkg/lib/external/hf"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
