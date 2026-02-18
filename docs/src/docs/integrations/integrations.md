@@ -27,7 +27,7 @@ The most fully-featured model registry integration for ModelKits is the [Jozu Hu
 * Azure Container Registry
 * Docker Hub
 * GitHub Packages Container Registry
-* GitLab Container Registry (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/v4.7.0-gitlab/docs/supported-media-types.md))
+* GitLab Container Registry (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/master/docs/supported-media-types.md?ref_type=heads))
 * Google Artifact Registry
 * Harbor
 * IBM Cloud Container Registry
@@ -96,7 +96,7 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 * Git
 * Git LFS
 * GitHub Actions
-* GitLab Pipelines (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/v4.7.0-gitlab/docs/supported-media-types.md))
+* GitLab Pipelines (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/master/docs/supported-media-types.md?ref_type=heads))
 * Jenkins CI/CD
 * Kubeflow
 * Spinnaker
