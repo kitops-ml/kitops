@@ -96,7 +96,7 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 * Git
 * Git LFS
 * GitHub Actions
-* GitLab Pipelines (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/master/docs/supported-media-types.md?ref_type=heads))
+* GitLab Pipelines
 * Jenkins CI/CD
 * Kubeflow
 * Spinnaker
