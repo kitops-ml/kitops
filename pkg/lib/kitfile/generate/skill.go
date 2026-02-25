@@ -39,17 +39,24 @@ func parseSkillFrontmatter(skillMDPath string) *SkillFrontmatter {
 		return nil
 	}
 
-	content := string(data)
-	if !strings.HasPrefix(content, "---\n") {
+	content := strings.ReplaceAll(string(data), "\r\n", "\n")
+	lines := strings.Split(content, "\n")
+	if len(lines) == 0 || lines[0] != "---" {
 		return nil
 	}
 
-	end := strings.Index(content[4:], "\n---")
+	end := -1
+	for i := 1; i < len(lines); i++ {
+		if lines[i] == "---" {
+			end = i
+			break
+		}
+	}
 	if end == -1 {
 		return nil
 	}
 
-	frontmatterYAML := content[4 : 4+end]
+	frontmatterYAML := strings.Join(lines[1:end], "\n")
 	if strings.TrimSpace(frontmatterYAML) == "" {
 		return nil
 	}

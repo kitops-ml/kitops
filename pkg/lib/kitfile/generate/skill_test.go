@@ -71,6 +71,17 @@ func TestParseSkillFrontmatter(t *testing.T) {
 			expectName: "my-skill",
 			expectDesc: "Use --- to separate sections",
 		},
+		{
+			name:       "CRLF line endings",
+			content:    "---\r\nname: crlf-skill\r\ndescription: Windows style\r\n---\r\n# Body",
+			expectName: "crlf-skill",
+			expectDesc: "Windows style",
+		},
+		{
+			name:       "dashes in value prefix not treated as delimiter",
+			content:    "---\nname: test\nother: ---value\n---\n# Body",
+			expectName: "test",
+		},
 	}
 
 	for _, tt := range tests {
