@@ -78,14 +78,14 @@ func dirContainsSkillMD(dir DirectoryListing) (bool, string) {
 	return false, ""
 }
 
-func buildPromptFromSkill(dir DirectoryListing) artifact.Prompt {
+func buildPromptFromSkill(dir DirectoryListing) (artifact.Prompt, *SkillFrontmatter) {
 	prompt := artifact.Prompt{
 		Path: dir.Path,
 	}
 
 	found, skillPath := dirContainsSkillMD(dir)
 	if !found {
-		return prompt
+		return prompt, nil
 	}
 
 	fm := parseSkillFrontmatter(skillPath)
@@ -93,7 +93,7 @@ func buildPromptFromSkill(dir DirectoryListing) artifact.Prompt {
 		prompt.Name = fm.Name
 		prompt.Description = fm.Description
 	}
-	return prompt
+	return prompt, fm
 }
 
 func applySkillMetadataToPackage(kitfile *artifact.KitFile, dir DirectoryListing) {
@@ -110,7 +110,12 @@ func applySkillMetadataToPackage(kitfile *artifact.KitFile, dir DirectoryListing
 		return
 	}
 
-	if len(skillFrontmatters) == 1 {
+	// Only promote name/description when the Kitfile contains exclusively
+	// prompt layers. A mixed Kitfile (model + skill) should not inherit the
+	// skill's name as the package name.
+	hasOnlyPrompts := kitfile.Model == nil && len(kitfile.Code) == 0 &&
+		len(kitfile.DataSets) == 0 && len(kitfile.Docs) == 0
+	if hasOnlyPrompts && len(skillFrontmatters) == 1 {
 		fm := skillFrontmatters[0]
 		if kitfile.Package.Name == "" {
 			kitfile.Package.Name = fm.Name

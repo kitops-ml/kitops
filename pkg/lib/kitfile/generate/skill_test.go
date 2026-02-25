@@ -183,7 +183,7 @@ func TestBuildPromptFromSkill(t *testing.T) {
 		},
 	}
 
-	prompt := buildPromptFromSkill(dir)
+	prompt, _ := buildPromptFromSkill(dir)
 	if prompt.Path != "myskill" {
 		t.Errorf("Path = %q, want %q", prompt.Path, "myskill")
 	}
@@ -400,6 +400,10 @@ func TestGenerateKitfile_MultiSkillMixedDirs(t *testing.T) {
 	}
 	if len(kitfile.Docs) != 1 {
 		t.Fatalf("expected 1 docs layer, got %d", len(kitfile.Docs))
+	}
+	// Mixed content: skill name should NOT be promoted to package
+	if kitfile.Package.Name != "" {
+		t.Errorf("package name should be empty for mixed content, got %q", kitfile.Package.Name)
 	}
 }
 

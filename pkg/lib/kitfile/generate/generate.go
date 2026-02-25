@@ -94,13 +94,12 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package) (*arti
 		kitfile.Package = *packageOpt
 	}
 
-	//  SKILL.md: found at ROOT treat entire directory as a skill
-	if found, skillPath := dirContainsSkillMD(*dir); found {
+	// SKILL.md at root: treat entire directory as a single skill
+	if found, _ := dirContainsSkillMD(*dir); found {
 		output.Logf(output.LogLevelTrace, "SKILL.md found; treating as a skill directory")
-		prompt := artifact.Prompt{Path: "."}
-		if fm := parseSkillFrontmatter(skillPath); fm != nil {
-			prompt.Name = fm.Name
-			prompt.Description = fm.Description
+		prompt, fm := buildPromptFromSkill(*dir)
+		kitfile.Prompts = append(kitfile.Prompts, prompt)
+		if fm != nil {
 			if kitfile.Package.Name == "" {
 				kitfile.Package.Name = fm.Name
 			}
@@ -111,7 +110,6 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package) (*arti
 				kitfile.Package.License = fm.License
 			}
 		}
-		kitfile.Prompts = append(kitfile.Prompts, prompt)
 		return kitfile, nil
 	}
 
@@ -240,7 +238,7 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package) (*arti
 func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFiles []FileListing, err error) {
 	if found, _ := dirContainsSkillMD(dir); found {
 		output.Logf(output.LogLevelTrace, "Directory %s contains SKILL.md; treating as skill", dir.Path)
-		prompt := buildPromptFromSkill(dir)
+		prompt, _ := buildPromptFromSkill(dir)
 		kitfile.Prompts = append(kitfile.Prompts, prompt)
 		return nil, nil
 	}
