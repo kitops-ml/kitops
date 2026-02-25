@@ -123,6 +123,6 @@ func applySkillMetadataToPackage(kitfile *artifact.KitFile, dir DirectoryListing
 	first := skillFrontmatters[0]
 	if kitfile.Package.License == "" && first.License != "" {
 		kitfile.Package.License = first.License
-		output.Logf(output.LogLevelWarn, "Using license from skill %q", first.Name)
+		output.Logf(output.LogLevelTrace, "Using license %q from skill %q", first.License, first.Name)
 	}
 }
