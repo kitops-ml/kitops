@@ -94,6 +94,27 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package) (*arti
 		kitfile.Package = *packageOpt
 	}
 
+	//  SKILL.md: found at ROOT treat entire directory as a skill
+	if found, skillPath := dirContainsSkillMD(*dir); found {
+		output.Logf(output.LogLevelTrace, "SKILL.md found; treating as a skill directory")
+		prompt := artifact.Prompt{Path: "."}
+		if fm := parseSkillFrontmatter(skillPath); fm != nil {
+			prompt.Name = fm.Name
+			prompt.Description = fm.Description
+			if kitfile.Package.Name == "" {
+				kitfile.Package.Name = fm.Name
+			}
+			if kitfile.Package.Description == "" {
+				kitfile.Package.Description = fm.Description
+			}
+			if kitfile.Package.License == "" {
+				kitfile.Package.License = fm.License
+			}
+		}
+		kitfile.Prompts = append(kitfile.Prompts, prompt)
+		return kitfile, nil
+	}
+
 	// We can make sure all files are included by including a layer with path '.'
 	// However, we only want to do this if it is necessary
 	includeCatchallSection := false
@@ -211,10 +232,19 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package) (*arti
 		kitfile.Package.License = detectedLicenseType
 	}
 
+	applySkillMetadataToPackage(kitfile, *dir)
+
 	return kitfile, nil
 }
 
 func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFiles []FileListing, err error) {
+	if found, _ := dirContainsSkillMD(dir); found {
+		output.Logf(output.LogLevelTrace, "Directory %s contains SKILL.md; treating as skill", dir.Path)
+		prompt := buildPromptFromSkill(dir)
+		kitfile.Prompts = append(kitfile.Prompts, prompt)
+		return nil, nil
+	}
+
 	switch dir.Name {
 	case "docs":
 		output.Logf(output.LogLevelTrace, "Directory %s interpreted as documentation", dir.Name)

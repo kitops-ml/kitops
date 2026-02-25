@@ -104,6 +104,7 @@ type (
 	}
 
 	Prompt struct {
+		Name        string `json:"name,omitempty" yaml:"name,omitempty"`
 		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
 		Description string `json:"description,omitempty" yaml:"description,omitempty"`
 		*LayerInfo  `json:",inline" yaml:",inline"`

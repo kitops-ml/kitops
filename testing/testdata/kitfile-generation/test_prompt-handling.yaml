@@ -4,7 +4,6 @@ files:
   # Special-cased names
   - AGENTS.md
   - CLAUDE.md
-  - SKILL.md
   # filenames containing .prompt
   - my.prompt.md
   - test.prompt.pdf
@@ -30,7 +29,6 @@ expectedKitfile:
   prompts:
     - path: AGENTS.md
     - path: CLAUDE.md
-    - path: SKILL.md
     - path: my.prompt.md
     - path: suffix.prompt
     - path: test.prompt.pdf

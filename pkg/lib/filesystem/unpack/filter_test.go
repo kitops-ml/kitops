@@ -19,6 +19,7 @@ package unpack
 import (
 	"testing"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -107,6 +108,55 @@ func TestParseFilter_EdgeCases(t *testing.T) {
 				// If no specific filters expected, should be empty
 				assert.Empty(t, result.Filters)
 			}
+		})
+	}
+}
+
+func TestShouldUnpackLayer_PromptByName(t *testing.T) {
+	tests := []struct {
+		name   string
+		prompt artifact.Prompt
+		filter string
+		expect bool
+	}{
+		{
+			name:   "match by name",
+			prompt: artifact.Prompt{Name: "docx", Path: "skills/docx"},
+			filter: "prompts:docx",
+			expect: true,
+		},
+		{
+			name:   "match by path fallback",
+			prompt: artifact.Prompt{Path: "skills/docx"},
+			filter: "prompts:skills/docx",
+			expect: true,
+		},
+		{
+			name:   "no match",
+			prompt: artifact.Prompt{Name: "docx", Path: "skills/docx"},
+			filter: "prompts:xlsx",
+			expect: false,
+		},
+		{
+			name:   "prompts type without specific filter matches all",
+			prompt: artifact.Prompt{Name: "docx", Path: "skills/docx"},
+			filter: "prompts",
+			expect: true,
+		},
+		{
+			name:   "empty name matches by path",
+			prompt: artifact.Prompt{Path: "SKILL.md"},
+			filter: "prompts:SKILL.md",
+			expect: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fc, err := ParseFilter(tt.filter)
+			require.NoError(t, err)
+			result := shouldUnpackLayer(tt.prompt, []FilterConf{*fc})
+			assert.Equal(t, tt.expect, result)
 		})
 	}
 }

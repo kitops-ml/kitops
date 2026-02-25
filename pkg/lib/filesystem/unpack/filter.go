@@ -110,8 +110,7 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 		// Code does not have a ID/name field so we can only match on path
 		return matchesFilters("code", l.Path, filters)
 	case artifact.Prompt:
-		// Prompts do not have a ID/name field so we can only match on path
-		return matchesFilters("prompts", l.Path, filters)
+		return matchesFilters("prompts", l.Name, filters) || matchesFilters("prompts", l.Path, filters)
 	default:
 		return false
 	}
