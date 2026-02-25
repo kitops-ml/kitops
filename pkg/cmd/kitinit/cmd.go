@@ -320,8 +320,8 @@ func detectRemoteRepo(path string) (isRemote bool, repo string, repoType hf.Repo
 
 	// Check if the path exists on the filesystem
 	// This handles cases like "models/my-model" which could be either local or remote
-	if _, err := os.Stat(path); err == nil || !errors.Is(err, fs.ErrNotExist) {
-		// Path exists locally or has a non-"not exists" error (e.g. permission denied) - treat as local
+	if _, err := os.Stat(path); err == nil || errors.Is(err, fs.ErrPermission) {
+		// Path exists locally, or permission denied (path exists but is unreadable) - treat as local
 		return false, "", hf.RepoTypeUnknown
 	}
 
