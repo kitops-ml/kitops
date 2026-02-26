@@ -26,6 +26,7 @@ import (
 	gotemplate "text/template"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -143,19 +144,25 @@ func runCommand(opts *listOptions) func(*cobra.Command, []string) error {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		var infos []modelInfo
-		if opts.remoteRef == nil {
-			lines, err := listLocalKits(cmd.Context(), opts)
-			if err != nil {
-				return output.Fatalln(err)
+		kitOpts := &kit.ListOptions{
+			NetworkOptions: opts.NetworkOptions,
+			ConfigHome:     opts.configHome,
+			RemoteRef:      opts.remoteRef,
+		}
+		lines, err := kit.List(cmd.Context(), kitOpts)
+		if err != nil {
+			return output.Fatalln(err)
+		}
+		infos := make([]modelInfo, len(lines))
+		for i := range lines {
+			infos[i] = modelInfo{
+				Repo:      lines[i].Repo,
+				Digest:    lines[i].Digest,
+				Tags:      lines[i].Tags,
+				ModelName: lines[i].ModelName,
+				Size:      lines[i].Size,
+				Author:    lines[i].Author,
 			}
-			infos = lines
-		} else {
-			lines, err := listRemoteKits(cmd.Context(), opts)
-			if err != nil {
-				return output.Fatalln(err)
-			}
-			infos = lines
 		}
 		return formatAndPrint(cmd.OutOrStdout(), infos, opts)
 	}
@@ -212,3 +219,5 @@ func printConfig(opts *listOptions) {
 		output.Debugf("Listing remote model kits in %s", opts.remoteRef.String())
 	}
 }
+
+//

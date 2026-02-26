@@ -14,25 +14,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package logout
+package kit
 
 import (
 	"context"
 
-	"github.com/kitops-ml/kitops/pkg/lib/network"
-	"github.com/kitops-ml/kitops/pkg/output"
-
-	"oras.land/oras-go/v2/registry/remote/credentials"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 )
 
-func logout(ctx context.Context, hostname string, credentialsPath string) error {
-	store, err := network.NewCredentialStore(credentialsPath)
-	if err != nil {
-		return err
-	}
-	if err := credentials.Logout(ctx, store, hostname); err != nil {
-		return err
-	}
-	output.Infof("Successfully logged out from %s", hostname)
-	return nil
+// UnpackOptions re-exports unpack.UnpackOptions for library API.
+type UnpackOptions = unpack.UnpackOptions
+
+// FilterConf re-exports unpack.FilterConf for library API.
+type FilterConf = unpack.FilterConf
+
+// Unpack unpacks a ModelKit to the filesystem.
+func Unpack(ctx context.Context, opts *UnpackOptions) error {
+	return unpack.UnpackModelKit(ctx, opts)
 }
+
+// ParseFilter re-exports unpack.ParseFilter for convenience.
+func ParseFilter(filter string) (*FilterConf, error) {
+	return unpack.ParseFilter(filter)
+}
+
+//

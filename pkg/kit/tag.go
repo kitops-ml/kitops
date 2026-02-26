@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package tag
+package kit
 
 import (
 	"context"
@@ -25,38 +25,45 @@ import (
 
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/errdef"
+	"oras.land/oras-go/v2/registry"
 )
 
-func RunTag(ctx context.Context, options *tagOptions) error {
-	storageHome := constants.StoragePath(options.configHome)
-	sourceRepo, err := local.NewLocalRepo(storageHome, options.sourceRef)
+type TagOptions struct {
+	ConfigHome string
+	SourceRef  *registry.Reference
+	TargetRef  *registry.Reference
+}
+
+func Tag(ctx context.Context, options *TagOptions) error {
+	storageHome := constants.StoragePath(options.ConfigHome)
+	sourceRepo, err := local.NewLocalRepo(storageHome, options.SourceRef)
 	if err != nil {
 		return fmt.Errorf("failed to open local storage: %w", err)
 	}
-	descriptor, err := oras.Resolve(ctx, sourceRepo, options.sourceRef.Reference, oras.ResolveOptions{})
+	descriptor, err := oras.Resolve(ctx, sourceRepo, options.SourceRef.Reference, oras.ResolveOptions{})
 	if err != nil {
 		if err == errdef.ErrNotFound {
-			return fmt.Errorf("model %s not found", options.sourceRef.String())
+			return fmt.Errorf("model %s not found", options.SourceRef.String())
 		}
 		return fmt.Errorf("error resolving model: %s", err)
 	}
-	if options.sourceRef.Registry == options.targetRef.Registry && options.sourceRef.Repository == options.targetRef.Repository {
-		err = sourceRepo.Tag(ctx, descriptor, options.targetRef.Reference)
+	if options.SourceRef.Registry == options.TargetRef.Registry && options.SourceRef.Repository == options.TargetRef.Repository {
+		err = sourceRepo.Tag(ctx, descriptor, options.TargetRef.Reference)
 		if err != nil {
-			return fmt.Errorf("failed to tag reference %s: %w", options.targetRef, err)
+			return fmt.Errorf("failed to tag reference %s: %w", options.TargetRef, err)
 		}
 		return nil
 	}
 
-	// Target is under a different repo name (org/repo pair); manifest needs to be pushed to _that_ local store
-	// Note that since local repos all share the same blob storage, only the manifest will need to be copied.
-	targetRepo, err := local.NewLocalRepo(storageHome, options.targetRef)
+	targetRepo, err := local.NewLocalRepo(storageHome, options.TargetRef)
 	if err != nil {
 		return fmt.Errorf("failed to open local storage: %w", err)
 	}
-	_, err = oras.Copy(ctx, sourceRepo, options.sourceRef.Reference, targetRepo, options.targetRef.Reference, oras.CopyOptions{})
+	_, err = oras.Copy(ctx, sourceRepo, options.SourceRef.Reference, targetRepo, options.TargetRef.Reference, oras.CopyOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to tag model: %w", err)
 	}
 	return nil
 }
+
+//

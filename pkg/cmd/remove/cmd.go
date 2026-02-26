@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -164,20 +165,16 @@ func runCommand(opts *removeOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-
-		var err error
-		switch {
-		case opts.modelRef != nil:
-			if opts.remote {
-				err = removeRemoteModel(cmd.Context(), opts)
-			} else {
-				err = removeModel(cmd.Context(), opts)
-			}
-		case opts.removeAll && !opts.forceDelete:
-			err = removeUntaggedModels(cmd.Context(), opts)
-		case opts.removeAll && opts.forceDelete:
-			err = removeAllModels(cmd.Context(), opts)
+		kitOpts := &kit.RemoveOptions{
+			NetworkOptions: opts.NetworkOptions,
+			ConfigHome:     opts.configHome,
+			ForceDelete:    opts.forceDelete,
+			RemoveAll:      opts.removeAll,
+			Remote:         opts.remote,
+			ModelRef:       opts.modelRef,
+			ExtraTags:      opts.extraTags,
 		}
+		err := kit.Remove(cmd.Context(), kitOpts)
 		if err != nil {
 			return output.Fatalf(err.Error())
 		}
@@ -198,3 +195,5 @@ func printConfig(opts *removeOptions) {
 		}
 	}
 }
+
+//

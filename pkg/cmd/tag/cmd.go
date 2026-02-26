@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -127,8 +128,12 @@ func runCommand(opts *tagOptions) func(cmd *cobra.Command, args []string) error 
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-
-		err := RunTag(cmd.Context(), opts)
+		kitOpts := &kit.TagOptions{
+			ConfigHome: opts.configHome,
+			SourceRef:  opts.sourceRef,
+			TargetRef:  opts.targetRef,
+		}
+		err := kit.Tag(cmd.Context(), kitOpts)
 		if err != nil {
 			return output.Fatalf("Failed to tag modelkit: %s", err)
 		}
@@ -136,3 +141,5 @@ func runCommand(opts *tagOptions) func(cmd *cobra.Command, args []string) error 
 		return nil
 	}
 }
+
+//

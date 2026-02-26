@@ -23,10 +23,9 @@ import (
 	"net/http"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -134,20 +133,11 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-
-		remoteRepo, err := remote.NewRepository(
-			cmd.Context(),
-			opts.destModelRef.Registry,
-			opts.destModelRef.Repository,
-			&opts.NetworkOptions,
-		)
-		if err != nil {
-			return output.Fatalln(err)
-		}
-
-		localRepo, err := local.NewLocalRepo(constants.StoragePath(opts.configHome), opts.srcModelRef)
-		if err != nil {
-			return output.Fatalln(err)
+		kitOpts := &kit.PushOptions{
+			NetworkOptions: opts.NetworkOptions,
+			ConfigHome:     opts.configHome,
+			SrcModelRef:    opts.srcModelRef,
+			DestModelRef:   opts.destModelRef,
 		}
 
 		if opts.srcModelRef.String() != opts.destModelRef.String() {
@@ -155,7 +145,7 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		} else {
 			output.Infof("Pushing %s", opts.srcModelRef.String())
 		}
-		desc, err := PushModel(cmd.Context(), localRepo, remoteRepo, opts)
+		result, err := kit.Push(cmd.Context(), kitOpts)
 		respErr := &errcode.ErrorResponse{}
 		if ok := errors.As(err, &respErr); ok {
 			output.Debugf("Got error pushing: %s", err)
@@ -168,7 +158,9 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		} else if err != nil {
 			return output.Fatalf("Failed to push: %s.", err)
 		}
-		output.Infof("Pushed %s", desc.Digest)
+		output.Infof("Pushed %s", result.Descriptor.Digest)
 		return nil
 	}
 }
+
+//

@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package list
+package kit
 
 import (
 	"testing"
@@ -26,7 +26,7 @@ import (
 )
 
 func TestModelInfoFillNormal(t *testing.T) {
-	info := modelInfo{}
+	info := ModelInfo{}
 	manifest := genTestManifest(100, 200, 300)
 	kitfile := &artifact.KitFile{
 		Package: artifact.Package{
@@ -35,32 +35,26 @@ func TestModelInfoFillNormal(t *testing.T) {
 		},
 	}
 	info.fill(manifest, kitfile)
-	// Not testing size formatting here
 	assert.Equal(t, info.Size, "600 B")
-	// Should use first author in list
 	assert.Equal(t, info.Author, "testauthor1")
 	assert.Equal(t, info.ModelName, "testmodelkit")
 }
 
 func TestModelInfoFillEmptyKitfile(t *testing.T) {
-	info := modelInfo{}
+	info := ModelInfo{}
 	manifest := genTestManifest(100, 200, 300)
 	kitfile := &artifact.KitFile{}
 	info.fill(manifest, kitfile)
-	// Not testing size formatting here
 	assert.Equal(t, info.Size, "600 B")
-	// Should use first author in list
 	assert.Equal(t, info.Author, "<none>")
 	assert.Equal(t, info.ModelName, "<none>")
 }
 
 func TestModelInfoFillNilKitfile(t *testing.T) {
-	info := modelInfo{}
+	info := ModelInfo{}
 	manifest := genTestManifest(100, 200, 300)
 	info.fill(manifest, nil)
-	// Not testing size formatting here
 	assert.Equal(t, info.Size, "600 B")
-	// Should use first author in list
 	assert.Equal(t, info.Author, "<none>")
 	assert.Equal(t, info.ModelName, "<none>")
 }
@@ -69,8 +63,6 @@ func genTestManifest(layersizes ...int64) *ocispec.Manifest {
 	var layers []ocispec.Descriptor
 	for _, s := range layersizes {
 		layers = append(layers, ocispec.Descriptor{
-			// Empty media type is sufficient for now as we don't care about mediatypes
-			// when filling
 			MediaType: ocispec.DescriptorEmptyJSON.MediaType,
 			Digest:    ocispec.DescriptorEmptyJSON.Digest,
 			Size:      s,
@@ -83,3 +75,5 @@ func genTestManifest(layersizes ...int64) *ocispec.Manifest {
 		Layers:    layers,
 	}
 }
+
+//

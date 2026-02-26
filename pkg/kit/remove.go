@@ -1,4 +1,4 @@
-// Copyright 2024 The KitOps Authors.
+// Copyright 2025 The KitOps Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,28 +14,59 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package remove
+package kit
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
-// removeAllModels removes all modelkits from local storage, including tagged ones
-func removeAllModels(ctx context.Context, opts *removeOptions) error {
-	localRepos, err := local.GetAllLocalRepos(constants.StoragePath(opts.configHome))
+type RemoveOptions struct {
+	options.NetworkOptions
+	ConfigHome  string
+	ForceDelete bool
+	RemoveAll   bool
+	Remote      bool
+	ModelRef    *registry.Reference
+	ExtraTags   []string
+}
+
+func Remove(ctx context.Context, opts *RemoveOptions) error {
+	switch {
+	case opts.ModelRef != nil:
+		if opts.Remote {
+			return removeRemoteModel(ctx, opts)
+		}
+		return removeModel(ctx, opts)
+	case opts.RemoveAll && !opts.ForceDelete:
+		return removeUntaggedModels(ctx, opts)
+	case opts.RemoveAll && opts.ForceDelete:
+		return removeAllModels(ctx, opts)
+	default:
+		return nil
+	}
+}
+
+func removeAllModels(ctx context.Context, opts *RemoveOptions) error {
+	localRepos, err := local.GetAllLocalRepos(constants.StoragePath(opts.ConfigHome))
 	if err != nil {
 		return fmt.Errorf("failed to read local storage: %w", err)
 	}
@@ -43,18 +74,12 @@ func removeAllModels(ctx context.Context, opts *removeOptions) error {
 		repository := util.FormatRepositoryForDisplay(localRepo.GetRepoName())
 
 		models := localRepo.GetAllModels()
-
-		// Store a list of removed manifests for this LocalStore. This is necessary
-		// as index.Manifests may have multiple manifest descriptors with the same
-		// digest (and different tags). If we delete a manifest we don't want to try
-		// to delete it (by digest) again.
 		skipManifests := map[digest.Digest]bool{}
 		for _, manifestDesc := range models {
 			if skipManifests[manifestDesc.Digest] {
 				continue
 			}
 			tags := localRepo.GetTags(manifestDesc)
-			// First untag all manifests for this digest
 			for _, tag := range tags {
 				if err := localRepo.Untag(ctx, tag); err != nil {
 					output.Errorf("Failed to untag %s:%s: %w", repository, tag, err)
@@ -66,7 +91,6 @@ func removeAllModels(ctx context.Context, opts *removeOptions) error {
 				output.Errorf("Failed to remove %s@%s: %s", repository, manifestDesc.Digest, err)
 				continue
 			}
-			// Skip future manifest descriptors with this digest, since we just removed it.
 			skipManifests[manifestDesc.Digest] = true
 			output.Infof("Removed %s@%s", repository, manifestDesc.Digest)
 		}
@@ -74,9 +98,8 @@ func removeAllModels(ctx context.Context, opts *removeOptions) error {
 	return nil
 }
 
-// removeUntaggedModels removes all untagged modelkits from local storage
-func removeUntaggedModels(ctx context.Context, opts *removeOptions) error {
-	localRepos, err := local.GetAllLocalRepos(constants.StoragePath(opts.configHome))
+func removeUntaggedModels(ctx context.Context, opts *RemoveOptions) error {
+	localRepos, err := local.GetAllLocalRepos(constants.StoragePath(opts.ConfigHome))
 	if err != nil {
 		return fmt.Errorf("failed to read local storage: %w", err)
 	}
@@ -99,24 +122,24 @@ func removeUntaggedModels(ctx context.Context, opts *removeOptions) error {
 	return nil
 }
 
-func removeModel(ctx context.Context, opts *removeOptions) error {
-	storageRoot := constants.StoragePath(opts.configHome)
-	localRepo, err := local.NewLocalRepo(storageRoot, opts.modelRef)
+func removeModel(ctx context.Context, opts *RemoveOptions) error {
+	storageRoot := constants.StoragePath(opts.ConfigHome)
+	localRepo, err := local.NewLocalRepo(storageRoot, opts.ModelRef)
 	if err != nil {
 		return fmt.Errorf("failed to read local storage at path %s: %w", storageRoot, err)
 	}
-	desc, err := removeModelRef(ctx, localRepo, opts.modelRef, opts.forceDelete)
+	desc, err := removeModelRef(ctx, localRepo, opts.ModelRef, opts.ForceDelete)
 	if err != nil {
 		return fmt.Errorf("failed to remove: %s", err)
 	}
-	displayRef := util.FormatRepositoryForDisplay(opts.modelRef.String())
+	displayRef := util.FormatRepositoryForDisplay(opts.ModelRef.String())
 	output.Infof("Removed %s (digest %s)", displayRef, desc.Digest)
 
-	for _, tag := range opts.extraTags {
-		ref := *opts.modelRef
+	for _, tag := range opts.ExtraTags {
+		ref := *opts.ModelRef
 		ref.Reference = tag
 		displayRef := util.FormatRepositoryForDisplay(ref.String())
-		desc, err := removeModelRef(ctx, localRepo, &ref, opts.forceDelete)
+		desc, err := removeModelRef(ctx, localRepo, &ref, opts.ForceDelete)
 		if err != nil {
 			output.Errorf("Failed to remove tag %s: %s", tag, err)
 		} else {
@@ -135,7 +158,6 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("error resolving model: %s", err)
 	}
 
-	// If reference passed in is a digest, remove the manifest ignoring any tags the manifest might have
 	if err := ref.ValidateReferenceAsDigest(); err == nil || forceDelete {
 		output.Debugf("Deleting manifest with digest %s", ref.Reference)
 		if err := localRepo.Delete(ctx, desc); err != nil {
@@ -160,3 +182,47 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 
 	return desc, nil
 }
+
+func removeRemoteModel(ctx context.Context, opts *RemoveOptions) error {
+	repository, err := remote.NewRepository(ctx, opts.ModelRef.Registry, opts.ModelRef.Repository, &opts.NetworkOptions)
+	if err != nil {
+		return err
+	}
+
+	desc, err := repository.Resolve(ctx, opts.ModelRef.Reference)
+	if err != nil {
+		if errors.Is(err, errdef.ErrNotFound) {
+			return fmt.Errorf("model %s not found", util.FormatRepositoryForDisplay(opts.ModelRef.String()))
+		}
+		return fmt.Errorf("error resolving modelkit: %w", err)
+	}
+
+	if !util.ReferenceIsDigest(opts.ModelRef.Reference) && !opts.ForceDelete {
+		output.Infof("Untagging remote ModelKit %s", util.FormatRepositoryForDisplay(opts.ModelRef.String()))
+		return untagRemoteModel(ctx, opts.ModelRef.Reference, repository)
+	}
+
+	deleteRef := *opts.ModelRef
+	deleteRef.Reference = desc.Digest.String()
+	output.Infof("Deleting remote ModelKit %s", util.FormatRepositoryForDisplay(deleteRef.String()))
+	if err := repository.Delete(ctx, desc); err != nil {
+		if errResp, ok := err.(*errcode.ErrorResponse); ok && errResp.StatusCode == http.StatusMethodNotAllowed {
+			return fmt.Errorf("removing models is unsupported by registry %s", opts.ModelRef.Registry)
+		}
+		return fmt.Errorf("failed to remove remote model: %w", err)
+	}
+	return nil
+}
+
+func untagRemoteModel(ctx context.Context, tag string, repo registry.Repository) error {
+	untaggerRepo, ok := repo.(content.Untagger)
+	if !ok {
+		return fmt.Errorf("remote repository implementation does not support untagging ModelKits")
+	}
+	if err := untaggerRepo.Untag(ctx, tag); err != nil {
+		return fmt.Errorf("failed to untag ModelKit in remote: %w", err)
+	}
+	return nil
+}
+
+//

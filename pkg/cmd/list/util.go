@@ -18,11 +18,6 @@ package list
 
 import (
 	"fmt"
-
-	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/output"
-
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
@@ -52,37 +47,4 @@ func (m *modelInfo) format() []string {
 	return lines
 }
 
-// fill adds information pulled from a manifest and kitfile into the modelInfo. Handles
-// cases where the Kitfile is nil
-func (m *modelInfo) fill(manifest *ocispec.Manifest, kitfile *artifact.KitFile) {
-	m.Size = getModelSize(manifest)
-	m.Author = getModelAuthor(kitfile)
-	m.ModelName = getModelName(kitfile)
-}
-
-func getModelSize(manifest *ocispec.Manifest) string {
-	var size int64
-	for _, layer := range manifest.Layers {
-		size += layer.Size
-	}
-	return output.FormatBytes(size)
-}
-
-func getModelAuthor(kitfile *artifact.KitFile) string {
-	if kitfile != nil && len(kitfile.Package.Authors) > 0 {
-		return kitfile.Package.Authors[0]
-	} else {
-		return "<none>"
-	}
-}
-
-func getModelName(kitfile *artifact.KitFile) string {
-	name := ""
-	if kitfile != nil {
-		name = kitfile.Package.Name
-	}
-	if name == "" {
-		name = "<none>"
-	}
-	return name
-}
+//

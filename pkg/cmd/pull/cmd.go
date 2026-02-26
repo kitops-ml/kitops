@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -96,13 +97,20 @@ func runCommand(opts *pullOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
+		kitOpts := &kit.PullOptions{
+			NetworkOptions: opts.NetworkOptions,
+			ConfigHome:     opts.configHome,
+			ModelRef:       opts.modelRef,
+		}
 
 		output.Infof("Pulling %s", opts.modelRef.String())
-		desc, err := runPull(cmd.Context(), opts)
+		result, err := kit.Pull(cmd.Context(), kitOpts)
 		if err != nil {
 			return output.Fatalln(err)
 		}
-		output.Infof("Pulled %s", desc.Digest)
+		output.Infof("Pulled %s", result.Descriptor.Digest)
 		return nil
 	}
 }
+
+//

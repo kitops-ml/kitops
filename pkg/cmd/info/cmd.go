@@ -27,6 +27,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -103,7 +104,13 @@ func runCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		config, err := getInfo(cmd.Context(), opts)
+		kitOpts := &kit.InfoOptions{
+			NetworkOptions: opts.NetworkOptions,
+			ConfigHome:     opts.configHome,
+			CheckRemote:    opts.checkRemote,
+			ModelRef:       opts.modelRef,
+		}
+		config, err := kit.Info(cmd.Context(), kitOpts)
 		if err != nil {
 			if errors.Is(err, errdef.ErrNotFound) {
 				return output.Fatalf("Could not find modelkit %s", util.FormatRepositoryForDisplay(opts.modelRef.String()))
@@ -198,3 +205,5 @@ func checkFilterIsValid(filter string) error {
 	}
 	return nil
 }
+
+//
