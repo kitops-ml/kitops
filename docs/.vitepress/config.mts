@@ -135,6 +135,7 @@ export default defineConfig({
           { text: 'Kubernetes - initContainer', link: '/docs/integrations/k8s-init-container/' },
           { text: 'KServe', link: '/docs/integrations/kserve/' },
           { text: 'Kubeflow Pipelines', link: '/docs/integrations/kubeflow/' },
+          { text: 'Kubeflow Model Registry', link: '/docs/integrations/kubeflow-model-registry/' },
           { text: 'ModelPack', link: '/docs/integrations/modelpack/' },
         ]
       },
