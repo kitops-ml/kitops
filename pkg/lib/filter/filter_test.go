@@ -96,7 +96,6 @@ func TestParseFilter_EdgeCases(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, result)
 
-			// Verify base types
 			if tt.expectedTypes != nil {
 				assert.Equal(t, tt.expectedTypes, result.BaseTypes)
 			}
@@ -105,7 +104,6 @@ func TestParseFilter_EdgeCases(t *testing.T) {
 			if tt.expectedFilters != nil {
 				assert.Equal(t, tt.expectedFilters, result.Filters)
 			} else {
-				// If no specific filters expected, should be empty
 				assert.Empty(t, result.Filters)
 			}
 		})
@@ -188,7 +186,7 @@ func TestKitfileMatches(t *testing.T) {
 			{Path: "prompts/pdf-processing.txt"},
 			{Path: "prompts/greeting.txt"},
 		},
-		DataSets: []artifact.DataSet{ // Note: Check if your struct uses DataSets or Datasets
+		DataSets: []artifact.DataSet{
 			{Path: "data/train.csv"},
 		},
 	}
@@ -231,7 +229,7 @@ func TestKitfileMatches(t *testing.T) {
 		{
 			name:          "Fails gracefully on nil Kitfile",
 			filterStrings: []string{"model"},
-			expected:      false, // Handled specially in the test loop below
+			expected:      false,
 		},
 	}
 
@@ -244,7 +242,6 @@ func TestKitfileMatches(t *testing.T) {
 				filters = append(filters, *conf)
 			}
 
-			// Test edge case: nil kitfile
 			if tt.name == "Fails gracefully on nil Kitfile" {
 				result := KitfileMatches(nil, filters)
 				assert.Equal(t, tt.expected, result)
