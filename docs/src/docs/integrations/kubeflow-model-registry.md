@@ -18,8 +18,12 @@ This integration workflow:
 4. **Discovers** and retrieves models via the Model Registry API
 5. **Deploys** models using KServe or other Kubeflow components
 
-```
-Local Model → kit pack → OCI Registry → Model Registry → Kubeflow Pipelines/KServe
+```mermaid
+graph LR
+  A[Local Model] -->|kit pack| B[ModelKit]
+  B -->|kit push| C[OCI Registry]
+  C -->|Register URI| D[Kubeflow Model Registry]
+  D -->|Reference| E[Kubeflow Pipelines/KServe]
 ```
 
 ## Prerequisites
@@ -62,6 +66,13 @@ Verify connectivity to Model Registry from within a Kubeflow Notebook:
 # Replace <MODEL_REGISTRY_URL> with your Model Registry service endpoint
 curl <MODEL_REGISTRY_URL>/api/model_registry/v1alpha3/registered_models
 ```
+`<MODEL_REGISTRY_URL>` must include the protocol (for example, `http://` or `https://`).
+
+> For in-cluster notebooks or pipelines, the Model Registry service is typically reachable via the Kubernetes DNS name:
+>
+> `http://model-registry-service.kubeflow.svc.cluster.local:8080`
+>
+> External access may instead use a LoadBalancer or Ingress endpoint depending on your Kubeflow installation.
 
 ## Workflow
 
@@ -75,7 +86,7 @@ manifestVersion: 1.0.0
 
 package:
   name: iris-classifier
-  version: 1.0.0
+  version: v1.0.0
   description: Iris species classification model
   authors:
     - ML Team
@@ -204,6 +215,8 @@ kit unpack <REGISTRY>/<ORG>/iris-classifier:v1.0.0 --filter=model -d ./model-onl
 kit unpack <REGISTRY>/<ORG>/iris-classifier:v1.0.0 --filter=datasets -d ./data-only
 ```
 
+The commands above demonstrate manual CLI usage. In Kubeflow environments, these steps are typically executed inside pipeline containers or notebook workloads as shown below.
+
 ## Using ModelKits in Kubeflow Pipelines
 
 ### Pipeline Component for Unpacking ModelKits
@@ -239,7 +252,7 @@ def inference_pipeline(model_ref: str = "<REGISTRY>/<ORG>/iris-classifier:v1.0.0
     # Mount registry credentials
     kubernetes.use_secret_as_volume(
         unpack_task,
-        secret_name='docker-config',
+        secret_name='oci-registry-creds',
         mount_path='/home/user/.docker',
     )
     
@@ -354,7 +367,7 @@ Mount the secret in your pipeline components:
 ```python
 kubernetes.use_secret_as_volume(
     unpack_task,
-    secret_name='docker-config',
+    secret_name='oci-registry-creds',
     mount_path='/home/user/.docker',
 )
 ```
@@ -447,7 +460,7 @@ kubectl get svc model-registry-service -n kubeflow
 **Solution:**
 ```sh
 # Verify the ModelKit exists
-kit list <REGISTRY>/<ORG>/model-name
+kit list --remote <REGISTRY>/<ORG>/model-name
 
 # Check the exact tag
 kit inspect --remote <REGISTRY>/<ORG>/model-name:tag
@@ -477,7 +490,7 @@ kit inspect --remote <REGISTRY>/<ORG>/model-name:tag
 
 ## Tested With
 
-This guide was validated conceptually against:
+This guide is based on:
 - KitOps CLI: latest
 - Kubeflow: v1.x
 - Kubeflow Model Registry: v1alpha3 API
