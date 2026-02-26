@@ -32,6 +32,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/filter"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -107,7 +108,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 				return err
 			}
 		}
-		if shouldUnpackLayer(config, opts.FilterConfs) {
+		if filter.LayerMatches(config, opts.FilterConfs) {
 			if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
 				return err
 			}
@@ -138,7 +139,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
 			entry := config.Model
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !filter.LayerMatches(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -147,7 +148,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.ModelPartBaseType:
 			entry := config.Model.Parts[modelPartIdx]
 			modelPartIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !filter.LayerMatches(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -158,7 +159,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			if layerDesc.Annotations[constants.LayerSubtypeAnnotation] == constants.LayerSubtypePrompt {
 				entry := config.Prompts[promptIdx]
 				promptIdx += 1
-				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+				if !filter.LayerMatches(entry, opts.FilterConfs) {
 					continue
 				}
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -166,7 +167,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			} else {
 				entry := config.Code[codeIdx]
 				codeIdx += 1
-				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+				if !filter.LayerMatches(entry, opts.FilterConfs) {
 					continue
 				}
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -176,7 +177,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.DatasetBaseType:
 			entry := config.DataSets[datasetIdx]
 			datasetIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !filter.LayerMatches(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -185,7 +186,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.DocsBaseType:
 			entry := config.Docs[docsIdx]
 			docsIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !filter.LayerMatches(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -240,16 +241,16 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	opts.ModelRef = parentRef
 	// Unpack only model, ignore code/datasets
 	if len(opts.FilterConfs) == 0 {
-		modelFilter, err := ParseFilter("model")
+		modelFilter, err := filter.ParseFilter("model")
 		if err != nil {
 			// Shouldn't happen, ever
 			return fmt.Errorf("failed to parse filter for parent modelkit: %w", err)
 		}
-		opts.FilterConfs = []FilterConf{*modelFilter}
+		opts.FilterConfs = []filter.FilterConf{*modelFilter}
 	} else {
-		var filterConfs []FilterConf
+		var filterConfs []filter.FilterConf
 		for _, conf := range opts.FilterConfs {
-			if conf.matchesBaseType("model") {
+			if slices.Contains(conf.BaseTypes, "model") {
 				// Drop any other base types from this filter
 				conf.BaseTypes = []string{"model"}
 				filterConfs = append(filterConfs, conf)

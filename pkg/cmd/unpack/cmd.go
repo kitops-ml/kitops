@@ -26,6 +26,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/filter"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -204,16 +205,16 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		// Handle deprecated flags by converting to filters
 		conf := opts.unpackConf
 		if conf.unpackKitfile || conf.unpackModels || conf.unpackCode || conf.unpackDatasets || conf.unpackDocs {
-			deprecatedFilters := unpack.FiltersFromUnpackConf(
+			deprecatedFilters := filter.FiltersFromUnpackConf(
 				conf.unpackKitfile, conf.unpackModels, conf.unpackCode,
 				conf.unpackDatasets, conf.unpackDocs)
 			libOpts.FilterConfs = deprecatedFilters
 		} else if len(opts.filters) > 0 {
 			// Parse filters using library functionality
-			for _, filter := range opts.filters {
-				filterConf, err := unpack.ParseFilter(filter)
+			for _, fStr := range opts.filters {
+				filterConf, err := filter.ParseFilter(fStr)
 				if err != nil {
-					return output.Fatalf("Invalid filter %q: %s", filter, err)
+					return output.Fatalf("Invalid filter %q: %s", fStr, err)
 				}
 				libOpts.FilterConfs = append(libOpts.FilterConfs, *filterConf)
 			}

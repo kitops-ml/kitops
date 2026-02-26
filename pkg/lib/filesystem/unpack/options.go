@@ -18,6 +18,7 @@ package unpack
 
 import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/filter"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -28,7 +29,7 @@ type UnpackOptions struct {
 	ConfigHome     string
 	UnpackDir      string
 	Filters        []string
-	FilterConfs    []FilterConf
+	FilterConfs    []filter.FilterConf
 	ModelRef       *registry.Reference
 	Overwrite      bool
 	IgnoreExisting bool

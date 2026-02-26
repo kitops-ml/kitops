@@ -22,6 +22,7 @@ import (
 	"sort"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filter"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 )
@@ -35,7 +36,7 @@ func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) 
 	}
 	var allInfo []modelInfo
 	for _, repo := range localRepos {
-		infos, err := readInfoFromRepo(ctx, repo)
+		infos, err := readInfoFromRepo(ctx, repo, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -45,24 +46,25 @@ func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) 
 	return allInfo, nil
 }
 
-func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]modelInfo, error) {
+func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, opts *listOptions) ([]modelInfo, error) {
 	var infos []modelInfo
 	manifestDescs := repo.GetAllModels()
 	for _, manifestDesc := range manifestDescs {
 		manifest, config, err := util.GetManifestAndKitfile(ctx, repo, manifestDesc)
 		if err != nil {
 			if errors.Is(err, util.ErrNotAModelKit) {
-				// Shouldn't happen since this is a local repo, but either way it's not a supported artifact
 				continue
 			}
-			// Allow artifacts without Kitfiles as all that will be lacking is some metadata; we can still
-			// describe them
 			if !errors.Is(err, util.ErrNoKitfile) {
 				return nil, err
 			}
 		}
+
+		if !filter.KitfileMatches(config, opts.filterConfs) {
+			continue
+		}
+
 		tags := repo.GetTags(manifestDesc)
-		// Strip localhost from repo if present, since we added it
 		repository := util.FormatRepositoryForDisplay(repo.GetRepoName())
 		if repository == "" {
 			repository = "<none>"

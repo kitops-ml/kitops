@@ -14,11 +14,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package unpack
+package filter
 
 import (
 	"testing"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -175,6 +176,83 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 
 			// Filters should be empty for deprecated config conversion
 			assert.Empty(t, filterConf.Filters)
+		})
+	}
+}
+
+func TestKitfileMatches(t *testing.T) {
+	// Setup a mock Kitfile with a few different layers
+	kf := &artifact.KitFile{
+		Model: &artifact.Model{Path: "models/my-model.bin"},
+		Prompts: []artifact.Prompt{
+			{Path: "prompts/pdf-processing.txt"},
+			{Path: "prompts/greeting.txt"},
+		},
+		DataSets: []artifact.DataSet{ // Note: Check if your struct uses DataSets or Datasets
+			{Path: "data/train.csv"},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		filterStrings []string
+		expected      bool
+	}{
+		{
+			name:          "No filters returns true (default list behavior)",
+			filterStrings: []string{},
+			expected:      true,
+		},
+		{
+			name:          "Matches existing model base type",
+			filterStrings: []string{"model"},
+			expected:      true,
+		},
+		{
+			name:          "Matches specific prompt path (AND logic)",
+			filterStrings: []string{"prompts:prompts/pdf-processing.txt"},
+			expected:      true,
+		},
+		{
+			name:          "Fails specific prompt path that doesn't exist",
+			filterStrings: []string{"prompts:non-existent.txt"},
+			expected:      false,
+		},
+		{
+			name:          "Matches OR logic across multiple flags",
+			filterStrings: []string{"code", "prompts"},
+			expected:      true,
+		},
+		{
+			name:          "Fails completely mismatched types",
+			filterStrings: []string{"code", "docs"},
+			expected:      false,
+		},
+		{
+			name:          "Fails gracefully on nil Kitfile",
+			filterStrings: []string{"model"},
+			expected:      false, // Handled specially in the test loop below
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var filters []FilterConf
+			for _, fStr := range tt.filterStrings {
+				conf, err := ParseFilter(fStr)
+				assert.NoError(t, err)
+				filters = append(filters, *conf)
+			}
+
+			// Test edge case: nil kitfile
+			if tt.name == "Fails gracefully on nil Kitfile" {
+				result := KitfileMatches(nil, filters)
+				assert.Equal(t, tt.expected, result)
+				return
+			}
+
+			result := KitfileMatches(kf, filters)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

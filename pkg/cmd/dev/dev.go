@@ -30,6 +30,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/filter"
 	"github.com/kitops-ml/kitops/pkg/lib/harness"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -192,11 +193,11 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 	}
 
 	// Add model filter
-	modelFilter, err := unpack.ParseFilter("model,kitfile")
+	modelFilter, err := filter.ParseFilter("model,kitfile")
 	if err != nil {
 		return fmt.Errorf("failed to create model filter: %w", err)
 	}
-	libOpts.FilterConfs = []unpack.FilterConf{*modelFilter}
+	libOpts.FilterConfs = []filter.FilterConf{*modelFilter}
 
 	err = unpack.UnpackModelKit(ctx, libOpts)
 	if err != nil {

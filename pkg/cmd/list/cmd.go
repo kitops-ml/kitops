@@ -27,6 +27,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filter"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -76,10 +77,12 @@ kit list registry.example.com/my-namespace/my-model`
 
 type listOptions struct {
 	options.NetworkOptions
-	configHome string
-	remoteRef  *registry.Reference
-	format     string
-	template   string
+	configHome  string
+	remoteRef   *registry.Reference
+	format      string
+	template    string
+	filters     []string
+	filterConfs []filter.FilterConf
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
@@ -112,6 +115,13 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 		opts.template = opts.format
 		opts.format = "template"
 	}
+	for _, fStr := range opts.filters {
+		fConf, err := filter.ParseFilter(fStr)
+		if err != nil {
+			return fmt.Errorf("invalid filter syntax '%s': %w", fStr, err)
+		}
+		opts.filterConfs = append(opts.filterConfs, *fConf)
+	}
 
 	printConfig(opts)
 	return nil
@@ -131,6 +141,7 @@ func ListCommand() *cobra.Command {
 
 	cmd.Args = cobra.MaximumNArgs(1)
 	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table, json, or Go template string")
+	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter what is listed based on type and name. Can be specified multiple times")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 

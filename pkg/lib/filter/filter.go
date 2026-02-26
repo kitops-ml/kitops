@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package unpack
+package filter
 
 import (
 	"fmt"
@@ -76,10 +76,10 @@ func ParseFilter(filter string) (*FilterConf, error) {
 	return conf, nil
 }
 
-// shouldUnpackLayer determines if we should unpack a layer in a Kitfile by matching
+// LayerMatches determines if we should unpack a layer in a Kitfile by matching
 // fields against the filters. Matching is done against path and name (if present).
 // If filters is empty, we assume everything should be unpacked
-func shouldUnpackLayer(layer any, filters []FilterConf) bool {
+func LayerMatches(layer any, filters []FilterConf) bool {
 	if len(filters) == 0 {
 		return true
 	}
@@ -98,26 +98,26 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 		}
 		return false
 	case artifact.Model:
-		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
+		return MatchesFilters("model", l.Name, filters) || MatchesFilters("model", l.Path, filters)
 	case artifact.ModelPart:
-		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
+		return MatchesFilters("model", l.Name, filters) || MatchesFilters("model", l.Path, filters)
 	case artifact.Docs:
 		// Docs does not have an ID/name field so we can only match on path
-		return matchesFilters("docs", l.Path, filters)
+		return MatchesFilters("docs", l.Path, filters)
 	case artifact.DataSet:
-		return matchesFilters("datasets", l.Name, filters) || matchesFilters("datasets", l.Path, filters)
+		return MatchesFilters("datasets", l.Name, filters) || MatchesFilters("datasets", l.Path, filters)
 	case artifact.Code:
 		// Code does not have a ID/name field so we can only match on path
-		return matchesFilters("code", l.Path, filters)
+		return MatchesFilters("code", l.Path, filters)
 	case artifact.Prompt:
 		// Prompts do not have a ID/name field so we can only match on path
-		return matchesFilters("prompts", l.Path, filters)
+		return MatchesFilters("prompts", l.Path, filters)
 	default:
 		return false
 	}
 }
 
-func matchesFilters(baseType, field string, filterConfs []FilterConf) bool {
+func MatchesFilters(baseType, field string, filterConfs []FilterConf) bool {
 	for _, filterConf := range filterConfs {
 		if filterConf.matches(baseType, field) {
 			return true
@@ -146,4 +146,49 @@ func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatase
 		filter.BaseTypes = append(filter.BaseTypes, "code")
 	}
 	return []FilterConf{filter}
+}
+
+// KitfileMatches checks if ANY layer within the Kitfile satisfies the provided filters.
+// It is used by commands like 'kit list' to filter whole ModelKits.
+func KitfileMatches(kf *artifact.KitFile, filters []FilterConf) bool {
+	// If no filters are provided, everything matches by default
+	if len(filters) == 0 {
+		return true
+	}
+	if kf == nil {
+		return false
+	}
+	if kf.Model != nil {
+		if LayerMatches(*kf.Model, filters) {
+			return true
+		}
+		for _, part := range kf.Model.Parts {
+			if LayerMatches(part, filters) {
+				return true
+			}
+		}
+	}
+	for _, dataset := range kf.DataSets {
+		if LayerMatches(dataset, filters) {
+			return true
+		}
+	}
+	for _, code := range kf.Code {
+		if LayerMatches(code, filters) {
+			return true
+		}
+	}
+
+	for _, prompt := range kf.Prompts {
+		if LayerMatches(prompt, filters) {
+			return true
+		}
+	}
+
+	for _, doc := range kf.Docs {
+		if LayerMatches(doc, filters) {
+			return true
+		}
+	}
+	return false
 }
