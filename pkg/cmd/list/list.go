@@ -23,6 +23,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 )
@@ -36,7 +37,7 @@ func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) 
 	}
 	var allInfo []modelInfo
 	for _, repo := range localRepos {
-		infos, err := readInfoFromRepo(ctx, repo)
+		infos, err := readInfoFromRepo(ctx, repo, opts.filterConfs)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +47,7 @@ func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) 
 	return allInfo, nil
 }
 
-func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]modelInfo, error) {
+func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []unpack.FilterConf) ([]modelInfo, error) {
 	var infos []modelInfo
 	manifestDescs := repo.GetAllModels()
 	for _, manifestDesc := range manifestDescs {
@@ -62,6 +63,12 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]modelInfo, e
 				return nil, err
 			}
 		}
+
+		// Apply filter if filters are provided
+		if !unpack.KitfileContainsMatchingLayer(config, filterConfs) {
+			continue
+		}
+
 		tags := repo.GetTags(manifestDesc)
 		// Strip localhost from repo if present, since we added it
 		repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())

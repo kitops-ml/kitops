@@ -28,6 +28,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -53,6 +54,16 @@ appear multiple times in the list, distinguished by their DIGEST.
 The SIZE displayed for each modelkit represents the total storage space
 occupied by all its components.
 
+Use the --filter (-f) flag to narrow results based on modelkit contents. Only
+modelkits containing at least one layer matching the filter will be shown.
+
+Valid filters have the format
+    [types]:[filters]
+where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets,
+code, docs, or prompts) and [filters] is an optional comma-separated list of names
+or paths to match against. Multiple --filter flags use OR logic (a modelkit is
+listed if it matches any filter).
+
 Use the --format flag to change how results are printed. Valid values are
 "table", "json", or a Go template. When a value other than "table" or "json"
 is supplied, the flag contents are treated as a Go template executed once per
@@ -71,15 +82,29 @@ Template placeholders:
 kit list
 
 # List modelkits from a remote repository
-kit list registry.example.com/my-namespace/my-model`
+kit list registry.example.com/my-namespace/my-model
+
+# List only modelkits that contain prompt layers
+kit list -f prompts
+
+# List only modelkits containing a model
+kit list -f model
+
+# List modelkits that have either prompts or datasets
+kit list -f prompts -f datasets
+
+# List modelkits with a specific named prompt
+kit list -f prompts:pdf-processing`
 )
 
 type listOptions struct {
 	options.NetworkOptions
-	configHome string
-	remoteRef  *registry.Reference
-	format     string
-	template   string
+	configHome  string
+	remoteRef   *registry.Reference
+	format      string
+	template    string
+	filters     []string
+	filterConfs []unpack.FilterConf
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
@@ -113,6 +138,15 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 		opts.format = "template"
 	}
 
+	// Parse filters using library functionality
+	for _, filter := range opts.filters {
+		filterConf, err := unpack.ParseFilter(filter)
+		if err != nil {
+			return fmt.Errorf("invalid filter %q: %w", filter, err)
+		}
+		opts.filterConfs = append(opts.filterConfs, *filterConf)
+	}
+
 	printConfig(opts)
 	return nil
 }
@@ -131,6 +165,7 @@ func ListCommand() *cobra.Command {
 
 	cmd.Args = cobra.MaximumNArgs(1)
 	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table, json, or Go template string")
+	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter modelkits by content type (e.g., model, datasets, code, docs, prompts). Can be specified multiple times")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 

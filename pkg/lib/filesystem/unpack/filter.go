@@ -125,6 +125,65 @@ func matchesFilters(baseType, field string, filterConfs []FilterConf) bool {
 	return false
 }
 
+// KitfileContainsMatchingLayer returns true if the given Kitfile contains at least one layer
+// that matches any of the provided filters. If filters is empty, returns true.
+// This reuses shouldUnpackLayer to ensure identical matching semantics.
+func KitfileContainsMatchingLayer(kf *artifact.KitFile, filters []FilterConf) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	if kf == nil {
+		return false
+	}
+
+	// Check if kitfile type itself matches
+	if shouldUnpackLayer(*kf, filters) {
+		return true
+	}
+
+	// Check model
+	if kf.Model != nil {
+		if shouldUnpackLayer(*kf.Model, filters) {
+			return true
+		}
+		for _, part := range kf.Model.Parts {
+			if shouldUnpackLayer(part, filters) {
+				return true
+			}
+		}
+	}
+
+	// Check datasets
+	for _, ds := range kf.DataSets {
+		if shouldUnpackLayer(ds, filters) {
+			return true
+		}
+	}
+
+	// Check code
+	for _, code := range kf.Code {
+		if shouldUnpackLayer(code, filters) {
+			return true
+		}
+	}
+
+	// Check docs
+	for _, doc := range kf.Docs {
+		if shouldUnpackLayer(doc, filters) {
+			return true
+		}
+	}
+
+	// Check prompts
+	for _, prompt := range kf.Prompts {
+		if shouldUnpackLayer(prompt, filters) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // FiltersFromUnpackConf converts a (deprecated) unpackConf to a set of filters to enable supporting the old flags
 func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs bool) []FilterConf {
 	filter := FilterConf{}

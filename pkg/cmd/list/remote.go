@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
@@ -34,16 +35,16 @@ func listRemoteKits(ctx context.Context, opts *listOptions) ([]modelInfo, error)
 		return nil, fmt.Errorf("failed to read repository: %w", err)
 	}
 	if opts.remoteRef.Reference != "" {
-		info, err := listImageTag(ctx, repo, opts.remoteRef)
+		info, err := listImageTag(ctx, repo, opts.remoteRef, opts.filterConfs)
 		if info == nil || err != nil {
 			return nil, err
 		}
 		return []modelInfo{*info}, nil
 	}
-	return listTags(ctx, repo, opts.remoteRef)
+	return listTags(ctx, repo, opts.remoteRef, opts.filterConfs)
 }
 
-func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference) ([]modelInfo, error) {
+func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []unpack.FilterConf) ([]modelInfo, error) {
 	var tags []string
 	err := repo.Tags(ctx, "", func(tagsPage []string) error {
 		tags = append(tags, tagsPage...)
@@ -60,7 +61,7 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 			Repository: ref.Repository,
 			Reference:  tag,
 		}
-		info, err := listImageTag(ctx, repo, tagRef)
+		info, err := listImageTag(ctx, repo, tagRef, filterConfs)
 		if err != nil && !errors.Is(err, util.ErrNotAModelKit) {
 			return nil, err
 		}
@@ -72,7 +73,7 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 	return allInfos, nil
 }
 
-func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference) (*modelInfo, error) {
+func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []unpack.FilterConf) (*modelInfo, error) {
 	manifestDesc, err := repo.Resolve(ctx, ref.Reference)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve reference %s: %w", ref.Reference, err)
@@ -84,6 +85,12 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 	if _, err := mediatype.ModelFormatForManifest(manifest); err != nil {
 		return nil, nil
 	}
+
+	// Apply filter if filters are provided
+	if !unpack.KitfileContainsMatchingLayer(config, filterConfs) {
+		return nil, nil
+	}
+
 	info := &modelInfo{
 		Repo:   ref.Repository,
 		Digest: string(manifestDesc.Digest),
