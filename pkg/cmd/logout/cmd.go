@@ -81,5 +81,3 @@ func (opts *logoutOptions) complete(ctx context.Context, args []string) error {
 	opts.configHome = configHome
 	return nil
 }
-
-
