@@ -68,5 +68,3 @@ func getRemoteConfig(ctx context.Context, opts *InfoOptions) (*artifact.KitFile,
 	}
 	return config, nil
 }
-
-//

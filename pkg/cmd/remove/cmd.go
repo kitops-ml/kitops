@@ -195,5 +195,3 @@ func printConfig(opts *removeOptions) {
 		}
 	}
 }
-
-//

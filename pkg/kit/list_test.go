@@ -75,5 +75,3 @@ func genTestManifest(layersizes ...int64) *ocispec.Manifest {
 		Layers:    layers,
 	}
 }
-
-//

@@ -219,5 +219,3 @@ func printConfig(opts *listOptions) {
 		output.Debugf("Listing remote model kits in %s", opts.remoteRef.String())
 	}
 }
-
-//

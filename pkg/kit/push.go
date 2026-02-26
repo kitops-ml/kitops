@@ -79,5 +79,3 @@ func pushModel(ctx context.Context, localRepo local.LocalRepo, repo registry.Rep
 
 	return desc, err
 }
-
-//

@@ -141,5 +141,3 @@ func runCommand(opts *tagOptions) func(cmd *cobra.Command, args []string) error 
 		return nil
 	}
 }
-
-//

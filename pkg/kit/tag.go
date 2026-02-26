@@ -65,5 +65,3 @@ func Tag(ctx context.Context, options *TagOptions) error {
 	}
 	return nil
 }
-
-//

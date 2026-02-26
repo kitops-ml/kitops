@@ -167,5 +167,3 @@ func readPasswordFromStdin() (string, error) {
 	}
 	return strings.TrimSpace(string(passwd)), err
 }
-
-//

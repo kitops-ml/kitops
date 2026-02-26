@@ -112,5 +112,3 @@ func runCommand(opts *pullOptions) func(*cobra.Command, []string) error {
 		return nil
 	}
 }
-
-//

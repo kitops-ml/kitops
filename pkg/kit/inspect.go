@@ -88,5 +88,3 @@ func getInspectInfo(ctx context.Context, repository oras.Target, ref string) (*I
 		Manifest:   manifest,
 	}, nil
 }
-
-//

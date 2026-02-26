@@ -224,5 +224,3 @@ func untagRemoteModel(ctx context.Context, tag string, repo registry.Repository)
 	}
 	return nil
 }
-
-//

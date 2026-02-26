@@ -142,5 +142,3 @@ func (opts *inspectOptions) complete(ctx context.Context, args []string) error {
 
 	return nil
 }
-
-//

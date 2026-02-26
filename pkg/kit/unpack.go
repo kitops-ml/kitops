@@ -37,5 +37,3 @@ func Unpack(ctx context.Context, opts *UnpackOptions) error {
 func ParseFilter(filter string) (*FilterConf, error) {
 	return unpack.ParseFilter(filter)
 }
-
-//

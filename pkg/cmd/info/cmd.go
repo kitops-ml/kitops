@@ -205,5 +205,3 @@ func checkFilterIsValid(filter string) error {
 	}
 	return nil
 }
-
-//

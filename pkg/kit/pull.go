@@ -153,5 +153,3 @@ func getIndex(list []string, s string) int {
 	}
 	return -1
 }
-
-//

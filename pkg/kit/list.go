@@ -208,5 +208,3 @@ func getModelName(kitfile *artifact.KitFile) string {
 	}
 	return name
 }
-
-//

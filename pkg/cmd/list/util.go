@@ -46,5 +46,3 @@ func (m *modelInfo) format() []string {
 	}
 	return lines
 }
-
-//
