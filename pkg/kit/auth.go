@@ -45,7 +45,14 @@ func Login(ctx context.Context, opts *LoginOptions) error {
 	if err != nil {
 		return err
 	}
-	reg, err := remote.NewRegistry(opts.Registry, &opts.NetworkOptions)
+	networkOpts := opts.NetworkOptions
+	if networkOpts.CredentialsPath == "" {
+		networkOpts.CredentialsPath = credentialsStorePath
+		if !networkOpts.PlainHTTP && !networkOpts.TLSVerify {
+			networkOpts.TLSVerify = true
+		}
+	}
+	reg, err := remote.NewRegistry(opts.Registry, &networkOpts)
 	if err != nil {
 		return fmt.Errorf("could not resolve registry %s: %w", opts.Registry, err)
 	}

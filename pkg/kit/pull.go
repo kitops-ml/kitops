@@ -47,12 +47,22 @@ type PullResult struct {
 }
 
 func Pull(ctx context.Context, opts *PullOptions) (*PullResult, error) {
-	storageHome := constants.StoragePath(opts.ConfigHome)
-	localRepo, err := local.NewLocalRepo(storageHome, opts.ModelRef)
+	pullOpts := *opts
+	if pullOpts.NetworkOptions.Concurrency < 1 {
+		pullOpts.NetworkOptions.Concurrency = 5
+	}
+	if pullOpts.NetworkOptions.CredentialsPath == "" {
+		pullOpts.NetworkOptions.CredentialsPath = constants.CredentialsPath(pullOpts.ConfigHome)
+		if !pullOpts.NetworkOptions.PlainHTTP && !pullOpts.NetworkOptions.TLSVerify {
+			pullOpts.NetworkOptions.TLSVerify = true
+		}
+	}
+	storageHome := constants.StoragePath(pullOpts.ConfigHome)
+	localRepo, err := local.NewLocalRepo(storageHome, pullOpts.ModelRef)
 	if err != nil {
 		return nil, err
 	}
-	desc, err := runPullRecursive(ctx, localRepo, opts, []string{})
+	desc, err := runPullRecursive(ctx, localRepo, &pullOpts, []string{})
 	if err != nil {
 		return nil, err
 	}
