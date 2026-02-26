@@ -24,12 +24,15 @@ Local Model → kit pack → OCI Registry → Model Registry → Kubeflow Pipeli
 
 ## Prerequisites
 
-- [KitOps CLI installed](../cli/installation.md)
+- [KitOps CLI installed](../../cli/installation.md)
 - Kubernetes cluster with [Kubeflow](https://www.kubeflow.org/docs/started/installing-kubeflow/) installed
 - [Kubeflow Model Registry](https://www.kubeflow.org/docs/components/model-registry/installation/) deployed
 - Access to an OCI-compatible registry
 - `kubectl` configured to access your cluster
 - Python >= 3.9 (for Model Registry client)
+- Kubeflow Pipelines SDK (`kfp`) installed for pipeline examples
+
+> Note: If your OCI registry is private, configure Kubernetes imagePullSecrets or registry credentials for Kubeflow workloads before proceeding. See the **Registry Authentication** section below.
 
 ## Environment Setup
 
@@ -42,7 +45,7 @@ Install and verify the KitOps CLI:
 kit version
 
 # Log in to your OCI registry
-kit login jozu.ml
+kit login <REGISTRY>
 ```
 
 ### Kubeflow Setup
@@ -50,13 +53,14 @@ kit login jozu.ml
 Install the Model Registry Python client in your notebook or pipeline environment:
 
 ```sh
-pip install model-registry=="0.3.5"
+pip install "model-registry>=0.3"
 ```
 
 Verify connectivity to Model Registry from within a Kubeflow Notebook:
 
 ```sh
-curl http://model-registry-service.kubeflow.svc.cluster.local:8080/api/model_registry/v1alpha3/registered_models
+# Replace <MODEL_REGISTRY_URL> with your Model Registry service endpoint
+curl <MODEL_REGISTRY_URL>/api/model_registry/v1alpha3/registered_models
 ```
 
 ## Workflow
@@ -95,7 +99,7 @@ docs:
 Pack the ModelKit:
 
 ```sh
-kit pack . -t jozu.ml/my-org/iris-classifier:v1.0.0
+kit pack . -t <REGISTRY>/<ORG>/iris-classifier:v1.0.0
 ```
 
 Verify the ModelKit:
@@ -109,13 +113,13 @@ kit list
 Push the ModelKit to your registry:
 
 ```sh
-kit push jozu.ml/my-org/iris-classifier:v1.0.0
+kit push <REGISTRY>/<ORG>/iris-classifier:v1.0.0
 ```
 
 Get the digest for immutable referencing:
 
 ```sh
-kit inspect jozu.ml/my-org/iris-classifier:v1.0.0
+kit inspect <REGISTRY>/<ORG>/iris-classifier:v1.0.0
 ```
 
 ### Step 3: Register in Kubeflow Model Registry
@@ -127,7 +131,8 @@ from model_registry import ModelRegistry
 
 # Connect to Model Registry
 registry = ModelRegistry(
-    server_address="http://model-registry-service.kubeflow.svc.cluster.local",
+    # Replace with your Model Registry service endpoint
+    server_address="<MODEL_REGISTRY_URL>",
     port=8080,
     author="ml-team",
     is_secure=False
@@ -136,7 +141,7 @@ registry = ModelRegistry(
 # Register the ModelKit with its OCI URI
 rm = registry.register_model(
     "iris-classifier",
-    "oci://jozu.ml/my-org/iris-classifier:v1.0.0",  # OCI URI to ModelKit
+    "oci://<REGISTRY>/<ORG>/iris-classifier:v1.0.0",  # OCI URI to ModelKit
     model_format_name="sklearn",
     model_format_version="1",
     version="v1.0.0",
@@ -183,20 +188,20 @@ Once you have the OCI URI from the registry, use KitOps to retrieve the model:
 
 ```sh
 # Pull the ModelKit
-kit pull jozu.ml/my-org/iris-classifier:v1.0.0
+kit pull <REGISTRY>/<ORG>/iris-classifier:v1.0.0
 
 # Unpack to a directory
-kit unpack jozu.ml/my-org/iris-classifier:v1.0.0 -d ./model-artifacts
+kit unpack <REGISTRY>/<ORG>/iris-classifier:v1.0.0 -d ./model-artifacts
 ```
 
 Unpack only specific components:
 
 ```sh
 # Unpack only the model
-kit unpack jozu.ml/my-org/iris-classifier:v1.0.0 --filter=model -d ./model-only
+kit unpack <REGISTRY>/<ORG>/iris-classifier:v1.0.0 --filter=model -d ./model-only
 
 # Unpack only datasets
-kit unpack jozu.ml/my-org/iris-classifier:v1.0.0 --filter=datasets -d ./data-only
+kit unpack <REGISTRY>/<ORG>/iris-classifier:v1.0.0 --filter=datasets -d ./data-only
 ```
 
 ## Using ModelKits in Kubeflow Pipelines
@@ -224,7 +229,7 @@ Use in a pipeline:
 
 ```python
 @dsl.pipeline(name="inference-pipeline")
-def inference_pipeline(model_ref: str = "jozu.ml/my-org/iris-classifier:v1.0.0"):
+def inference_pipeline(model_ref: str = "<REGISTRY>/<ORG>/iris-classifier:v1.0.0"):
     # Unpack the ModelKit
     unpack_task = unpack_modelkit(
         modelkit_reference=model_ref,
@@ -243,7 +248,7 @@ def inference_pipeline(model_ref: str = "jozu.ml/my-org/iris-classifier:v1.0.0")
 
 ### Integration with KServe
 
-After registering a ModelKit in the Model Registry, deploy it with KServe. For KitOps-based model storage, use the [KitOps KServe integration](./kserve.md):
+After registering a ModelKit in the Model Registry, deploy it with KServe. For KitOps-based model storage, use the [KitOps KServe integration](../kserve.md):
 
 ```yaml
 apiVersion: serving.kserve.io/v1beta1
@@ -258,7 +263,7 @@ spec:
     model:
       modelFormat:
         name: sklearn
-      storageUri: kit://jozu.ml/my-org/iris-classifier:v1.0.0
+      storageUri: kit://<REGISTRY>/<ORG>/iris-classifier:v1.0.0
 ```
 
 ## Version Management
@@ -269,12 +274,12 @@ Use semantic versioning for ModelKit tags:
 
 ```sh
 # Development versions
-kit pack . -t jozu.ml/my-org/iris-classifier:dev
-kit pack . -t jozu.ml/my-org/iris-classifier:v1.0.0-rc1
+kit pack . -t <REGISTRY>/<ORG>/iris-classifier:dev
+kit pack . -t <REGISTRY>/<ORG>/iris-classifier:v1.0.0-rc1
 
 # Release versions
-kit pack . -t jozu.ml/my-org/iris-classifier:v1.0.0
-kit pack . -t jozu.ml/my-org/iris-classifier:latest
+kit pack . -t <REGISTRY>/<ORG>/iris-classifier:v1.0.0
+kit pack . -t <REGISTRY>/<ORG>/iris-classifier:latest
 ```
 
 Register each version in Model Registry:
@@ -283,7 +288,7 @@ Register each version in Model Registry:
 # Register v1.0.0
 registry.register_model(
     "iris-classifier",
-    "oci://jozu.ml/my-org/iris-classifier:v1.0.0",
+    "oci://<REGISTRY>/<ORG>/iris-classifier:v1.0.0",
     model_format_name="sklearn",
     model_format_version="1",
     version="v1.0.0",
@@ -293,7 +298,7 @@ registry.register_model(
 # Register v1.1.0
 registry.register_model(
     "iris-classifier",
-    "oci://jozu.ml/my-org/iris-classifier:v1.1.0",
+    "oci://<REGISTRY>/<ORG>/iris-classifier:v1.1.0",
     model_format_name="sklearn",
     model_format_version="1",
     version="v1.1.0",
@@ -307,7 +312,7 @@ For production deployments, use digest-based references for immutability:
 
 ```python
 # Get the digest from kit inspect output
-digest_ref = "jozu.ml/my-org/iris-classifier@sha256:abc123..."
+digest_ref = "<REGISTRY>/<ORG>/iris-classifier@sha256:abc123..."
 
 registry.register_model(
     "iris-classifier",
@@ -327,7 +332,7 @@ For Kubeflow components to access your OCI registry:
 
 ```sh
 kubectl create secret docker-registry oci-registry-creds \
-  --docker-server=jozu.ml \
+  --docker-server=<REGISTRY> \
   --docker-username=myuser \
   --docker-password=mypassword \
   --docker-email=user@example.com \
@@ -365,17 +370,18 @@ import subprocess
 # 1. Pack the trained model
 subprocess.run([
     "kit", "pack", ".",
-    "-t", "jozu.ml/my-org/churn-predictor:v1.0.0"
+    "-t", "<REGISTRY>/<ORG>/churn-predictor:v1.0.0"
 ], check=True)
 
 # 2. Push to registry
 subprocess.run([
-    "kit", "push", "jozu.ml/my-org/churn-predictor:v1.0.0"
+    "kit", "push", "<REGISTRY>/<ORG>/churn-predictor:v1.0.0"
 ], check=True)
 
 # 3. Register in Model Registry
 registry = ModelRegistry(
-    server_address="http://model-registry-service.kubeflow.svc.cluster.local",
+    # Replace with your Model Registry service endpoint
+    server_address="<MODEL_REGISTRY_URL>",
     port=8080,
     author="data-science-team",
     is_secure=False
@@ -383,7 +389,7 @@ registry = ModelRegistry(
 
 rm = registry.register_model(
     "churn-predictor",
-    "oci://jozu.ml/my-org/churn-predictor:v1.0.0",
+    "oci://<REGISTRY>/<ORG>/churn-predictor:v1.0.0",
     model_format_name="xgboost",
     model_format_version="1",
     version="v1.0.0",
@@ -401,7 +407,7 @@ print(f"Model registered at: {artifact.uri}")
 
 # 5. Pull for inference
 subprocess.run([
-    "kit", "unpack", "jozu.ml/my-org/churn-predictor:v1.0.0",
+    "kit", "unpack", "<REGISTRY>/<ORG>/churn-predictor:v1.0.0",
     "-d", "/tmp/model", "-o"
 ], check=True)
 ```
@@ -415,10 +421,10 @@ subprocess.run([
 **Solution:**
 ```sh
 # Re-authenticate with the registry
-kit login jozu.ml
+kit login <REGISTRY>
 
 # Verify access by inspecting a remote artifact
-kit inspect --remote jozu.ml/my-org/iris-classifier:v1.0.0
+kit inspect --remote <REGISTRY>/<ORG>/iris-classifier:v1.0.0
 ```
 
 ### Model Registry Connection Failures
@@ -441,10 +447,10 @@ kubectl get svc model-registry-service -n kubeflow
 **Solution:**
 ```sh
 # Verify the ModelKit exists
-kit list jozu.ml/my-org/model-name
+kit list <REGISTRY>/<ORG>/model-name
 
 # Check the exact tag
-kit inspect --remote jozu.ml/my-org/model-name:tag
+kit inspect --remote <REGISTRY>/<ORG>/model-name:tag
 ```
 
 ### OCI URI Format
@@ -469,4 +475,11 @@ kit inspect --remote jozu.ml/my-org/model-name:tag
 
 6. **Selective unpacking**: Use `--filter` flags to extract only the components you need, reducing storage and transfer overhead.
 
----
+## Tested With
+
+This guide was validated conceptually against:
+- KitOps CLI: latest
+- Kubeflow: v1.x
+- Kubeflow Model Registry: v1alpha3 API
+
+Update with exact versions after environment validation.
