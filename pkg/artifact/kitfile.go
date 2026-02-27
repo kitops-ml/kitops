@@ -138,6 +138,9 @@ func (kf *KitFile) LoadModel(kitfileContent io.ReadCloser) error {
 	if err := decoder.Decode(kf); err != nil {
 		return err
 	}
+	if err := kf.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -210,6 +213,10 @@ func (kf *KitFile) Validate() error {
 			}
 			if dataset.RemoteHash == "" {
 				return fmt.Errorf("remoteHash is required when remote dataset paths are used (%s)", dataset.RemotePath)
+			}
+		} else {
+			if dataset.RemoteHash != "" {
+				return fmt.Errorf("remote hash is only applicable when remotePath is set")
 			}
 		}
 	}

@@ -65,6 +65,13 @@ func ParseS3ObjectReference(ref string, hash string) (*S3ObjectReference, error)
 	bucketKey := strings.TrimPrefix(s3url.Path, "/")
 	version := s3url.Query().Get("versionId")
 
+	if bucketName == "" {
+		return nil, fmt.Errorf("bucket name is required for S3 references")
+	}
+	if bucketKey == "" {
+		return nil, fmt.Errorf("bucket key is required for S3 references")
+	}
+
 	return &S3ObjectReference{
 		Bucket:  bucketName,
 		Key:     bucketKey,
@@ -104,6 +111,7 @@ func DownloadObject(ctx context.Context, client S3ClientAPI, ref *S3ObjectRefere
 	if err != nil {
 		return fmt.Errorf("failed to get object from S3 bucket: %w", err)
 	}
+	defer obj.Body.Close()
 
 	outfile, err := os.Create(outputPath)
 	if err != nil {
@@ -143,6 +151,9 @@ func SetUpClient(ctx context.Context) (S3ClientAPI, error) {
 		// For now, use path style URLs (endpoint.com/bucket/key) instead of virtual-hosted style (bucket.endpoint.com/key) when
 		// an alternate endpoint is specified; this is used/supported by most S3-compatible APIs
 		clientOpts = append(clientOpts, func(o *s3.Options) { o.UsePathStyle = true })
+	} else {
+		// If we're using the default endpoint, enable UseARNRegion to allow finding buckets across regions
+		clientOpts = append(clientOpts, func(o *s3.Options) { o.UseARNRegion = true })
 	}
 
 	s3cfg, err := s3config.LoadDefaultConfig(ctx, cfgOpts...)

@@ -176,17 +176,20 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 
 		case mediatype.DatasetBaseType:
 			// Since some datasets may be remote, we need to search the Kitfile for the next non-remote dataset
-			var entry artifact.DataSet
+			var entry *artifact.DataSet
 			for idx := datasetIdx; idx < len(config.DataSets); idx++ {
 				dataset := config.DataSets[idx]
 				if dataset.RemotePath != "" {
 					continue
 				}
-				entry = dataset
+				entry = &dataset
 				datasetIdx = idx + 1
 				break
 			}
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if entry == nil {
+				continue
+			}
+			if !shouldUnpackLayer(*entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -249,15 +252,30 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 				return err
 			}
 			for path, s3Ref := range remoteFiles {
-				output.Debugf("Downloading remote dataset: Bucket: %s, Key: %s", s3Ref.Bucket, s3Ref.Key)
-				if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) && !opts.Overwrite {
-					return fmt.Errorf("failed to unpack remote dataset: path '%s' already exists", path)
+				_, relPath, err := filesystem.VerifySubpath(opts.UnpackDir, path)
+				if err != nil {
+					return fmt.Errorf("error verifying path %s for remote reference: %w", path, err)
 				}
-				pathDir := filepath.Dir(path)
+
+				output.Debugf("Downloading remote dataset: Bucket: %s, Key: %s", s3Ref.Bucket, s3Ref.Key)
+				if fi, exists := filesystem.PathExists(relPath); exists {
+					if opts.IgnoreExisting {
+						output.Debugf("File %s already exists; skipping", path)
+						continue
+					}
+					if !opts.Overwrite {
+						return fmt.Errorf("failed to unpack remote dataset: path '%s' already exists", path)
+					}
+					if !fi.Mode().IsRegular() {
+						return fmt.Errorf("failed to unpack remote dataset: path '%s' already exists and is not a regular file", path)
+					}
+				}
+
+				pathDir := filepath.Dir(relPath)
 				if err := os.MkdirAll(pathDir, 0755); err != nil {
 					return fmt.Errorf("failed to create directory %s: %w", pathDir, err)
 				}
-				if err := s3api.DownloadObject(ctx, client, &s3Ref, path); err != nil {
+				if err := s3api.DownloadObject(ctx, client, &s3Ref, relPath); err != nil {
 					return fmt.Errorf("failed to download remote dataset for path %s: %w", path, err)
 				}
 				output.Infof("Downloaded remote S3 dataset for path %s", path)

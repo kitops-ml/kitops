@@ -85,11 +85,8 @@ func TestVerifyKitfile(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			kf := &KitFile{}
 			rc := io.NopCloser(strings.NewReader(tt.Kitfile))
-			if !assert.NoError(t, kf.LoadModel(rc), "Unexpected error loading test Kitfile") {
-				return
-			}
 
-			err := kf.Validate()
+			err := kf.LoadModel(rc)
 			if tt.ErrRegexp == "" {
 				assert.NoError(t, err, "Should not return an error")
 			} else {
