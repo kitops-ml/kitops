@@ -25,6 +25,27 @@ import (
 	"github.com/vbauerster/mpb/v8"
 )
 
+// formatAndWrite formats a log message and writes it to w.
+// Used by defaultLogger and ProgressLogger.
+func formatAndWrite(w io.Writer, level LogLevel, format string, args ...any) {
+	if !logLevel.shouldPrint(level) {
+		return
+	}
+	if !strings.HasSuffix(format, "\n") {
+		format = format + "\n"
+	}
+	str := fmt.Sprintf(format, args...)
+	str = strings.ToUpper(str[:1]) + str[1:]
+	str = level.getPrefix() + str
+	fmt.Fprint(w, str)
+}
+
+type defaultLogger struct{}
+
+func (defaultLogger) Log(level LogLevel, format string, args ...any) {
+	formatAndWrite(level.getOutput(), level, format, args...)
+}
+
 func Infoln(s any) {
 	Logln(LogLevelInfo, s)
 }
@@ -73,48 +94,24 @@ func SafeDebugf(s string, args ...any) {
 	SafeLogf(LogLevelDebug, s, args...)
 }
 
-// SystemInfoLn is like Infoln except it logs to stderr. This should be used
+// SystemInfoln is like Infoln except it logs to stderr. This should be used
 // for system messages such as update notifications
 func SystemInfoln(s any) {
-	loglnTo(stderr, LogLevelInfo, s)
+	currentLogger.Log(LogLevelSystem, "%s\n", fmt.Sprint(s))
 }
 
 // SystemInfof is like Infof except it logs to stderr. This should be used
 // for system messages such as update notifications
 func SystemInfof(s string, args ...any) {
-	logfTo(stderr, LogLevelInfo, s, args...)
+	currentLogger.Log(LogLevelSystem, s, args...)
 }
 
 func Logln(level LogLevel, s any) {
-	loglnTo(level.getOutput(), level, s)
-}
-
-func loglnTo(output io.Writer, level LogLevel, s any) {
-	if logLevel.shouldPrint(level) {
-		str := fmt.Sprintln(s)
-		// Capitalize first letter in string for nicer output, in case it's not already capitalized
-		str = strings.ToUpper(str[:1]) + str[1:]
-		str = level.getPrefix() + str
-		fmt.Fprint(output, str)
-	}
+	currentLogger.Log(level, "%s\n", fmt.Sprint(s))
 }
 
 func Logf(level LogLevel, s string, args ...any) {
-	logfTo(level.getOutput(), level, s, args...)
-}
-
-func logfTo(output io.Writer, level LogLevel, s string, args ...any) {
-	if logLevel.shouldPrint(level) {
-		// Avoid printing incomplete lines
-		if !strings.HasSuffix(s, "\n") {
-			s = s + "\n"
-		}
-		str := fmt.Sprintf(s, args...)
-		// Capitalize first letter in string for nicer output, in case it's not already capitalized
-		str = strings.ToUpper(str[:1]) + str[1:]
-		str = level.getPrefix() + str
-		fmt.Fprint(output, str)
-	}
+	currentLogger.Log(level, s, args...)
 }
 
 func SafeLogln(level LogLevel, s any) {
@@ -133,6 +130,10 @@ func SafeLogf(level LogLevel, s string, args ...any) {
 // is filling, and should be used instead of the standard output functions to prevent
 // progress bars from removing log lines. Once the progress bar is done, the Wait()
 // method should be called.
+//
+// Note: ProgressLogger writes directly to its underlying writer (typically an
+// mpb.Progress instance) and does not route through a custom Logger set via
+// SetLogger. This is necessary to coordinate output with active progress bars.
 type ProgressLogger struct {
 	output io.Writer
 }
@@ -146,37 +147,25 @@ func (pw *ProgressLogger) Wait() {
 }
 
 func (pw *ProgressLogger) Infoln(s any) {
-	if logLevel.shouldPrint(LogLevelInfo) {
-		loglnTo(pw.output, LogLevelInfo, s)
-	}
+	formatAndWrite(pw.output, LogLevelInfo, "%s\n", fmt.Sprint(s))
 }
 
 func (pw *ProgressLogger) Infof(s string, args ...any) {
-	if logLevel.shouldPrint(LogLevelInfo) {
-		logfTo(pw.output, LogLevelInfo, s, args...)
-	}
+	formatAndWrite(pw.output, LogLevelInfo, s, args...)
 }
 
 func (pw *ProgressLogger) Debugln(s any) {
-	if logLevel.shouldPrint(LogLevelDebug) {
-		loglnTo(pw.output, LogLevelDebug, s)
-	}
+	formatAndWrite(pw.output, LogLevelDebug, "%s\n", fmt.Sprint(s))
 }
 
 func (pw *ProgressLogger) Debugf(s string, args ...any) {
-	if logLevel.shouldPrint(LogLevelDebug) {
-		logfTo(pw.output, LogLevelDebug, s, args...)
-	}
+	formatAndWrite(pw.output, LogLevelDebug, s, args...)
 }
 
 func (pw *ProgressLogger) Logln(level LogLevel, s any) {
-	if logLevel.shouldPrint(level) {
-		loglnTo(pw.output, level, s)
-	}
+	formatAndWrite(pw.output, level, "%s\n", fmt.Sprint(s))
 }
 
 func (pw *ProgressLogger) Logf(level LogLevel, s string, args ...any) {
-	if logLevel.shouldPrint(level) {
-		logfTo(pw.output, level, s, args...)
-	}
+	formatAndWrite(pw.output, level, s, args...)
 }

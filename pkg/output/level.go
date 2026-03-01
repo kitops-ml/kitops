@@ -33,6 +33,7 @@ const (
 	LogLevelInfo
 	LogLevelWarn
 	LogLevelError
+	LogLevelSystem // always printed, routed to stderr
 )
 
 var (
@@ -60,7 +61,7 @@ func (l LogLevel) shouldPrint(atLevel LogLevel) bool {
 
 func (l LogLevel) getOutput() io.Writer {
 	switch l {
-	case LogLevelError, LogLevelWarn:
+	case LogLevelError, LogLevelWarn, LogLevelSystem:
 		return stderr
 	default:
 		return stdout
@@ -70,7 +71,7 @@ func (l LogLevel) getOutput() io.Writer {
 func (l LogLevel) getPrefix() string {
 	if logLevel == LogLevelInfo {
 		switch l {
-		case LogLevelInfo:
+		case LogLevelInfo, LogLevelSystem:
 			return ""
 		case LogLevelWarn:
 			return fmt.Sprintf("%s[WARN ] %s", colorWarn, colorNone)
@@ -83,7 +84,7 @@ func (l LogLevel) getPrefix() string {
 			return fmt.Sprintf("%s[TRACE] %s", colorTrace, colorNone)
 		case LogLevelDebug:
 			return fmt.Sprintf("%s[DEBUG] %s", colorDebug, colorNone)
-		case LogLevelInfo:
+		case LogLevelInfo, LogLevelSystem:
 			return fmt.Sprintf("%s[INFO ] %s", colorInfo, colorNone)
 		case LogLevelWarn:
 			return fmt.Sprintf("%s[WARN ] %s", colorWarn, colorNone)
