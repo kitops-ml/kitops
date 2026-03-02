@@ -112,7 +112,7 @@ func downloadFile(
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			plog.Logf(output.LogLevelWarn, "Failed to close response body: %w", err)
+			plog.Logf(output.LogLevelWarn, "Failed to close response body: %s", err)
 		}
 	}()
 
