@@ -867,5 +867,180 @@
     "author": "Kalin Daskalov",
     "published_time": "2025-09-18",
     "title": "Lab Notes: Intel AI Inference Platform MVP"
+  },
+  {
+    "url": "https://www.opensourceforu.com/2025/10/jozu-champions-open-standards-for-ai-with-cncf-supported-kitops-and-modelpack/",
+    "tags": [
+      "KitOps",
+      "ModelPack",
+      "CNCF",
+      "Open Source"
+    ],
+    "author": "Apurba Sen",
+    "published_time": "2025-10-24",
+    "title": "Jozu Champions Open Standards For AI With CNCF-Supported KitOps And ModelPack"
+  },
+  {
+    "url": "https://techintelpro.com/news/ai/enterprise-ai/jozu-pioneers-secure-ai-standard-with-modelpack-kitops",
+    "tags": [
+      "KitOps",
+      "ModelPack",
+      "Enterprise AI"
+    ],
+    "published_time": "2025-10-28",
+    "title": "Jozu Pioneers Secure AI Standard with ModelPack & KitOps"
+  },
+  {
+    "url": "https://www.computerweekly.com/blog/Open-Source-Insider/Jozu-drives-open-source-ModelPack-KitOps-Modelkit",
+    "tags": [
+      "KitOps",
+      "ModelPack",
+      "Open Source"
+    ],
+    "author": "Adrian Bridgwater",
+    "published_time": "2025-10-28",
+    "title": "Jozu drives open source ModelPack & KitOps Modelkit"
+  },
+  {
+    "url": "https://www.dbta.com/Editorial/News-Flashes/Jozu-Supports-Secure-Machine-Learning-Across-the-Enterprise-with-ModelPack-and-KitOps-ModelKit-172237.aspx",
+    "tags": [
+      "KitOps",
+      "ModelPack",
+      "Enterprise AI",
+      "Security"
+    ],
+    "published_time": "2025-11-03",
+    "title": "Jozu Supports Secure Machine Learning Across the Enterprise with ModelPack and KitOps ModelKit"
+  },
+  {
+    "url": "https://jozu.com/blog/top-open-source-tools-for-kubernetes-ml-from-development-to-production",
+    "tags": [
+      "KitOps",
+      "Kubernetes",
+      "Open Source",
+      "MLOps"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-11-04",
+    "title": "Top Open Source Tools for Kubernetes ML: From Development to Production"
+  },
+  {
+    "url": "https://dev.to/jozu/top-open-source-tools-for-kubernetes-ml-from-development-to-production-78b",
+    "tags": [
+      "KitOps",
+      "Kubernetes",
+      "Open Source",
+      "MLOps"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-11-04",
+    "title": "Top Open Source Tools for Kubernetes ML: From Development to Production"
+  },
+  {
+    "url": "https://community.cncf.io/events/details/cncf-cncf-online-programs-presents-cncf-on-demand-from-chaos-to-control-in-enterprise-aiml/",
+    "tags": [
+      "KitOps",
+      "CNCF",
+      "Enterprise AI",
+      "Webinar"
+    ],
+    "author": "Brad Micklea",
+    "published_time": "2025-11-06",
+    "title": "CNCF On-Demand Webinar: From Chaos to Control in Enterprise AI/ML"
+  },
+  {
+    "url": "https://jozu.com/blog/stop-rebuilding-docker-images-deploy-ml-models-at-scale-with-argo-and-kitops",
+    "tags": [
+      "KitOps",
+      "Argo",
+      "Kubernetes",
+      "MLOps"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-11-06",
+    "title": "Stop Rebuilding Docker Images: Deploy ML Models at Scale with Argo and KitOps"
+  },
+  {
+    "url": "https://jozu.com/blog/serving-llms-at-scale-with-kitops-kubeflow-and-kserve",
+    "tags": [
+      "KitOps",
+      "KServe",
+      "Kubeflow",
+      "LLMs"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2025-12-04",
+    "title": "Serving LLMs at Scale with KitOps, Kubeflow, and KServe"
+  },
+  {
+    "url": "https://openssf.org/blog/2025/12/05/recap-openssf-community-day-korea-2025/",
+    "tags": [
+      "KitOps",
+      "OpenSSF",
+      "Security",
+      "AI Supply Chain"
+    ],
+    "published_time": "2025-12-05",
+    "title": "Recap: OpenSSF Community Day Korea 2025"
+  },
+  {
+    "url": "https://www.cncf.io/blog/2025/12/09/exploring-ai-observability-and-community-at-oss-summit-korea-2025/",
+    "tags": [
+      "KitOps",
+      "CNCF",
+      "Open Source",
+      "AI"
+    ],
+    "author": "Akash Jaiswal",
+    "published_time": "2025-12-09",
+    "title": "Exploring AI, Observability and Community at OSS Summit Korea 2025"
+  },
+  {
+    "url": "https://dev.to/astrodevil/kitops-wrap-2025-1n0l",
+    "tags": [
+      "KitOps",
+      "Open Source",
+      "CNCF",
+      "Community"
+    ],
+    "author": "Astrodevil",
+    "published_time": "2025-12-31",
+    "title": "KitOps Wrap 2025"
+  },
+  {
+    "url": "https://jozu.com/blog/instant-rollbacks-on-prem-edge-with-jozu-kitops",
+    "tags": [
+      "KitOps",
+      "Edge",
+      "On-Prem",
+      "MLOps"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2026-01-07",
+    "title": "Instant Rollbacks On-Prem & Edge with Jozu + KitOps"
+  },
+  {
+    "url": "https://jozu.com/blog/audit-logging-for-ml-workflows-with-kitops-and-mlflow",
+    "tags": [
+      "KitOps",
+      "MLflow",
+      "Audit",
+      "MLOps"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2026-01-14",
+    "title": "Audit Logging for ML Workflows with KitOps and MLflow"
+  },
+  {
+    "url": "https://jozu.com/blog/automated-ai-compliance-gates-from-training-data-to-production-with-cryptographic-proof",
+    "tags": [
+      "KitOps",
+      "Compliance",
+      "Security",
+      "MLOps"
+    ],
+    "author": "Jesse Williams",
+    "published_time": "2026-02-24",
+    "title": "Automated AI Compliance Gates: From Training Data to Production with Cryptographic Proof"
   }
 ]
