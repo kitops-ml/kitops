@@ -31,10 +31,10 @@ func formatAndWrite(w io.Writer, level LogLevel, format string, args ...any) {
 	if !logLevel.shouldPrint(level) {
 		return
 	}
-	if !strings.HasSuffix(format, "\n") {
-		format = format + "\n"
-	}
 	str := fmt.Sprintf(format, args...)
+	if !strings.HasSuffix(str, "\n") {
+		str = str + "\n"
+	}
 	str = strings.ToUpper(str[:1]) + str[1:]
 	str = level.getPrefix() + str
 	fmt.Fprint(w, str)
@@ -46,16 +46,16 @@ func (defaultLogger) Log(level LogLevel, format string, args ...any) {
 	formatAndWrite(level.getOutput(), level, format, args...)
 }
 
-func Infoln(s any) {
-	Logln(LogLevelInfo, s)
+func Infoln(s ...any) {
+	Logln(LogLevelInfo, s...)
 }
 
 func Infof(s string, args ...any) {
 	Logf(LogLevelInfo, s, args...)
 }
 
-func Errorln(s any) {
-	Logln(LogLevelError, s)
+func Errorln(s ...any) {
+	Logln(LogLevelError, s...)
 }
 
 func Errorf(s string, args ...any) {
@@ -63,8 +63,8 @@ func Errorf(s string, args ...any) {
 }
 
 // Fatalln is the equivalent of Errorln except it returns a basic error to signal the command has failed
-func Fatalln(s any) error {
-	Logln(LogLevelError, s)
+func Fatalln(s ...any) error {
+	Logln(LogLevelError, s...)
 	return errors.New("failed to run")
 }
 
@@ -74,8 +74,8 @@ func Fatalf(s string, args ...any) error {
 	return errors.New("failed to run")
 }
 
-func Debugln(s any) {
-	Logln(LogLevelDebug, s)
+func Debugln(s ...any) {
+	Logln(LogLevelDebug, s...)
 }
 
 func Debugf(s string, args ...any) {
@@ -84,8 +84,8 @@ func Debugf(s string, args ...any) {
 
 // SafeDebugln is the same as Debugln except it will only print if progress bars
 // are disabled to avoid confusing output
-func SafeDebugln(s any) {
-	SafeLogln(LogLevelDebug, s)
+func SafeDebugln(s ...any) {
+	SafeLogln(LogLevelDebug, s...)
 }
 
 // SafeDebugf is the same as Debugf except it will only print if progress bars
@@ -96,8 +96,8 @@ func SafeDebugf(s string, args ...any) {
 
 // SystemInfoln is like Infoln except it logs to stderr. This should be used
 // for system messages such as update notifications
-func SystemInfoln(s any) {
-	currentLogger.Log(LogLevelSystem, "%s\n", fmt.Sprint(s))
+func SystemInfoln(s ...any) {
+	currentLogger.Log(LogLevelSystem, "%s", fmt.Sprintln(s...))
 }
 
 // SystemInfof is like Infof except it logs to stderr. This should be used
@@ -106,17 +106,17 @@ func SystemInfof(s string, args ...any) {
 	currentLogger.Log(LogLevelSystem, s, args...)
 }
 
-func Logln(level LogLevel, s any) {
-	currentLogger.Log(level, "%s\n", fmt.Sprint(s))
+func Logln(level LogLevel, s ...any) {
+	currentLogger.Log(level, "%s", fmt.Sprintln(s...))
 }
 
 func Logf(level LogLevel, s string, args ...any) {
 	currentLogger.Log(level, s, args...)
 }
 
-func SafeLogln(level LogLevel, s any) {
+func SafeLogln(level LogLevel, s ...any) {
 	if !progressEnabled {
-		Logln(level, s)
+		Logln(level, s...)
 	}
 }
 
@@ -146,24 +146,24 @@ func (pw *ProgressLogger) Wait() {
 	}
 }
 
-func (pw *ProgressLogger) Infoln(s any) {
-	formatAndWrite(pw.output, LogLevelInfo, "%s\n", fmt.Sprint(s))
+func (pw *ProgressLogger) Infoln(s ...any) {
+	formatAndWrite(pw.output, LogLevelInfo, "%s", fmt.Sprintln(s...))
 }
 
 func (pw *ProgressLogger) Infof(s string, args ...any) {
 	formatAndWrite(pw.output, LogLevelInfo, s, args...)
 }
 
-func (pw *ProgressLogger) Debugln(s any) {
-	formatAndWrite(pw.output, LogLevelDebug, "%s\n", fmt.Sprint(s))
+func (pw *ProgressLogger) Debugln(s ...any) {
+	formatAndWrite(pw.output, LogLevelDebug, "%s", fmt.Sprintln(s...))
 }
 
 func (pw *ProgressLogger) Debugf(s string, args ...any) {
 	formatAndWrite(pw.output, LogLevelDebug, s, args...)
 }
 
-func (pw *ProgressLogger) Logln(level LogLevel, s any) {
-	formatAndWrite(pw.output, level, "%s\n", fmt.Sprint(s))
+func (pw *ProgressLogger) Logln(level LogLevel, s ...any) {
+	formatAndWrite(pw.output, level, "%s", fmt.Sprintln(s...))
 }
 
 func (pw *ProgressLogger) Logf(level LogLevel, s string, args ...any) {
