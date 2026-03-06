@@ -79,7 +79,7 @@ func (tc verifyTestCase) withName(name string) verifyTestCase {
 	return tc
 }
 
-func TestVerifyKitfile(t *testing.T) {
+func TestValidateKitfile(t *testing.T) {
 	tests := loadAllTestCasesOrPanic[verifyTestCase](t, filepath.Join("testdata", "validation"))
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -170,9 +170,9 @@ model:
   path: model-files
   license: "license-h"
   parts:
-  - path: part-files
+  - path: part-files-1
     license: "license-f"
-  - path: part-files
+  - path: part-files-2
     license: "license-e"
 datasets:
 - path: dataset
@@ -198,9 +198,9 @@ model:
   path: model-files
   license: MIT
   parts:
-  - path: part-files
+  - path: part-files-1
     license: Apache-2.0
-  - path: part-files
+  - path: part-files-2
     license: MIT
 datasets:
 - path: dataset

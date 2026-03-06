@@ -123,9 +123,6 @@ func readKitfile(modelFile string) (*artifact.KitFile, error) {
 	if err := kitfile.LoadModel(kitfileContentReader); err != nil {
 		return nil, err
 	}
-	if err := kfutils.ValidateKitfile(kitfile); err != nil {
-		return nil, err
-	}
 	return kitfile, nil
 }
 
