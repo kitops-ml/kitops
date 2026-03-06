@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kitops-ml/kitops/pkg/output"
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	"github.com/opencontainers/go-digest"
 	"go.yaml.in/yaml/v3"
@@ -140,16 +141,17 @@ type (
 	}
 )
 
-func (kf *KitFile) LoadModel(kitfileContent io.ReadCloser) error {
+func (kf *KitFile) LoadModel(kitfileContent io.ReadCloser) (err error) {
 	decoder := yaml.NewDecoder(kitfileContent)
 	decoder.KnownFields(true)
 	if err := decoder.Decode(kf); err != nil {
 		return err
 	}
-	if err := kf.Validate(); err != nil {
-		return err
+	warnings, err := kf.Validate()
+	for _, warning := range warnings {
+		output.Logln(output.LogLevelWarn, warning)
 	}
-	return nil
+	return err
 }
 
 func (kf *KitFile) MarshalToJSON() ([]byte, error) {
@@ -171,14 +173,15 @@ func (kf *KitFile) MarshalToYAML() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (kf *KitFile) Validate() error {
+func (kf *KitFile) Validate() (warnings []string, err error) {
+	if kf.ManifestVersion != "1.0.0" {
+		warnings = append(warnings, fmt.Sprintf("Unrecognized manifestVersion %s: treating Kitfile as 1.0.0", kf.ManifestVersion))
+	}
+
 	var errs []string
 	addErr := func(format string, a ...any) {
 		s := fmt.Sprintf(format, a...)
 		errs = append(errs, fmt.Sprintf("  * %s", s))
-	}
-	if kf.ManifestVersion != "1.0.0" {
-		addErr("invalid manifestVersion: expect 1.0.0 but got %s", kf.ManifestVersion)
 	}
 
 	// Map of paths to the component that uses them; used to detect duplicate paths
@@ -287,10 +290,10 @@ func (kf *KitFile) Validate() error {
 	if len(errs) > 0 {
 		// Iterating through the paths map is random; sort to get a consistent message
 		slices.Sort(errs)
-		return fmt.Errorf("errors while validating Kitfile: \n%s", strings.Join(errs, "\n"))
+		return warnings, fmt.Errorf("errors while validating Kitfile: \n%s", strings.Join(errs, "\n"))
 	}
 
-	return nil
+	return warnings, nil
 }
 
 func (kf *KitFile) ToModelPackConfig(diffIDs []digest.Digest) modelspecv1.Model {
