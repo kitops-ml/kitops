@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kitops-ml/kitops/pkg/cmd/config"
 	"github.com/kitops-ml/kitops/pkg/cmd/dev"
 	"github.com/kitops-ml/kitops/pkg/cmd/diff"
 	"github.com/kitops-ml/kitops/pkg/cmd/info"
@@ -167,6 +168,7 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(diff.DiffCommand())
 	rootCmd.AddCommand(kitimport.ImportCommand())
 	rootCmd.AddCommand(kitcache.CacheCommand())
+	rootCmd.AddCommand(config.ConfigCommand())
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

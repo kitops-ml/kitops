@@ -12,4 +12,8 @@ const (
 	setConfigLongDesc  = `Sets a specific configuration key to a given value in the local config.yaml file.
 	If the configuration file or directory does not exist,
 	it will be created automatically in the default cross-platform location.`
+
+	getConfigShortDesc = `Retrieve the value of a configuration key`
+	getConfigLongDesc  = `Retrieves the currently set value for a specific configuration key from the KitOps configuration file. 
+	If the key exists, its value will be printed to standard output. If the key is not found, the command will return an error.`
 )
