@@ -16,4 +16,8 @@ const (
 	getConfigShortDesc = `Retrieve the value of a configuration key`
 	getConfigLongDesc  = `Retrieves the currently set value for a specific configuration key from the KitOps configuration file. 
 	If the key exists, its value will be printed to standard output. If the key is not found, the command will return an error.`
+
+	listConfigShortDesc = `List all saved configuration settings`
+	listConfigLongDesc  = `Prints a complete, alphabetically sorted list of all key-value pairs currently stored in the config.yaml file. 
+	If no configuration file has been created yet, the command will exit quietly without outputting any text.`
 )

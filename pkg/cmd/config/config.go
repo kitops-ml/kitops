@@ -12,20 +12,22 @@ import (
 func setConfig(key, value string) error {
 	path, pathErr := constants.DefaultConfigPath()
 	if pathErr != nil {
-		return fmt.Errorf("Failed to get default path: %w", pathErr)
+		return fmt.Errorf("failed to get default path: %w", pathErr)
 	}
-	configMap := make(map[string]string)
 	configYamlPath := constants.ConfigYamlPath(path)
-	loadConfigErr := loadConfigFile(&configMap, path)
-
-	if loadConfigErr != nil && !errors.Is(loadConfigErr, os.ErrNotExist) {
-		return loadConfigErr
+	configMap, loadConfigErr := loadConfigFile(path)
+	if loadConfigErr != nil {
+		if errors.Is(loadConfigErr, os.ErrNotExist) {
+			configMap = make(map[string]string)
+		} else {
+			return loadConfigErr
+		}
 	}
 
 	configMap[key] = value
 	saveErr := saveSetConfig(configMap, configYamlPath)
 	if saveErr != nil {
-		return fmt.Errorf("Failed to save setting: %w", saveErr)
+		return fmt.Errorf("failed to save setting: %w", saveErr)
 	}
 	return nil
 }
@@ -33,11 +35,11 @@ func setConfig(key, value string) error {
 func saveSetConfig(configMap map[string]string, configYamlPath string) error {
 	yamlConfigMap, marshErr := yaml.Marshal(configMap)
 	if marshErr != nil {
-		return fmt.Errorf("Failed to marshal data: %w", marshErr)
+		return fmt.Errorf("failed to marshal data: %w", marshErr)
 	}
 	writeErr := os.WriteFile(configYamlPath, yamlConfigMap, 0644)
 	if writeErr != nil {
-		return fmt.Errorf("Failed to set to config file: %w", writeErr)
+		return fmt.Errorf("failed to set to config file: %w", writeErr)
 	}
 	return nil
 }
@@ -45,10 +47,9 @@ func saveSetConfig(configMap map[string]string, configYamlPath string) error {
 func getConfig(key string) (string, error) {
 	path, pathErr := constants.DefaultConfigPath()
 	if pathErr != nil {
-		return "", fmt.Errorf("Failed to get default path: %w", pathErr)
+		return "", fmt.Errorf("failed to get default path: %w", pathErr)
 	}
-	configMap := make(map[string]string)
-	err := loadConfigFile(&configMap, path)
+	configMap, err := loadConfigFile(path)
 	if err != nil {
 		return "", err
 	}
@@ -60,20 +61,33 @@ func getConfig(key string) (string, error) {
 	}
 }
 
-func loadConfigFile(configMap *map[string]string, path string) error {
+func listConfig() (map[string]string, error) {
+	path, pathErr := constants.DefaultConfigPath()
+	if pathErr != nil {
+		return nil, fmt.Errorf("failed to get default path: %w", pathErr)
+	}
+	configMap, loadErr := loadConfigFile(path)
+	if loadErr != nil {
+		return nil, loadErr
+	}
+	return configMap, nil
+}
+func loadConfigFile(path string) (map[string]string, error) {
 	configYamlPath := constants.ConfigYamlPath(path)
 	data, readErr := os.ReadFile(configYamlPath)
 
-	if readErr == nil {
-		unmarshErr := yaml.Unmarshal(data, configMap)
-		if unmarshErr != nil {
-			return fmt.Errorf("Failed to unmarshal data: %w", unmarshErr)
+	if readErr != nil {
+		if !errors.Is(readErr, os.ErrNotExist) {
+			return nil, fmt.Errorf("failed to read config file: %w", readErr)
 		}
-	} else if !errors.Is(readErr, os.ErrNotExist) { // if there is an error (readErr != nil) that is not a missing file error
-		return fmt.Errorf("Failed to read config file: %w", readErr)
-	} else {
-		return fmt.Errorf("Config %w", os.ErrNotExist)
+		return nil, fmt.Errorf("config file does not exist: %w", os.ErrNotExist)
 	}
 
-	return nil
+	configMap := make(map[string]string)
+	unmarshErr := yaml.Unmarshal(data, &configMap)
+	if unmarshErr != nil {
+		return nil, fmt.Errorf("failed to unmarshal data: %w", unmarshErr)
+	}
+
+	return configMap, nil
 }
