@@ -1,6 +1,6 @@
 module github.com/kitops-ml/kitops
 
-go 1.24.0
+go 1.25.7
 
 require (
 	github.com/google/licensecheck v0.3.1
@@ -13,8 +13,8 @@ require (
 	github.com/vbauerster/mpb/v8 v8.12.0
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/mod v0.33.0
-	golang.org/x/sync v0.19.0
-	golang.org/x/sys v0.41.0
+	golang.org/x/sync v0.20.0
+	golang.org/x/sys v0.42.0
 	golang.org/x/term v0.40.0
 	golang.org/x/text v0.34.0
 	oras.land/oras-go/v2 v2.6.0
