@@ -20,4 +20,8 @@ const (
 	listConfigShortDesc = `List all saved configuration settings`
 	listConfigLongDesc  = `Prints a complete, alphabetically sorted list of all key-value pairs currently stored in the config.yaml file. 
 	If no configuration file has been created yet, the command will exit quietly without outputting any text.`
+
+	resetConfigShortDesc = `Clear all saved configuration settings`
+	resetConfigLongDesc  = `Permanently removes all key-value pairs from the config.yaml file, returning the CLI to its default, unconfigured state. 
+	Warning: This action is destructive and cannot be undone.`
 )

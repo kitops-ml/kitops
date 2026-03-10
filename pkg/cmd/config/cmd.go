@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +21,7 @@ func ConfigCommand() *cobra.Command {
 	cmd.AddCommand(configSetCommand())
 	cmd.AddCommand(configGetCommand())
 	cmd.AddCommand(configListCommand())
+	cmd.AddCommand(configResetCommand())
 
 	return cmd
 }
@@ -36,8 +39,7 @@ func configSetCommand() *cobra.Command {
 }
 
 func runSetCommand(cmd *cobra.Command, args []string) error {
-	err := setConfig(args[0], args[1])
-	if err != nil {
+	if err := setConfig(args[0], args[1]); err != nil {
 		return output.Fatalf("%s", err)
 	}
 	return nil
@@ -98,4 +100,31 @@ func runListCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func configResetCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "reset",
+		Short: resetConfigShortDesc,
+		Long:  resetConfigLongDesc,
+		RunE:  runResetCommand,
+	}
+	cmd.Args = cobra.NoArgs
+
+	return cmd
+}
+
+func runResetCommand(cmd *cobra.Command, args []string) error {
+	warning := "Warning: this action is destructive and cannot be undone.Proceed? (y/N): "
+
+	choice, choiceErr := util.PromptForInput(warning, false)
+	if choiceErr != nil {
+		return choiceErr
+	}
+
+	if !strings.EqualFold(choice, "y") && !strings.EqualFold(choice, "yes") {
+		return nil
+	}
+
+	return resetConfig()
 }
