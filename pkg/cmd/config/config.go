@@ -38,8 +38,7 @@ func saveConfigFile(configMap map[string]string, configYamlPath string) error {
 	if marshErr != nil {
 		return fmt.Errorf("failed to marshal data: %w", marshErr)
 	}
-	writeErr := os.WriteFile(configYamlPath, yamlConfigMap, 0644)
-	if writeErr != nil {
+	if writeErr := os.WriteFile(configYamlPath, yamlConfigMap, 0644); writeErr != nil {
 		return fmt.Errorf("failed to set to config file: %w", writeErr)
 	}
 	return nil
@@ -50,9 +49,9 @@ func getConfig(key string) (string, error) {
 	if pathErr != nil {
 		return "", fmt.Errorf("failed to get default path: %w", pathErr)
 	}
-	configMap, err := loadConfigFileHelper(path)
-	if err != nil {
-		return "", err
+	configMap, loadErr := loadConfigFileHelper(path)
+	if loadErr != nil {
+		return "", loadErr
 	}
 
 	if val, ok := configMap[key]; ok {
@@ -92,9 +91,8 @@ func resetConfig() error {
 	//clear map
 	configMap = make(map[string]string)
 
-	saveErr := saveConfigFile(configMap, configYamlPath)
-	if saveErr != nil {
-		return fmt.Errorf("failed to save setting: %w", saveErr)
+	if err := saveConfigFile(configMap, configYamlPath); err != nil {
+		return fmt.Errorf("failed to save setting: %w", err)
 	}
 
 	return nil
@@ -121,9 +119,9 @@ func loadConfigFileHelper(path string) (map[string]string, error) {
 }
 
 func pathHelper() (string, string, error) {
-	path, pathErr := constants.DefaultConfigPath()
-	if pathErr != nil {
-		return "", "", fmt.Errorf("failed to get default path: %w", pathErr)
+	path, err := constants.DefaultConfigPath()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get default path: %w", err)
 	}
 	configYamlPath := constants.ConfigYamlPath(path)
 
