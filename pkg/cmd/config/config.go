@@ -4,126 +4,141 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"gopkg.in/yaml.v3"
 )
 
 func setConfig(key, value string) error {
-	path, configYamlPath, err := pathHelper()
+	configYamlPath, err := pathHelper()
 
 	if err != nil {
 		return err
 	}
 
-	configMap, loadConfigErr := loadConfigFileHelper(path)
+	configStruct, loadConfigErr := loadConfigFileHelper(configYamlPath)
 	if loadConfigErr != nil {
-		if errors.Is(loadConfigErr, os.ErrNotExist) {
-			configMap = make(map[string]string)
-		} else {
-			return loadConfigErr
+		return loadConfigErr
+	}
+
+	switch key {
+	case "logLevel":
+		configStruct.LogLevel = value
+	case "progressBars":
+		configStruct.ProgressBars = value
+	case "configHome":
+		configStruct.ConfigHome = value
+	case "verbosity":
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return err
 		}
+		configStruct.Verbosity = intValue
+	default:
+		return fmt.Errorf("invalid config key: %s", key)
 	}
 
-	configMap[key] = value
-	saveErr := saveConfigFile(configMap, configYamlPath)
-	if saveErr != nil {
-		return fmt.Errorf("failed to save setting: %w", saveErr)
-	}
-	return nil
-}
-
-func saveConfigFile(configMap map[string]string, configYamlPath string) error {
-	yamlConfigMap, marshErr := yaml.Marshal(configMap)
-	if marshErr != nil {
-		return fmt.Errorf("failed to marshal data: %w", marshErr)
-	}
-	if writeErr := os.WriteFile(configYamlPath, yamlConfigMap, 0644); writeErr != nil {
-		return fmt.Errorf("failed to set to config file: %w", writeErr)
-	}
-	return nil
-}
-
-func getConfig(key string) (string, error) {
-	path, pathErr := constants.DefaultConfigPath()
-	if pathErr != nil {
-		return "", fmt.Errorf("failed to get default path: %w", pathErr)
-	}
-	configMap, loadErr := loadConfigFileHelper(path)
-	if loadErr != nil {
-		return "", loadErr
-	}
-
-	if val, ok := configMap[key]; ok {
-		return val, nil
-	} else {
-		return "", fmt.Errorf("key %s does not exist", key)
-	}
-}
-
-func listConfig() (map[string]string, error) {
-	path, pathErr := constants.DefaultConfigPath()
-	if pathErr != nil {
-		return nil, fmt.Errorf("failed to get default path: %w", pathErr)
-	}
-	configMap, loadErr := loadConfigFileHelper(path)
-	if loadErr != nil {
-		return nil, loadErr
-	}
-	return configMap, nil
-}
-
-func resetConfig() error {
-	path, configYamlPath, err := pathHelper()
-
-	if err != nil {
-		return err
-	}
-
-	configMap, loadErr := loadConfigFileHelper(path)
-	if loadErr != nil {
-		if errors.Is(loadErr, os.ErrNotExist) {
-			// because resetting a non-existent config file is not really an error
-			return nil
-		}
-		return loadErr
-	}
-	//clear map
-	configMap = make(map[string]string)
-
-	if err := saveConfigFile(configMap, configYamlPath); err != nil {
+	if err := saveConfigFile(configStruct, configYamlPath); err != nil {
 		return fmt.Errorf("failed to save setting: %w", err)
 	}
 
 	return nil
 }
 
-func loadConfigFileHelper(path string) (map[string]string, error) {
-	configYamlPath := constants.ConfigYamlPath(path)
+func getConfig(key string) (string, error) {
+	configYamlPath, err := pathHelper()
+
+	if err != nil {
+		return "", err
+	}
+
+	configStruct, loadErr := loadConfigFileHelper(configYamlPath)
+	if loadErr != nil {
+		return "", loadErr
+	}
+
+	switch key {
+	case "logLevel":
+		return configStruct.LogLevel, nil
+	case "progressBars":
+		return configStruct.ProgressBars, nil
+	case "configHome":
+		return configStruct.ConfigHome, nil
+	case "verbosity":
+		stringValue := strconv.Itoa(configStruct.Verbosity)
+		return stringValue, nil
+	default:
+		return "", fmt.Errorf("invalid config key: %s", key)
+	}
+
+}
+
+func listConfig() (Config, error) {
+	configYamlPath, err := pathHelper()
+
+	if err != nil {
+		return Config{}, err
+	}
+
+	configStruct, loadErr := loadConfigFileHelper(configYamlPath)
+	if loadErr != nil {
+		return Config{}, loadErr
+	}
+
+	return configStruct, nil
+}
+
+func resetConfig() error {
+	configYamlPath, err := pathHelper()
+
+	if err != nil {
+		return err
+	}
+
+	if err := os.Remove(configYamlPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	return nil
+}
+
+func loadConfigFileHelper(configYamlPath string) (Config, error) {
 	data, readErr := os.ReadFile(configYamlPath)
+	var cfg Config
 
 	if readErr != nil {
 		if !errors.Is(readErr, os.ErrNotExist) {
-			return nil, fmt.Errorf("failed to read config file: %w", readErr)
+			return cfg, fmt.Errorf("config file does not exist: %w", readErr)
 		}
-		return nil, fmt.Errorf("config file does not exist: %w", os.ErrNotExist)
+		return cfg, nil
 	}
 
-	configMap := make(map[string]string)
-	unmarshErr := yaml.Unmarshal(data, &configMap)
+	unmarshErr := yaml.Unmarshal(data, &cfg)
 	if unmarshErr != nil {
-		return nil, fmt.Errorf("failed to unmarshal data: %w", unmarshErr)
+		return cfg, fmt.Errorf("failed to unmarshal data: %w", unmarshErr)
 	}
 
-	return configMap, nil
+	return cfg, nil
 }
 
-func pathHelper() (string, string, error) {
+func saveConfigFile(configStruct Config, configYamlPath string) error {
+	yamlconfigStruct, marshErr := yaml.Marshal(configStruct)
+	if marshErr != nil {
+		return fmt.Errorf("failed to marshal data: %w", marshErr)
+	}
+	if writeErr := os.WriteFile(configYamlPath, yamlconfigStruct, 0644); writeErr != nil {
+		return fmt.Errorf("failed to set to config file: %w", writeErr)
+	}
+	return nil
+}
+
+func pathHelper() (string, error) {
 	path, err := constants.DefaultConfigPath()
 	if err != nil {
-		return "", "", fmt.Errorf("failed to get default path: %w", err)
+		return "", fmt.Errorf("failed to get default path: %w", err)
 	}
 	configYamlPath := constants.ConfigYamlPath(path)
 
-	return path, configYamlPath, nil
+	return configYamlPath, nil
 }

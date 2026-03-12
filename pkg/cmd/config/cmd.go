@@ -1,16 +1,23 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 	"github.com/spf13/cobra"
 )
+
+type Config struct {
+	ConfigHome   string `yaml:"configHome" json:"configHome"`
+	Verbosity    int    `yaml:"verbosity" json:"verbosity"`
+	LogLevel     string `yaml:"logLevel" json:"logLevel"`
+	ProgressBars string `yaml:"progressBars" json:"progressBars"`
+}
 
 func ConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -79,7 +86,7 @@ func configListCommand() *cobra.Command {
 }
 
 func runListCommand(cmd *cobra.Command, args []string) error {
-	configMap, err := listConfig()
+	configStruct, err := listConfig()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
@@ -87,17 +94,13 @@ func runListCommand(cmd *cobra.Command, args []string) error {
 		return output.Fatalf("%s", err)
 	}
 
-	keys := make([]string, 0, len(configMap))
+	list, jsonErr := json.MarshalIndent(configStruct, "", " ")
 
-	for k := range configMap {
-		keys = append(keys, k)
+	if jsonErr != nil {
+		return jsonErr
 	}
 
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		fmt.Fprintf(output.GetOut(), "%s: %s\n", k, configMap[k])
-	}
+	output.Infoln(string(list))
 
 	return nil
 }
