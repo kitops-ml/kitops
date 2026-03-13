@@ -2,9 +2,9 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
+
 	"fmt"
-	"os"
+
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/util"
@@ -88,9 +88,6 @@ func configListCommand() *cobra.Command {
 func runListCommand(cmd *cobra.Command, args []string) error {
 	configStruct, err := listConfig()
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
 		return output.Fatalf("%s", err)
 	}
 

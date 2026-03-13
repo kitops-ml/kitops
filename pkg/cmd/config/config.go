@@ -18,7 +18,7 @@ func setConfig(key, value string) error {
 	}
 
 	configStruct, loadConfigErr := loadConfigFileHelper(configYamlPath)
-	if loadConfigErr != nil {
+	if loadConfigErr != nil && !errors.Is(loadConfigErr, os.ErrNotExist) {
 		return loadConfigErr
 	}
 
@@ -109,9 +109,9 @@ func loadConfigFileHelper(configYamlPath string) (Config, error) {
 
 	if readErr != nil {
 		if !errors.Is(readErr, os.ErrNotExist) {
-			return cfg, fmt.Errorf("config file does not exist: %w", readErr)
+			return cfg, readErr
 		}
-		return cfg, nil
+		return cfg, fmt.Errorf("config file does not exist: %w", readErr)
 	}
 
 	unmarshErr := yaml.Unmarshal(data, &cfg)
