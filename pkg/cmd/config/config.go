@@ -11,13 +11,13 @@ import (
 )
 
 func setConfig(key, value string) error {
-	configYamlPath, err := pathHelper()
+	configYamlPath, err := PathHelper()
 
 	if err != nil {
 		return err
 	}
 
-	configStruct, loadConfigErr := loadConfigFileHelper(configYamlPath)
+	configStruct, loadConfigErr := LoadConfigFileHelper(configYamlPath)
 	if loadConfigErr != nil && !errors.Is(loadConfigErr, os.ErrNotExist) {
 		return loadConfigErr
 	}
@@ -47,13 +47,13 @@ func setConfig(key, value string) error {
 }
 
 func getConfig(key string) (string, error) {
-	configYamlPath, err := pathHelper()
+	configYamlPath, err := PathHelper()
 
 	if err != nil {
 		return "", err
 	}
 
-	configStruct, loadErr := loadConfigFileHelper(configYamlPath)
+	configStruct, loadErr := LoadConfigFileHelper(configYamlPath)
 	if loadErr != nil {
 		return "", loadErr
 	}
@@ -75,13 +75,13 @@ func getConfig(key string) (string, error) {
 }
 
 func listConfig() (Config, error) {
-	configYamlPath, err := pathHelper()
+	configYamlPath, err := PathHelper()
 
 	if err != nil {
 		return Config{}, err
 	}
 
-	configStruct, loadErr := loadConfigFileHelper(configYamlPath)
+	configStruct, loadErr := LoadConfigFileHelper(configYamlPath)
 	if loadErr != nil {
 		return Config{}, loadErr
 	}
@@ -90,7 +90,7 @@ func listConfig() (Config, error) {
 }
 
 func resetConfig() error {
-	configYamlPath, err := pathHelper()
+	configYamlPath, err := PathHelper()
 
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func resetConfig() error {
 	return nil
 }
 
-func loadConfigFileHelper(configYamlPath string) (Config, error) {
+func LoadConfigFileHelper(configYamlPath string) (Config, error) {
 	data, readErr := os.ReadFile(configYamlPath)
 	var cfg Config
 
@@ -133,7 +133,7 @@ func saveConfigFile(configStruct Config, configYamlPath string) error {
 	return nil
 }
 
-func pathHelper() (string, error) {
+func PathHelper() (string, error) {
 	path, err := constants.DefaultConfigPath()
 	if err != nil {
 		return "", fmt.Errorf("failed to get default path: %w", err)
