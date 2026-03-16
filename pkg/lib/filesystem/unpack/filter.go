@@ -17,191 +17,22 @@
 package unpack
 
 import (
-	"fmt"
-	"reflect"
-	"slices"
-	"strings"
-
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 )
 
-var validFilterTypes = []string{"kitfile", "model", "datasets", "code", "prompts", "docs"}
+type FilterConf = kitfile.FilterConf
 
-// FilterConf represents filter configuration for unpacking operations.
-type FilterConf struct {
-	BaseTypes []string
-	Filters   []string
-}
-
-func (fc *FilterConf) matches(baseType, field string) bool {
-	return fc.matchesBaseType(baseType) && fc.matchesField(field)
-}
-
-func (fc *FilterConf) matchesBaseType(baseType string) bool {
-	return slices.Contains(fc.BaseTypes, baseType)
-}
-
-func (fc *FilterConf) matchesField(field string) bool {
-	if len(fc.Filters) == 0 {
-		// By default everything matches
-		return true
-	}
-	return slices.Contains(fc.Filters, field)
-}
-
-// ParseFilter parses a filter string and returns a FilterConf.
 func ParseFilter(filter string) (*FilterConf, error) {
-	typesAndIds := strings.Split(filter, ":")
-
-	if len(typesAndIds) > 2 {
-		return nil, fmt.Errorf("invalid filter: should be in format <type1>,<type2>[:<filter1>,<filter2>]")
-	}
-
-	conf := &FilterConf{}
-
-	for filterType := range strings.SplitSeq(typesAndIds[0], ",") {
-		if !slices.Contains(validFilterTypes, filterType) {
-			return nil, fmt.Errorf("invalid filter type %s (must be one of %s)", filterType, strings.Join(validFilterTypes, ", "))
-		}
-		conf.BaseTypes = append(conf.BaseTypes, filterType)
-	}
-
-	// Check for additional filtering based on name/path
-	if len(typesAndIds) == 1 {
-		return conf, nil
-	}
-
-	filters := strings.Split(typesAndIds[1], ",")
-	conf.Filters = filters
-	return conf, nil
+	return kitfile.ParseFilter(filter)
 }
 
-// shouldUnpackLayer determines if we should unpack a layer in a Kitfile by matching
-// fields against the filters. Matching is done against path and name (if present).
-// If filters is empty, we assume everything should be unpacked
-func shouldUnpackLayer(layer any, filters []FilterConf) bool {
-	if len(filters) == 0 {
-		return true
-	}
-	// The type switch below checks for concrete (non-pointer) types. We need to use
-	// reflect to dereference the pointer and get a new interface{} (any) type.
-	if val := reflect.ValueOf(layer); val.Kind() == reflect.Ptr {
-		layer = val.Elem().Interface()
-	}
-
-	switch l := layer.(type) {
-	case artifact.KitFile:
-		for _, filter := range filters {
-			if filter.matchesBaseType("kitfile") {
-				return true
-			}
-		}
-		return false
-	case artifact.Model:
-		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
-	case artifact.ModelPart:
-		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
-	case artifact.Docs:
-		// Docs does not have an ID/name field so we can only match on path
-		return matchesFilters("docs", l.Path, filters)
-	case artifact.DataSet:
-		return matchesFilters("datasets", l.Name, filters) || matchesFilters("datasets", l.Path, filters)
-	case artifact.Code:
-		// Code does not have a ID/name field so we can only match on path
-		return matchesFilters("code", l.Path, filters)
-	case artifact.Prompt:
-		return matchesFilters("prompts", l.Name, filters) || matchesFilters("prompts", l.Path, filters)
-	default:
-		return false
-	}
-}
-
-func matchesFilters(baseType, field string, filterConfs []FilterConf) bool {
-	for _, filterConf := range filterConfs {
-		if filterConf.matches(baseType, field) {
-			return true
-		}
-	}
-	return false
-}
-
-// KitfileContainsMatchingLayer returns true if the given Kitfile contains at least one layer
-// that matches any of the provided filters. If filters is empty, returns true.
-// This reuses shouldUnpackLayer to ensure identical matching semantics.
 func KitfileContainsMatchingLayer(kf *artifact.KitFile, filters []FilterConf) bool {
-	if len(filters) == 0 {
-		return true
-	}
-	if kf == nil {
-		return false
-	}
-
-	// Check if kitfile type itself matches
-	if shouldUnpackLayer(*kf, filters) {
-		return true
-	}
-
-	// Check model
-	if kf.Model != nil {
-		if shouldUnpackLayer(*kf.Model, filters) {
-			return true
-		}
-		for _, part := range kf.Model.Parts {
-			if shouldUnpackLayer(part, filters) {
-				return true
-			}
-		}
-	}
-
-	// Check datasets
-	for _, ds := range kf.DataSets {
-		if shouldUnpackLayer(ds, filters) {
-			return true
-		}
-	}
-
-	// Check code
-	for _, code := range kf.Code {
-		if shouldUnpackLayer(code, filters) {
-			return true
-		}
-	}
-
-	// Check docs
-	for _, doc := range kf.Docs {
-		if shouldUnpackLayer(doc, filters) {
-			return true
-		}
-	}
-
-	// Check prompts
-	for _, prompt := range kf.Prompts {
-		if shouldUnpackLayer(prompt, filters) {
-			return true
-		}
-	}
-
-	return false
+	return kitfile.KitfileContainsMatchingLayer(kf, filters)
 }
 
-// FiltersFromUnpackConf converts a (deprecated) unpackConf to a set of filters to enable supporting the old flags
 func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs bool) []FilterConf {
-	filter := FilterConf{}
-
-	if unpackKitfile {
-		filter.BaseTypes = append(filter.BaseTypes, "kitfile")
-	}
-	if unpackModels {
-		filter.BaseTypes = append(filter.BaseTypes, "model")
-	}
-	if unpackDocs {
-		filter.BaseTypes = append(filter.BaseTypes, "docs")
-	}
-	if unpackDatasets {
-		filter.BaseTypes = append(filter.BaseTypes, "datasets")
-	}
-	if unpackCode {
-		filter.BaseTypes = append(filter.BaseTypes, "code")
-	}
-	return []FilterConf{filter}
+	return kitfile.FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs)
 }
+
+// AGENT_MODIFIED: Human review required before merge

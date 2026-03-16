@@ -33,6 +33,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/external/s3api"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -108,7 +109,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 				return err
 			}
 		}
-		if shouldUnpackLayer(config, opts.FilterConfs) {
+		if kitfile.LayerMatchesAnyFilter(config, opts.FilterConfs) {
 			if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
 				return err
 			}
@@ -139,7 +140,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
 			entry := config.Model
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -148,7 +149,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.ModelPartBaseType:
 			entry := config.Model.Parts[modelPartIdx]
 			modelPartIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -159,7 +160,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			if layerDesc.Annotations[constants.LayerSubtypeAnnotation] == constants.LayerSubtypePrompt {
 				entry := config.Prompts[promptIdx]
 				promptIdx += 1
-				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 					continue
 				}
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -167,7 +168,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			} else {
 				entry := config.Code[codeIdx]
 				codeIdx += 1
-				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 					continue
 				}
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -189,7 +190,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			if entry == nil {
 				continue
 			}
-			if !shouldUnpackLayer(*entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -198,7 +199,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.DocsBaseType:
 			entry := config.Docs[docsIdx]
 			docsIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -234,7 +235,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	// Handle remotely stored files: first build a list so we can show a warning if remote files are skipped
 	remoteFiles := map[string]s3api.S3ObjectReference{}
 	for _, dataset := range config.DataSets {
-		if dataset.RemotePath == "" || !shouldUnpackLayer(dataset, opts.FilterConfs) {
+		if dataset.RemotePath == "" || !kitfile.LayerMatchesAnyFilter(dataset, opts.FilterConfs) {
 			continue
 		}
 		ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
@@ -306,16 +307,16 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	opts.ModelRef = parentRef
 	// Unpack only model, ignore code/datasets
 	if len(opts.FilterConfs) == 0 {
-		modelFilter, err := ParseFilter("model")
+		modelFilter, err := kitfile.ParseFilter("model")
 		if err != nil {
 			// Shouldn't happen, ever
 			return fmt.Errorf("failed to parse filter for parent modelkit: %w", err)
 		}
-		opts.FilterConfs = []FilterConf{*modelFilter}
+		opts.FilterConfs = []kitfile.FilterConf{*modelFilter}
 	} else {
-		var filterConfs []FilterConf
+		var filterConfs []kitfile.FilterConf
 		for _, conf := range opts.FilterConfs {
-			if conf.matchesBaseType("model") {
+			if conf.MatchesBaseType("model") {
 				// Drop any other base types from this filter
 				conf.BaseTypes = []string{"model"}
 				filterConfs = append(filterConfs, conf)
@@ -331,6 +332,8 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 
 	return unpackRecursive(ctx, &opts, append(visitedRefs, ref))
 }
+
+// AGENT_MODIFIED: Human review required before merge
 
 func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) error {
 	configBytes, err := config.MarshalToYAML()

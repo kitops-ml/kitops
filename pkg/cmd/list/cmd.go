@@ -28,7 +28,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -104,7 +104,7 @@ type listOptions struct {
 	format      string
 	template    string
 	filters     []string
-	filterConfs []unpack.FilterConf
+	filterConfs []kitfile.FilterConf
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
@@ -140,7 +140,7 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 
 	// Parse filters using library functionality
 	for _, filter := range opts.filters {
-		filterConf, err := unpack.ParseFilter(filter)
+		filterConf, err := kitfile.ParseFilter(filter)
 		if err != nil {
 			return fmt.Errorf("invalid filter %q: %w", filter, err)
 		}
@@ -247,3 +247,5 @@ func printConfig(opts *listOptions) {
 		output.Debugf("Listing remote model kits in %s", opts.remoteRef.String())
 	}
 }
+
+// AGENT_MODIFIED: Human review required before merge

@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
@@ -44,7 +44,7 @@ func listRemoteKits(ctx context.Context, opts *listOptions) ([]modelInfo, error)
 	return listTags(ctx, repo, opts.remoteRef, opts.filterConfs)
 }
 
-func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []unpack.FilterConf) ([]modelInfo, error) {
+func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []kitfile.FilterConf) ([]modelInfo, error) {
 	var tags []string
 	err := repo.Tags(ctx, "", func(tagsPage []string) error {
 		tags = append(tags, tagsPage...)
@@ -73,7 +73,7 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 	return allInfos, nil
 }
 
-func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []unpack.FilterConf) (*modelInfo, error) {
+func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []kitfile.FilterConf) (*modelInfo, error) {
 	manifestDesc, err := repo.Resolve(ctx, ref.Reference)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve reference %s: %w", ref.Reference, err)
@@ -87,7 +87,7 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 	}
 
 	// Apply filter if filters are provided
-	if !unpack.KitfileContainsMatchingLayer(config, filterConfs) {
+	if !kitfile.KitfileContainsMatchingLayer(config, filterConfs) {
 		return nil, nil
 	}
 
@@ -100,3 +100,5 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 
 	return info, nil
 }
+
+// AGENT_MODIFIED: Human review required before merge

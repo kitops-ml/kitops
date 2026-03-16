@@ -23,7 +23,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 )
@@ -47,7 +47,7 @@ func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) 
 	return allInfo, nil
 }
 
-func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []unpack.FilterConf) ([]modelInfo, error) {
+func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []kitfile.FilterConf) ([]modelInfo, error) {
 	var infos []modelInfo
 	manifestDescs := repo.GetAllModels()
 	for _, manifestDesc := range manifestDescs {
@@ -65,7 +65,7 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []u
 		}
 
 		// Apply filter if filters are provided
-		if !unpack.KitfileContainsMatchingLayer(config, filterConfs) {
+		if !kitfile.KitfileContainsMatchingLayer(config, filterConfs) {
 			continue
 		}
 
@@ -91,3 +91,5 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []u
 	})
 	return infos, nil
 }
+
+// AGENT_MODIFIED: Human review required before merge

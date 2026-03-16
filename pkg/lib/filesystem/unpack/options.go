@@ -20,6 +20,7 @@ import (
 	"oras.land/oras-go/v2/registry"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 )
 
 // UnpackOptions represents the configuration for unpacking operations.
@@ -29,9 +30,11 @@ type UnpackOptions struct {
 	ConfigHome     string
 	UnpackDir      string
 	Filters        []string
-	FilterConfs    []FilterConf
+	FilterConfs    []kitfile.FilterConf
 	ModelRef       *registry.Reference
 	Overwrite      bool
 	IgnoreExisting bool
 	IncludeRemote  bool
 }
+
+// AGENT_MODIFIED: Human review required before merge
