@@ -47,6 +47,7 @@ func (fc *FilterConf) MatchesField(field string) bool {
 	return slices.Contains(fc.Filters, field)
 }
 
+// ParseFilter parses a filter string and returns a FilterConf.
 func ParseFilter(filter string) (*FilterConf, error) {
 	typesAndIds := strings.Split(filter, ":")
 
@@ -63,6 +64,7 @@ func ParseFilter(filter string) (*FilterConf, error) {
 		conf.BaseTypes = append(conf.BaseTypes, filterType)
 	}
 
+	// Check for additional filtering based on name/path
 	if len(typesAndIds) == 1 {
 		return conf, nil
 	}
@@ -173,6 +175,7 @@ func KitfileContainsMatchingLayer(kf *artifact.KitFile, filters []FilterConf) bo
 	return false
 }
 
+// FiltersFromUnpackConf converts a (deprecated) unpackConf to a set of filters to enable supporting the old flags
 func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatasets, unpackDocs bool) []FilterConf {
 	filter := FilterConf{}
 
@@ -193,5 +196,3 @@ func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatase
 	}
 	return []FilterConf{filter}
 }
-
-// AGENT_MODIFIED: Human review required before merge

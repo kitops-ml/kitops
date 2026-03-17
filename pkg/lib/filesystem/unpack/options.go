@@ -36,5 +36,3 @@ type UnpackOptions struct {
 	IgnoreExisting bool
 	IncludeRemote  bool
 }
-
-// AGENT_MODIFIED: Human review required before merge

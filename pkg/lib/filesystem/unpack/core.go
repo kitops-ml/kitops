@@ -333,8 +333,6 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	return unpackRecursive(ctx, &opts, append(visitedRefs, ref))
 }
 
-// AGENT_MODIFIED: Human review required before merge
-
 func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) error {
 	configBytes, err := config.MarshalToYAML()
 	if err != nil {

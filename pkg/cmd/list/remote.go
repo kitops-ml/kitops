@@ -100,5 +100,3 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 
 	return info, nil
 }
-
-// AGENT_MODIFIED: Human review required before merge

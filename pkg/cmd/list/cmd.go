@@ -247,5 +247,3 @@ func printConfig(opts *listOptions) {
 		output.Debugf("Listing remote model kits in %s", opts.remoteRef.String())
 	}
 }
-
-// AGENT_MODIFIED: Human review required before merge

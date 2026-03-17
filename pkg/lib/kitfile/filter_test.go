@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package unpack
+package kitfile
 
 import (
 	"testing"
@@ -155,7 +155,7 @@ func TestShouldUnpackLayer_PromptByName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fc, err := ParseFilter(tt.filter)
 			require.NoError(t, err)
-			result := shouldUnpackLayer(tt.prompt, []FilterConf{*fc})
+			result := LayerMatchesAnyFilter(tt.prompt, []FilterConf{*fc})
 			assert.Equal(t, tt.expect, result)
 		})
 	}

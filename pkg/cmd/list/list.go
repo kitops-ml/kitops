@@ -91,5 +91,3 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []k
 	})
 	return infos, nil
 }
-
-// AGENT_MODIFIED: Human review required before merge
