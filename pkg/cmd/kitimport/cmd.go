@@ -160,13 +160,12 @@ func (opts *importOptions) complete(ctx context.Context, args []string) error {
 		} else if strings.HasPrefix(opts.repo, "mlflow://") {
 			tagRepo = extractTagFromMLFlowURI(opts.repo)
 		} else {
-			repo, err := extractRepoFromURL(opts.repo)
+			var err error
 			tagRepo, err = extractRepoFromURL(opts.repo)
 			if err != nil {
 				output.Errorf("Could not generate tag from URL: %s", err)
 				return fmt.Errorf("use flag --tag to set a tag for ModelKit")
 			}
-			tagRepo = repo
 		}
 		tagRepo = strings.ToLower(tagRepo)
 		opts.tag = fmt.Sprintf("%s:latest", tagRepo)
