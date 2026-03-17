@@ -176,13 +176,18 @@ func verifyChecksum(folder, filename string, checksums map[string]string) error 
 	}
 
 	filePath := filepath.Join(folder, filename)
-	fileData, err := os.ReadFile(filePath)
+	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to read file %s: %w", filePath, err)
+		return fmt.Errorf("failed to open file %s: %w", filePath, err)
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return fmt.Errorf("failed to compute checksum for %s: %w", filePath, err)
 	}
 
-	hash := sha256.Sum256(fileData)
-	computedChecksum := hex.EncodeToString(hash[:])
+	computedChecksum := hex.EncodeToString(hash.Sum(nil))
 
 	if computedChecksum != expectedChecksum {
 		return fmt.Errorf("checksum mismatch for %s: expected %s, got %s", filename, expectedChecksum, computedChecksum)
