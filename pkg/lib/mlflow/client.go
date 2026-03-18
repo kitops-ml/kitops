@@ -38,28 +38,22 @@ const (
 
 	// Run lifecycle states
 	RunStatusFinished = "FINISHED"
-	RunStatusRunning  = "RUNNING"
-	RunStatusFailed   = "FAILED"
-	RunStatusKilled   = "KILLED"
 )
 
 // RunInfo contains metadata for a MLFlow run, as returned by the Tracking API.
 type RunInfo struct {
-	RunID          string `json:"run_id"`
-	RunName        string `json:"run_name"`
-	ExperimentID   string `json:"experiment_id"`
-	Status         string `json:"status"`
-	StartTime      int64  `json:"start_time"`
-	EndTime        int64  `json:"end_time"`
-	ArtifactURI    string `json:"artifact_uri"`
-	LifecycleStage string `json:"lifecycle_stage"`
+	RunID        string `json:"run_id"`
+	RunName      string `json:"run_name"`
+	ExperimentID string `json:"experiment_id"`
+	Status       string `json:"status"`
+	StartTime    int64  `json:"start_time"`
+	EndTime      int64  `json:"end_time"`
 }
 
-// RunData contains params, metrics, and tags for a run.
+// RunData contains params and metrics for a run.
 type RunData struct {
 	Params  []RunParam  `json:"params"`
 	Metrics []RunMetric `json:"metrics"`
-	Tags    []RunTag    `json:"tags"`
 }
 
 // RunParam is a key-value parameter logged to a run.
@@ -70,16 +64,8 @@ type RunParam struct {
 
 // RunMetric is a logged metric value.
 type RunMetric struct {
-	Key       string  `json:"key"`
-	Value     float64 `json:"value"`
-	Timestamp int64   `json:"timestamp"`
-	Step      int64   `json:"step"`
-}
-
-// RunTag is a key-value tag on a run.
-type RunTag struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
 }
 
 // Run is the full run object from the MLFlow API.
@@ -167,9 +153,7 @@ func (c *Client) listArtifactsRecursive(ctx context.Context, runID, artifactPath
 	}
 
 	var body struct {
-		Files     []ArtifactFileInfo `json:"files"`
-		RootURI   string             `json:"root_uri"`
-		NextToken string             `json:"next_page_token"`
+		Files []ArtifactFileInfo `json:"files"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		return nil, fmt.Errorf("failed to decode MLFlow artifacts list response: %w", err)
@@ -193,19 +177,17 @@ func (c *Client) listArtifactsRecursive(ctx context.Context, runID, artifactPath
 
 // DownloadArtifactURL returns the URL to download an artifact file.
 // This delegates to the tracking server's artifact proxy endpoint.
-func (c *Client) DownloadArtifactURL(runID, artifactPath string) string {
-	u, _ := url.Parse(c.trackingURI)
+func (c *Client) DownloadArtifactURL(runID, artifactPath string) (string, error) {
+	u, err := url.Parse(c.trackingURI)
+	if err != nil {
+		return "", fmt.Errorf("invalid tracking URI: %w", err)
+	}
 	u.Path = path.Join(u.Path, "get-artifact")
 	q := u.Query()
 	q.Set("run_id", runID)
 	q.Set("path", artifactPath)
 	u.RawQuery = q.Encode()
-	return u.String()
-}
-
-// TrackingURI returns the base URI of the connected MLFlow tracking server.
-func (c *Client) TrackingURI() string {
-	return c.trackingURI
+	return u.String(), nil
 }
 
 // doGet executes an authenticated GET request against the MLFlow REST API.
