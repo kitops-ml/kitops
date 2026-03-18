@@ -34,7 +34,7 @@ flowchart LR
 
 ## Prerequisites
 
-- **KitOps CLI** installed — follow the [KitOps installation guide](../cli/installation.md).
+- **KitOps CLI** installed — follow the [KitOps installation guide](/docs/cli/installation/).
 - Access to an **OCI-compatible registry** (for example, `ghcr.io`, ECR, GCR, Harbor, Docker Hub, or JFrog Artifactory).
 - A **Kubeflow cluster** with the **Model Registry** component installed. See Kubeflow’s [Model Registry getting started guide](https://www.kubeflow.org/docs/components/model-registry/getting-started/).
 - `kubectl` configured for the cluster and rights to create or use registry credentials (Kubernetes Secrets).
@@ -49,7 +49,7 @@ For local cluster testing, you can use tools like `minikube` or `kind` with regi
 
 ### 1. Install and verify the Kit CLI
 
-Follow the official [installation instructions](../cli/installation.md) for your OS (Homebrew, ZIP/TAR, or build-from-source).
+Follow the official [installation instructions](/docs/cli/installation/) for your OS (Homebrew, ZIP/TAR, or build-from-source).
 
 Verify the binary is available:
 
@@ -127,7 +127,7 @@ This builds a local ModelKit that is ready to be pushed.
 
 ### 4. Push the ModelKit to an OCI registry
 
-First log in to the registry (only needed once per environment). The `kit` command examples below show typical flags; if you see errors, confirm the exact subcommands/flags for your version of KitOps in the [CLI reference](../cli/cli-reference.md):
+First log in to the registry (only needed once per environment). The `kit` command examples below show typical flags; if you see errors, confirm the exact subcommands/flags for your version of KitOps in the [CLI reference](/docs/cli/cli-reference/):
 
 ```bash
 kit login <registry> -u "<REGISTRY_USER>" -p "<REGISTRY_PASSWORD>"
@@ -148,7 +148,7 @@ Then push the tagged ModelKit:
 kit push <registry>/<repo-namespace>/my-modelkit:0.1.0
 ```
 
-**Note:** The `kit` examples are illustrative. Confirm exact subcommands/flags for your installed KitOps CLI version in `../cli/cli-reference.md`.
+**Note:** The `kit` commands shown here are illustrative. Confirm exact subcommands/flags for your installed KitOps CLI version in the [CLI reference](/docs/cli/cli-reference/).
 
 At this point you have:
 
@@ -212,9 +212,9 @@ Common patterns for **Kubeflow-side authentication** include:
 ## Links and References
 
 - **KitOps docs**
-  - [Install KitOps CLI](../cli/installation.md)
-  - [Kit CLI reference](../cli/cli-reference.md)
-  - [Getting started with ModelKits](../get-started.md)
+  - [Install KitOps CLI](/docs/cli/installation/)
+  - [Kit CLI reference](/docs/cli/cli-reference/)
+  - [Getting started with ModelKits](/docs/get-started/)
 - **Kubeflow Model Registry**
   - [Getting started](https://www.kubeflow.org/docs/components/model-registry/getting-started/)
   - [Python client reference](https://www.kubeflow.org/docs/components/model-registry/reference/python-client/)
