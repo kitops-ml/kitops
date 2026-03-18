@@ -78,12 +78,6 @@ func ParseMLFlowURI(rawURI string) (*ParsedURI, error) {
 	}, nil
 }
 
-// isPathKeyword returns true if the segment is a well-known first path segment
-// rather than a host name.
-func isPathKeyword(seg string) bool {
-	return seg == "experiments" || seg == "runs"
-}
-
 // resolveTrackingURI turns a raw host into a full tracking URI, falling back to
 // the MLFLOW_TRACKING_URI env var and finally the default.
 func resolveTrackingURI(host string) string {
