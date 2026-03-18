@@ -18,17 +18,20 @@ package pack
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	cmdoptions "github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -86,6 +89,13 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 			return nil, fmt.Errorf("Failed to resolve referenced modelkit %s: %w", kitfile.Model.Path, err)
 		}
 		extraLayerPaths = util.LayerPathsFromKitfile(parentKitfile)
+
+		baseDigest, err := resolveBaseDigest(ctx, opts.configHome, kitfile.Model.Path)
+		if err != nil {
+			output.Debugf("Skipping base digest resolution: %v", err)
+		} else if baseDigest != "" {
+			kitfile.Model.BaseDigest = baseDigest
+		}
 	}
 
 	ignore, err := ignore.NewFromContext(opts.contextDir, kitfile, extraLayerPaths...)
@@ -110,6 +120,37 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 		return nil, err
 	}
 	return manifestDesc, nil
+}
+
+func resolveBaseDigest(ctx context.Context, configHome, baseRef string) (string, error) {
+	ref, _, err := artifact.ParseReference(baseRef)
+	if err != nil {
+		return "", nil
+	}
+
+	localRepo, err := local.NewLocalRepo(constants.StoragePath(configHome), ref)
+	if err != nil {
+		return "", nil
+	}
+
+	desc, _, _, err := util.ResolveManifestAndConfig(ctx, localRepo, ref.Reference)
+	if err == nil {
+		return desc.Digest.String(), nil
+	}
+	if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
+		return "", nil
+	}
+
+	repository, err := remote.NewRepository(ctx, ref.Registry, ref.Repository, cmdoptions.DefaultNetworkOptions(configHome))
+	if err != nil {
+		return "", nil
+	}
+
+	desc, _, _, err = util.ResolveManifestAndConfig(ctx, repository, ref.Reference)
+	if err != nil {
+		return "", nil
+	}
+	return desc.Digest.String(), nil
 }
 
 func readKitfile(modelFile string) (*artifact.KitFile, error) {
