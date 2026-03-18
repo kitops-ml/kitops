@@ -25,8 +25,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -61,8 +63,15 @@ func DownloadArtifacts(
 		}
 
 		artifactPath := f.Path
-		destPath := filepath.Join(destDir, filepath.FromSlash(artifactPath))
-		downloadURL := client.DownloadArtifactURL(runID, artifactPath)
+		localPath := filepath.FromSlash(artifactPath)
+		if _, _, err := filesystem.VerifySubpath(destDir, localPath); err != nil {
+			return fmt.Errorf("unsafe artifact path %q: %w", artifactPath, err)
+		}
+		destPath := filepath.Join(destDir, localPath)
+		downloadURL, err := client.DownloadArtifactURL(runID, artifactPath)
+		if err != nil {
+			return fmt.Errorf("failed to build download URL for %s: %w", artifactPath, err)
+		}
 		fileSize := f.FileSize
 
 		errs.Go(func() error {
@@ -130,43 +139,22 @@ func findOrCreateSubdir(parent *kfgen.DirectoryListing, name, path string) *kfge
 	return &parent.Subdirs[len(parent.Subdirs)-1]
 }
 
-// splitPath splits a slash-separated artifact path into components.
+// splitPath splits a slash-separated artifact path into its components.
 func splitPath(p string) []string {
-	var parts []string
-	for _, seg := range filepath.SplitList(p) {
-		parts = append(parts, seg)
+	if p == "" {
+		return nil
 	}
-	// SplitList works for OS paths; for artifact paths (always '/') do it manually
-	if len(parts) == 1 && parts[0] == p {
-		// just split on /
-		parts = nil
-		cur := ""
-		for _, ch := range p {
-			if ch == '/' {
-				if cur != "" {
-					parts = append(parts, cur)
-					cur = ""
-				}
-			} else {
-				cur += string(ch)
-			}
-		}
-		if cur != "" {
-			parts = append(parts, cur)
+	var parts []string
+	for _, seg := range strings.Split(p, "/") {
+		if seg != "" {
+			parts = append(parts, seg)
 		}
 	}
 	return parts
 }
 
 func joinPath(parts []string) string {
-	result := ""
-	for i, p := range parts {
-		if i > 0 {
-			result += "/"
-		}
-		result += p
-	}
-	return result
+	return strings.Join(parts, "/")
 }
 
 func downloadArtifact(
