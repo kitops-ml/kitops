@@ -36,6 +36,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2/errdef"
 )
 
 // runPack compresses and stores a modelkit based on a Kitfile. Returns an error if packing
@@ -125,30 +126,40 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 func resolveBaseDigest(ctx context.Context, configHome, baseRef string) (string, error) {
 	ref, _, err := artifact.ParseReference(baseRef)
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("failed to parse base reference: %w", err)
 	}
 
 	localRepo, err := local.NewLocalRepo(constants.StoragePath(configHome), ref)
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("failed to create local repository: %w", err)
 	}
 
 	desc, _, _, err := util.ResolveManifestAndConfig(ctx, localRepo, ref.Reference)
 	if err == nil {
 		return desc.Digest.String(), nil
 	}
+	// Expected cases: fallback to remote
 	if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
 		return "", nil
+	}
+	if errors.Is(err, errdef.ErrNotFound) || errors.Is(err, errdef.ErrMissingReference) {
+		// Reference not found locally, try remote
+	} else {
+		// Unexpected local error (IO issues, corruption, etc.)
+		return "", fmt.Errorf("failed to resolve base digest locally: %w", err)
 	}
 
 	repository, err := remote.NewRepository(ctx, ref.Registry, ref.Repository, cmdoptions.DefaultNetworkOptions(configHome))
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("failed to create remote repository: %w", err)
 	}
 
 	desc, _, _, err = util.ResolveManifestAndConfig(ctx, repository, ref.Reference)
 	if err != nil {
-		return "", nil
+		if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to resolve base digest remotely: %w", err)
 	}
 	return desc.Digest.String(), nil
 }
