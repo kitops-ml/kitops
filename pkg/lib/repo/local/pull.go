@@ -129,6 +129,10 @@ func (l *localRepo) pullNode(ctx context.Context, src oras.ReadOnlyTarget, desc 
 		return nil
 	}
 
+	if err := l.EnsureDirs(desc); err != nil {
+		return fmt.Errorf("failed to create blob directory: %w", err)
+	}
+
 	blob, err := src.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed to fetch: %w", err)
@@ -237,7 +241,7 @@ func (l *localRepo) downloadFile(desc ocispec.Descriptor, blob io.ReadCloser, p 
 }
 
 func (l *localRepo) ensurePullDirs() error {
-	blobsPath := filepath.Join(l.storagePath, ocispec.ImageBlobsDir, "sha256")
+	blobsPath := filepath.Join(l.storagePath, ocispec.ImageBlobsDir)
 	if err := os.MkdirAll(blobsPath, 0755); err != nil {
 		return err
 	}

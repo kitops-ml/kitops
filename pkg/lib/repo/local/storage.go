@@ -113,7 +113,7 @@ func (s *LocalStore) getStorePath() string {
 }
 
 func BlobPathForManifest(store LocalStorage, desc ocispec.Descriptor) string {
-	return filepath.Join(store.getStorePath(), "blobs", "sha256", desc.Digest.Encoded())
+	return filepath.Join(store.getStorePath(), ocispec.ImageBlobsDir, desc.Digest.Algorithm().String(), desc.Digest.Encoded())
 }
 
 // findStoragePaths walks the filesystem rooted at storageRoot looking for index.json
