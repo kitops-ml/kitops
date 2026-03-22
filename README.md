@@ -14,6 +14,7 @@
 - [KitOps Architecture](#kitops-architecture)
 - [Security and Compliance](#security-and-compliance)
 - [KitOps by Role](#kitops-by-role)
+- [Integrations](#integrations)
 - [Community and Support](#join-kitops-community)
 
 ## What is KitOps?
@@ -40,10 +41,10 @@ KitOps is also the enterprise implementation of the [CNCF ModelPack specificatio
 2. **Pack your first ModelKit**: Either:
    * **Import from HuggingFace**: Pull models directly from HuggingFace into a ModelKit with [HuggingFace Import](https://kitops.org/docs/hf-import/).
    * Navigate to your project directory and run `kit init .` to auto-generate a Kitfile, then follow the [Getting Started](https://kitops.org/docs/get-started/) guide to pack, push, and pull.
-3. **Push it to your registry**: Use `kit push` to start using your existing enterprise registry as a secure and curated registry for AI agents, models, and MCP Servers.
+3. **Push it to your registry**: Use `kit push` to start using your existing enterprise registry as a secure and curated registry for AI agents, models, and MCP servers.
 4. **Explore pre-built ModelKits**: [Try quick starts](https://jozu.ml/organization/jozu-quickstarts) for LLMs, computer vision models, and more.
 
-For those who prefer to build from source, follow [these steps](https://kitops.org/docs/cli/installation/#🛠️-install-from-source) to get the latest version from our repository.
+For those who prefer to build from source, follow [these steps](https://kitops.org/docs/cli/installation/#build-sources) to get the latest version from our repository.
 
 ## How Teams Use KitOps
 
