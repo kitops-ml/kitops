@@ -93,8 +93,12 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 
 		baseDigest, err := resolveBaseDigest(ctx, opts.configHome, kitfile.Model.Path)
 		if err != nil {
-			output.Debugf("Skipping base digest resolution: %v", err)
+			output.Logf(output.LogLevelWarn, "failed to resolve base digest, keeping existing value: %v", err)
 		} else if baseDigest != "" {
+			if kitfile.Model.BaseDigest != "" && kitfile.Model.BaseDigest != baseDigest {
+				output.Logf(output.LogLevelWarn, "overriding user-specified baseDigest %s with resolved %s",
+					kitfile.Model.BaseDigest, baseDigest)
+			}
 			kitfile.Model.BaseDigest = baseDigest
 		}
 	}
