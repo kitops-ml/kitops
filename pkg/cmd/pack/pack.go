@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	cmdoptions "github.com/kitops-ml/kitops/pkg/cmd/options"
@@ -128,6 +129,10 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 }
 
 func resolveBaseDigest(ctx context.Context, configHome, baseRef string) (string, error) {
+	if strings.HasPrefix(baseRef, "sha256:") {
+		return baseRef, nil
+	}
+
 	ref, _, err := artifact.ParseReference(baseRef)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse base reference: %w", err)
@@ -142,7 +147,7 @@ func resolveBaseDigest(ctx context.Context, configHome, baseRef string) (string,
 	if err == nil {
 		return desc.Digest.String(), nil
 	}
-	// Expected cases: fallback to remote
+	// Expected cases: no base digest resolved locally (skip pinning, no remote fallback)
 	if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
 		return "", nil
 	}
