@@ -113,7 +113,7 @@ This video shows how KitOps streamlines collaboration between data scientists, d
 
 KitOps provides built-in security primitives for organizations that need to establish and maintain chain-of-custody and provenance for their AI/ML assets:
 
-* **Immutable digests** - Every ModelKit component is SHA-256 hashed. Any modification to any file causes unpack to fail.
+* **Immutable digests** - Every ModelKit component is SHA-256 hashed. Any modification to any file is detected via OCI digest verification when the artifact is pulled or fetched, and the tampered artifact is rejected.
 * **Cryptographic signatures** - Sign ModelKits with [Cosign](https://github.com/sigstore/cosign) (key-based or keyless via OIDC). Unsigned or tampered ModelKits can be blocked in CI/CD.
 * **AI Bill of Materials** - ModelKits provide a structured inventory of all components (model weights, datasets, code, configs) with version tracking, serving as the foundation for AI SBOMs.
 * **Transparency logging** - Combine with [Rekor](https://github.com/sigstore/rekor) for append-only signature records.
