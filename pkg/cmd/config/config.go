@@ -4,18 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"gopkg.in/yaml.v3"
 )
 
-func setConfig(key, value string) error {
-	configYamlPath, err := PathHelper()
+func setConfig(key, value, path string) error {
 
-	if err != nil {
-		return err
-	}
+	configYamlPath := constants.ConfigYamlPath(path)
 
 	configStruct, loadConfigErr := LoadConfigFileHelper(configYamlPath)
 	if loadConfigErr != nil && !errors.Is(loadConfigErr, os.ErrNotExist) {
@@ -27,8 +25,6 @@ func setConfig(key, value string) error {
 		configStruct.LogLevel = value
 	case "progressBars":
 		configStruct.ProgressBars = value
-	case "configHome":
-		configStruct.ConfigHome = value
 	case "verbosity":
 		intValue, err := strconv.Atoi(value)
 		if err != nil {
@@ -46,12 +42,8 @@ func setConfig(key, value string) error {
 	return nil
 }
 
-func getConfig(key string) (string, error) {
-	configYamlPath, err := PathHelper()
-
-	if err != nil {
-		return "", err
-	}
+func getConfig(key, path string) (string, error) {
+	configYamlPath := constants.ConfigYamlPath(path)
 
 	configStruct, loadErr := LoadConfigFileHelper(configYamlPath)
 	if loadErr != nil {
@@ -63,8 +55,6 @@ func getConfig(key string) (string, error) {
 		return configStruct.LogLevel, nil
 	case "progressBars":
 		return configStruct.ProgressBars, nil
-	case "configHome":
-		return configStruct.ConfigHome, nil
 	case "verbosity":
 		stringValue := strconv.Itoa(configStruct.Verbosity)
 		return stringValue, nil
@@ -74,12 +64,8 @@ func getConfig(key string) (string, error) {
 
 }
 
-func listConfig() (Config, error) {
-	configYamlPath, err := PathHelper()
-
-	if err != nil {
-		return Config{}, err
-	}
+func listConfig(path string) (Config, error) {
+	configYamlPath := constants.ConfigYamlPath(path)
 
 	configStruct, loadErr := LoadConfigFileHelper(configYamlPath)
 	if loadErr != nil {
@@ -89,12 +75,8 @@ func listConfig() (Config, error) {
 	return configStruct, nil
 }
 
-func resetConfig() error {
-	configYamlPath, err := PathHelper()
-
-	if err != nil {
-		return err
-	}
+func resetConfig(path string) error {
+	configYamlPath := constants.ConfigYamlPath(path)
 
 	if err := os.Remove(configYamlPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
@@ -127,18 +109,14 @@ func saveConfigFile(configStruct Config, configYamlPath string) error {
 	if marshErr != nil {
 		return fmt.Errorf("failed to marshal data: %w", marshErr)
 	}
+
+	configDir := filepath.Dir(configYamlPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
 	if writeErr := os.WriteFile(configYamlPath, yamlconfigStruct, 0644); writeErr != nil {
 		return fmt.Errorf("failed to set to config file: %w", writeErr)
 	}
 	return nil
-}
-
-func PathHelper() (string, error) {
-	path, err := constants.DefaultConfigPath()
-	if err != nil {
-		return "", fmt.Errorf("failed to get default path: %w", err)
-	}
-	configYamlPath := constants.ConfigYamlPath(path)
-
-	return configYamlPath, nil
 }

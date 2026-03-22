@@ -5,15 +5,14 @@ import (
 
 	"fmt"
 
-	"strings"
-
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 type Config struct {
-	ConfigHome   string `yaml:"configHome" json:"configHome"`
 	Verbosity    int    `yaml:"verbosity" json:"verbosity"`
 	LogLevel     string `yaml:"logLevel" json:"logLevel"`
 	ProgressBars string `yaml:"progressBars" json:"progressBars"`
@@ -46,7 +45,12 @@ func configSetCommand() *cobra.Command {
 }
 
 func runSetCommand(cmd *cobra.Command, args []string) error {
-	if err := setConfig(args[0], args[1]); err != nil {
+	ctx := cmd.Context()
+	path, ok := ctx.Value(constants.ConfigKey{}).(string)
+	if !ok {
+		return fmt.Errorf("failed to retrieve config path from context")
+	}
+	if err := setConfig(args[0], args[1], path); err != nil {
 		return output.Fatalf("%s", err)
 	}
 	return nil
@@ -65,7 +69,12 @@ func configGetCommand() *cobra.Command {
 }
 
 func runGetCommand(cmd *cobra.Command, args []string) error {
-	val, err := getConfig(args[0])
+	ctx := cmd.Context()
+	path, ok := ctx.Value(constants.ConfigKey{}).(string)
+	if !ok {
+		return fmt.Errorf("failed to retrieve config path from context")
+	}
+	val, err := getConfig(args[0], path)
 	if err != nil {
 		return output.Fatalf("%s", err)
 	}
@@ -86,7 +95,12 @@ func configListCommand() *cobra.Command {
 }
 
 func runListCommand(cmd *cobra.Command, args []string) error {
-	configStruct, err := listConfig()
+	ctx := cmd.Context()
+	path, ok := ctx.Value(constants.ConfigKey{}).(string)
+	if !ok {
+		return fmt.Errorf("failed to retrieve config path from context")
+	}
+	configStruct, err := listConfig(path)
 	if err != nil {
 		return output.Fatalf("%s", err)
 	}
@@ -126,5 +140,11 @@ func runResetCommand(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return resetConfig()
+	ctx := cmd.Context()
+	path, ok := ctx.Value(constants.ConfigKey{}).(string)
+	if !ok {
+		return fmt.Errorf("failed to retrieve config path from context")
+	}
+
+	return resetConfig(path)
 }

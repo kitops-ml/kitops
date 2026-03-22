@@ -72,7 +72,7 @@ func RunCommand() *cobra.Command {
 		Short: shortDesc,
 		Long:  longDesc,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			
+
 			configHome, err := getConfigHomePath(opts)
 			if err != nil {
 				output.Errorf("Failed to read base config directory")
@@ -111,10 +111,6 @@ func RunCommand() *cobra.Command {
 				setVerbosity(opts.verbosity)
 			} else {
 				setVerbosity(configStruct.Verbosity)
-			}
-
-			if !cmd.Flags().Changed("config") && configStruct.ConfigHome != "" && os.Getenv(constants.KitopsHomeEnvVar) == "" {
-				configHome = configStruct.ConfigHome
 			}
 
 			ctx := context.WithValue(cmd.Context(), constants.ConfigKey{}, configHome)
@@ -218,7 +214,7 @@ func getConfigHomePath(opts *rootOptions) (string, error) {
 
 	defaultHome, defaultHomeErr := constants.DefaultConfigPath()
 	if defaultHomeErr != nil {
-		return "" ,defaultHomeErr
+		return "", defaultHomeErr
 	}
 
 	output.Debugf("Using default config directory: %s", defaultHome)
