@@ -72,6 +72,8 @@ func RunCommand() *cobra.Command {
 		Short: shortDesc,
 		Long:  longDesc,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			output.SetOut(cmd.OutOrStdout())
+			output.SetErr(cmd.ErrOrStderr())
 
 			configHome, err := getConfigHomePath(opts)
 			if err != nil {
@@ -86,9 +88,6 @@ func RunCommand() *cobra.Command {
 			if loadErr != nil && !errors.Is(loadErr, os.ErrNotExist) {
 				return loadErr
 			}
-
-			output.SetOut(cmd.OutOrStdout())
-			output.SetErr(cmd.ErrOrStderr())
 
 			if cmd.Flags().Changed("log-level") || configStruct.LogLevel == "" {
 				if err := output.SetLogLevelFromString(opts.loglevel); err != nil {
