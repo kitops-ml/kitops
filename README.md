@@ -23,7 +23,7 @@ KitOps is a CNCF open source tool for packaging, versioning, and securely sharin
 
 Built on the same [OCI (Open Container Initiative)](https://opencontainers.org/) technology that underlies containers, KitOps packages everything your model needs for development or production into a versioned and layered artifact stored in your existing container registry. It integrates with all your AI/ML, CI/CD, and DevOps tools.
 
-KitOps is the preferred solution for packaging, versioning, and managing AI assets in security-conscious enterprises, governments, and cloud operators who need to self-host AI models and agents.
+As part of the Kubernetes AI/ML technology stack, KitOps is the preferred solution for packaging, versioning, and managing AI assets in security-conscious enterprises, governments, and cloud operators who need to self-host AI models and agents.
 
 ### KitOps and the CNCF
 
@@ -86,16 +86,17 @@ KitOps can also create [ModelPack](https://github.com/modelpack/model-spec)-comp
 
 ### Kitfile
 
-A [Kitfile](https://kitops.org/docs/kitfile/kf-overview/) defines your ModelKit. Written in YAML, it maps where each artifact lives and how it fits into the project. You can write one by hand or generate one automatically with `kit init`.
+A [Kitfile](https://kitops.org/docs/kitfile/kf-overview/) defines where each artifact lives in your ModelKit. You can generate one automatically with `kit init`.
 
 ### Kit CLI
 
 The [Kit CLI](https://kitops.org/docs/cli/cli-reference/) lets you create, manage, run, and deploy ModelKits. Key commands include:
 
 * `kit pack` - Package your project into a ModelKit (add `--use-model-pack` for ModelPack format)
-* `kit push` / `kit pull` - Share ModelKits through any OCI registry
 * `kit unpack` - Extract all or specific layers from a ModelKit
+* `kit push` / `kit pull` - Share ModelKits through any OCI registry
 * `kit init` - Auto-generate a Kitfile from an existing project directory
+* `kit diff` - Compare differences between two ModelKits
 * `kit list` - List available ModelKits and ModelPacks
 * `kit inspect` - View the contents of a ModelKit without unpacking
 
@@ -111,7 +112,7 @@ This video shows how KitOps streamlines collaboration between data scientists, d
 
 ## Security and Compliance
 
-KitOps provides built-in security primitives for organizations that need to establish and maintain chain-of-custody and provenance for their AI/ML assets:
+KitOps provides artifact and project metadata for organizations that need to establish and maintain chain-of-custody and provenance for their AI/ML assets:
 
 * **Immutable digests** - Every ModelKit component is SHA-256 hashed. Any modification to any file is detected via OCI digest verification when the artifact is pulled or fetched, and the tampered artifact is rejected.
 * **Cryptographic signatures** - Sign ModelKits with [Cosign](https://github.com/sigstore/cosign) (key-based or keyless via OIDC). Unsigned or tampered ModelKits can be blocked in CI/CD.
@@ -123,7 +124,7 @@ These properties make ModelKits suitable for compliance frameworks that require 
 
 Learn more: [Securing Your Model Supply Chain](https://kitops.org/docs/security/)
 
-KitOps is also the core of **[Jozu Hub](https://jozu.com/)** that adds centralized policy administration, five-layer security scanning, signed attestations, and tamper-evident audit logs. Jozu Hub installs behind your firewall and works with your existing OCI registry in private cloud, datacenter, or air-gapped environments.
+KitOps is also used by **[Jozu Hub](https://jozu.com/)**, that adds centralized policy administration, five-layer security scanning, signed attestations, and tamper-evident audit logs. Jozu Hub installs behind your firewall and works with your existing OCI registry in private cloud, datacenter, or air-gapped environments.
 
 ## KitOps by Role
 
