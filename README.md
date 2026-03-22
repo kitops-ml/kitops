@@ -96,7 +96,7 @@ The [Kit CLI](https://kitops.org/docs/cli/cli-reference/) lets you create, manag
 * `kit push` / `kit pull` - Share ModelKits through any OCI registry
 * `kit unpack` - Extract all or specific layers from a ModelKit
 * `kit init` - Auto-generate a Kitfile from an existing project directory
-* `kit dev` - Run an LLM locally for testing
+* `kit list` - List available ModelKits and ModelPacks
 * `kit inspect` - View the contents of a ModelKit without unpacking
 
 ### PyKitOps Python SDK
