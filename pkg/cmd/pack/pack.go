@@ -18,21 +18,27 @@ package pack
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	cmdoptions "github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2/errdef"
 )
 
 // runPack compresses and stores a modelkit based on a Kitfile. Returns an error if packing
@@ -79,6 +85,7 @@ func runPack(ctx context.Context, options *packOptions) error {
 
 func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, localRepo local.LocalRepo) (*ocispec.Descriptor, error) {
 	var extraLayerPaths []string
+	var subject *ocispec.Descriptor
 	if kitfile.Model != nil && artifact.IsModelKitReference(kitfile.Model.Path) {
 		baseRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 		parentKitfile, err := kfutils.ResolveKitfile(ctx, opts.configHome, kitfile.Model.Path, baseRef)
@@ -86,6 +93,13 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 			return nil, fmt.Errorf("Failed to resolve referenced modelkit %s: %w", kitfile.Model.Path, err)
 		}
 		extraLayerPaths = util.LayerPathsFromKitfile(parentKitfile)
+
+		baseDesc, err := resolveBaseManifestDescriptor(ctx, opts.configHome, kitfile.Model.Path)
+		if err != nil {
+			output.Logf(output.LogLevelWarn, "failed to resolve base manifest descriptor for OCI subject: %v", err)
+		} else if baseDesc != nil {
+			subject = baseDesc
+		}
 	}
 
 	ignore, err := ignore.NewFromContext(opts.contextDir, kitfile, extraLayerPaths...)
@@ -105,11 +119,59 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 		ModelFormat: modelFormat,
 		Compression: compression,
 		LayerFormat: mediatype.TarFormat,
+		Subject:     subject,
 	})
 	if err != nil {
 		return nil, err
 	}
 	return manifestDesc, nil
+}
+
+func resolveBaseManifestDescriptor(ctx context.Context, configHome, baseRef string) (*ocispec.Descriptor, error) {
+	if strings.HasPrefix(baseRef, "sha256:") {
+		parsedDigest, err := digest.Parse(baseRef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse digest-only base reference: %w", err)
+		}
+		return &ocispec.Descriptor{MediaType: ocispec.MediaTypeImageManifest, Digest: parsedDigest}, nil
+	}
+
+	ref, _, err := artifact.ParseReference(baseRef)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse base reference: %w", err)
+	}
+
+	localRepo, err := local.NewLocalRepo(constants.StoragePath(configHome), ref)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create local repository: %w", err)
+	}
+
+	desc, _, _, err := util.ResolveManifestAndConfig(ctx, localRepo, ref.Reference)
+	if err == nil {
+		return &desc, nil
+	}
+	if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
+		return nil, nil
+	}
+	if !errors.Is(err, errdef.ErrNotFound) && !errors.Is(err, errdef.ErrMissingReference) {
+		return nil, fmt.Errorf("failed to resolve base descriptor locally: %w", err)
+	}
+
+	repository, err := remote.NewRepository(ctx, ref.Registry, ref.Repository, cmdoptions.DefaultNetworkOptions(configHome))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create remote repository: %w", err)
+	}
+
+	desc, _, _, err = util.ResolveManifestAndConfig(ctx, repository, ref.Reference)
+	if err != nil {
+		if errors.Is(err, util.ErrNoKitfile) || errors.Is(err, util.ErrNotAModelKit) {
+			return nil, nil
+		}
+		output.Logf(output.LogLevelWarn,
+			"failed to resolve base descriptor, skipping subject linkage: %v", err)
+		return nil, nil
+	}
+	return &desc, nil
 }
 
 func readKitfile(modelFile string) (*artifact.KitFile, error) {
