@@ -1,9 +1,5 @@
 # kitops-ts
 
-[![npm version](https://img.shields.io/npm/v/@kitops/kitops-ts)](https://www.npmjs.com/package/@kitops/kitops-ts)
-[![CI](https://github.com/kitops-ml/kitops-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/kitops-ml/kitops-ts/actions/workflows/ci.yml)
-[![License](https://img.shields.io/npm/l/@kitops/kitops-ts)](https://github.com/kitops-ml/kitops-ts/blob/main/LICENSE)
-
 **kitops-ts** is a TypeScript/Node.js SDK for the [KitOps](https://kitops.org) CLI. It provides a type-safe functional API for packing, pushing, pulling, and inspecting ModelKits — without having to shell out manually.
 
 Similar to [pykitops](https://github.com/kitops-ml/pykitops) but for TypeScript/JavaScript.
@@ -29,7 +25,6 @@ await push('ghcr.io/my-org/my-model:v1.0.0');
 - [Getting Started](./getting-started.md) — Installation, requirements, and a quick start guide
 - [API Reference](./api-reference.md) — Full documentation for all commands and types
 - [Examples](./examples.md) — Annotated walkthroughs of common workflows
-- [Contributing](./contributing.md) — How to contribute to kitops-ts
 
 ## Related
 
