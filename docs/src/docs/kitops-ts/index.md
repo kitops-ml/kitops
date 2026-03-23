@@ -20,12 +20,6 @@ await pack('.', { tag: 'ghcr.io/my-org/my-model:v1.0.0' });
 await push('ghcr.io/my-org/my-model:v1.0.0');
 ```
 
-## Documentation
-
-- [Getting Started](./getting-started.md) — Installation, requirements, and a quick start guide
-- [API Reference](./api-reference.md) — Full documentation for all commands and types
-- [Examples](./examples.md) — Annotated walkthroughs of common workflows
-
 ## Related
 
 - [KitOps](https://kitops.org) — The ModelKit standard and CLI

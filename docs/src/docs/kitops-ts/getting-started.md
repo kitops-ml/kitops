@@ -55,7 +55,3 @@ try {
 |---|---|
 | `KITOPS_CLI_PATH` | Full path to the `kit` binary. Defaults to `kit` (resolved via `PATH`). |
 
-## Next steps
-
-- [API Reference](./api-reference.md) — All available commands and their options
-- [Examples](./examples.md) — Common workflow walkthroughs
