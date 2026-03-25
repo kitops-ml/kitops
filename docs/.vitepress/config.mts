@@ -126,7 +126,7 @@ export default defineConfig({
           { text: 'Class Reference', link: '/docs/pykitops/reference/' },
         ]
       },
-    {
+      {
         text: 'Kit TypeScript Library',
         items: [
           { text: 'Overview', link: '/docs/kitops-ts' },
