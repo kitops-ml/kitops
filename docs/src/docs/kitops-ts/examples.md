@@ -63,6 +63,12 @@ Pack and publish a ModelKit from a CI environment. Reads credentials and version
 ```javascript
 import { login, pack, push, logout } from '@kitops/kitops-ts';
 
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
 const registry = requireEnv('REGISTRY');
 const user = requireEnv('REGISTRY_USER');
 const pass = requireEnv('REGISTRY_PASS');
@@ -143,23 +149,59 @@ await logout(prodRegistry);
 Package a prompt dataset for LLM fine-tuning. The `prompts` layer is designed for versioning prompt templates, instruction sets, and RLHF preference data alongside model weights and training code — keeping the entire fine-tuning run fully reproducible.
 
 ```javascript
+import { writeFile, access, mkdir } from 'fs/promises';
+import { stringify as toYaml } from 'yaml';
 import { login, pack, push, logout } from '@kitops/kitops-ts';
 
-// Generates a Kitfile if one isn't already committed, then packs and pushes.
-const kitfile = {
-  manifestVersion: '1.0.0',
-  package: { name: 'llm-finetune', version: '0.2.0' },
-  model: { name: 'base-checkpoint', path: './checkpoints' },
-  prompts: [
-    { path: './prompts/system.txt', description: 'System prompt template' },
-    { path: './prompts/instructions.jsonl', description: 'Instruction-following examples' },
-    { path: './prompts/preferences.jsonl', description: 'RLHF preference pairs' },
-  ],
-  datasets: [
-    { name: 'training-corpus', path: './data/train.jsonl' },
-  ],
-  code: [{ path: './train.py', description: 'Fine-tuning entry point' }],
-};
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
+const registry = process.env.REGISTRY ?? 'registry.example.com';
+const user = requireEnv('REGISTRY_USER');
+const pass = requireEnv('REGISTRY_PASS');
+const version = process.env.MODEL_VERSION ?? 'latest';
+
+const ref = `${registry}/org/llm-finetune:v${version}`;
+const workdir = './fine-tune';
+
+// Ensure the working directory exists before writing into it.
+await mkdir(workdir, { recursive: true });
+
+// Generate a Kitfile if one isn't already committed.
+const kitfilePath = `${workdir}/Kitfile`;
+const kitfileExists = await access(kitfilePath).then(() => true).catch(() => false);
+
+if (!kitfileExists) {
+  const kitfile = {
+    manifestVersion: '1.0.0',
+    package: { name: 'llm-finetune', version },
+    model: { name: 'base-checkpoint', path: './checkpoints' },
+    prompts: [
+      { path: './prompts/system.txt', description: 'System prompt template' },
+      { path: './prompts/instructions.jsonl', description: 'Instruction-following examples' },
+      { path: './prompts/preferences.jsonl', description: 'RLHF preference pairs' },
+    ],
+    datasets: [
+      { name: 'training-corpus', path: './data/train.jsonl' },
+    ],
+    code: [{ path: './train.py', description: 'Fine-tuning entry point' }],
+  };
+
+  await writeFile(kitfilePath, toYaml(kitfile, { lineWidth: 0 }));
+  console.log('Kitfile generated.');
+}
+
+await login(registry, user, pass);
+
+try {
+  await pack(workdir, { tag: ref });
+  await push(ref);
+} finally {
+  await logout(registry);
+}
 ```
 
 **Run:**

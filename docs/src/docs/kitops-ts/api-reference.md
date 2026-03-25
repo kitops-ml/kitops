@@ -435,7 +435,7 @@ console.log(`kit ${version} (${commit})`);
 
 ---
 
-### `kit(command, args, options?)`
+### `kit(command, args, stdin?, options?)`
 
 Low-level escape hatch for running any `kit` subcommand directly. Useful when the higher-level wrappers don't expose a flag you need.
 
@@ -445,6 +445,7 @@ Low-level escape hatch for running any `kit` subcommand directly. Useful when th
 |---|---|---|
 | `command` | `KitCommand` | The `kit` subcommand to run (e.g. `'pack'`, `'push'`). |
 | `args` | `string[]` | Arguments to pass to the subcommand. |
+| `stdin` | `string` | Optional data to write to stdin before closing it (e.g. a password). |
 | `options.cwd` | `string` | Working directory for the spawned process. |
 
 **Returns** `Promise<ExecResult>`
@@ -460,55 +461,10 @@ type ExecResult = {
 **Example**
 
 ```typescript
-const result = await kit('pack', ['.', '--tag', 'my-model:latest'], { cwd: '/path/to/project' });
+// Run a subcommand in a specific directory
+const result = await kit('pack', ['.', '--tag', 'my-model:latest'], undefined, { cwd: '/path/to/project' });
 console.log(result.stdout);
-```
 
----
-
-## Types
-
-### `FilterFlag`
-
-A filter expression used by `unpack` and `info` to select specific layers or individual paths within a layer.
-
-```typescript
-type Layer = 'model' | 'datasets' | 'code' | 'docs' | 'prompts'
-
-// Accepted formats:
-// 'model'                     — entire model layer
-// 'datasets:training'         — named dataset
-// 'docs:./README.md'          — single file within the docs layer
-// 'model,datasets:validation' — comma-separated (multiple layers)
-type FilterFlag = string
-```
-
-### `Kitfile`
-
-Represents a parsed `Kitfile`. See [KitOps Kitfile reference](https://kitops.org/docs/kitfile/kf-overview/) for full field documentation.
-
-```typescript
-type Kitfile = {
-  manifestVersion?: string;
-  package?: Package;
-  model?: Model;
-  datasets?: Dataset[];
-  code?: Code[];
-  docs?: Doc[];
-  prompts?: Prompt[];
-}
-```
-
-### `Manifest`
-
-OCI image manifest returned by `inspect`.
-
-```typescript
-type Manifest = {
-  schemaVersion: number;
-  mediaType: string;
-  config: ManifestDescriptor;
-  layers: ManifestDescriptor[];
-  annotations?: ManifestAnnotations;
-}
+// Pass credentials via stdin
+const result = await kit('login', ['registry.example.com', '--username', 'user'], process.env.REGISTRY_PASS!);
 ```
