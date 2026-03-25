@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -63,6 +64,11 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 	if err != nil {
 		return nil, fmt.Errorf("error creating manifest: %w", err)
 	}
+
+	if manifest.Annotations == nil {
+		manifest.Annotations = map[string]string{}
+	}
+	manifest.Annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	// If not storing a Kitfile, save the Kitfile to an annotation since it will be lost otherwise
 	if opts.ModelFormat == mediatype.ModelPackFormat {
