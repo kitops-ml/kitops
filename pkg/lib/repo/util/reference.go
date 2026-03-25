@@ -84,16 +84,15 @@ func GetKitfileForManifest(ctx context.Context, store oras.ReadOnlyTarget, manif
 	case mediatype.KitFormat:
 		return GetConfig(ctx, store, manifest.Config)
 	case mediatype.ModelPackFormat:
-		// TODO: can we (try to) generate a Kitfile from a ModelPack manifest?
-		if manifest.Annotations == nil || manifest.Annotations[constants.KitfileJsonAnnotation] == "" {
-			return nil, ErrNoKitfile
+		if manifest.Annotations != nil && manifest.Annotations[constants.KitfileJsonAnnotation] != "" {
+			kfstring := manifest.Annotations[constants.KitfileJsonAnnotation]
+			kitfile := &artifact.KitFile{}
+			if err := json.Unmarshal([]byte(kfstring), kitfile); err != nil {
+				return nil, fmt.Errorf("failed to parse config: %w", err)
+			}
+			return kitfile, nil
 		}
-		kfstring := manifest.Annotations[constants.KitfileJsonAnnotation]
-		kitfile := &artifact.KitFile{}
-		if err := json.Unmarshal([]byte(kfstring), kitfile); err != nil {
-			return nil, fmt.Errorf("failed to parse config: %w", err)
-		}
-		return kitfile, nil
+		return GenerateKitfileForModelPack(manifest)
 	default:
 		// Won't happen but necessary for completeness
 		return nil, fmt.Errorf("unknown artifact type")
