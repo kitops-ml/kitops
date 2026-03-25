@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 
 import ParameterTooltip from '@/components/ParameterTooltip.vue'
 import Accordion from '@/components/ui/Accordion.vue'
@@ -30,8 +30,6 @@ const parameters = ref({ ...(props.parameters || DEFAULT_PARAMS_VALUES) })
 
 const isChat = ref(session.value.type === 'chat')
 const isModalOpen = ref(true)
-const isVisible = ref(false)
-
 const closeModal = () => {
   isModalOpen.value = false
   requestAnimationFrame(() => {
@@ -44,13 +42,13 @@ const onBackdropClick = () => {
   closeModal()
 }
 
-onMounted(() => {
-  // We need to add the animation delay so this doesn't have a race condition
-  setTimeout(()=>{
-    document.body.classList.add('overflow-hidden')
-    // @TODO: use the actual `onanimationend` event instead of the static timer
-  }, 150)
-})
+const onModalAnimationEnd = (event: AnimationEvent) => {
+  if (event.animationName !== 'modalShow' || !isModalOpen.value) {
+    return
+  }
+
+  document.body.classList.add('overflow-hidden')
+}
 
 onBeforeUnmount(() => {
   closeModal()
@@ -113,7 +111,7 @@ const onChatToggle = () => {
     <div class="max-h-screen overflow-y-auto">
       <div class="modal-content"
         @click.stop
-        @animationend="isVisible = true">
+        @animationend="onModalAnimationEnd">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl">Settings</h2>
           <button class="text-off-white hocus:text-gold" @click="closeModal()">
