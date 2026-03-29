@@ -248,13 +248,22 @@ jobs:
           fi
           gh release create "${release_args[@]}"
 
+      - name: Generate a token for docs update PR
+        id: generate-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859   ## v3.0.0
+        with:
+          app-id: ${{ vars.KITOPS_BOT_ID }}
+          private-key: ${{ secrets.KITOPS_BOT_PRIVATE_KEY }}
+          owner: kitops-ml
+
       - name: Generate CLI documentation
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           TAG_NAME: ${{ inputs.release_tag || github.ref_name}}
         run: |
           pushd kitops
+          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${GITHUB_TOKEN}" | base64)"
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           PR_BRANCH="${{ github.ref_name }}-docs-update"
           git fetch origin main
