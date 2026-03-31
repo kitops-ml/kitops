@@ -27,7 +27,7 @@ type Layer =
 
 ### `FilterFlag`
 
-A filter expression used by [`unpack`](../api-reference.md#unpackdestination-flags) and [`info`](../api-reference.md#inforepository-tag-flags) to select specific layers or paths within a layer.
+A filter expression used by [`unpack`](api-reference.md#unpackdestination-flags) and [`info`](api-reference.md#inforepository-tag-flags) to select specific layers or paths within a layer.
 
 ```typescript
 type FilterFlag = string  // see accepted formats below
@@ -84,7 +84,7 @@ type ExecResult = {
 
 ### `ModelKit`
 
-A single entry returned by [`list`](../api-reference.md#listrepository).
+A single entry returned by [`list`](api-reference.md#listrepository).
 
 ```typescript
 type ModelKit = {
@@ -270,7 +270,7 @@ type TLSFlags = {
 
 ### `InitResult`
 
-Returned by [`init`](../api-reference.md#initpath-flags).
+Returned by [`init`](api-reference.md#initpath-flags).
 
 ```typescript
 type InitResult = {
@@ -283,7 +283,7 @@ type InitResult = {
 
 ### `InspectResult`
 
-Returned by [`inspect`](../api-reference.md#inspectrepository-tag-flags).
+Returned by [`inspect`](api-reference.md#inspectrepository-tag-flags).
 
 ```typescript
 type InspectResult = {
@@ -305,7 +305,7 @@ type InspectResult = {
 
 ### `VersionResult`
 
-Returned by [`version`](../api-reference.md#version).
+Returned by [`version`](api-reference.md#version).
 
 ```typescript
 type VersionResult = {
@@ -327,7 +327,7 @@ type VersionResult = {
 
 ### `DiffResult`
 
-Returned by [`diff`](../api-reference.md#diffmodelkit1-modelkit2-flags).
+Returned by [`diff`](api-reference.md#diffmodelkit1-modelkit2-flags).
 
 ```typescript
 type DiffResult = {
@@ -379,7 +379,7 @@ type DiffLayerEntry = {
 
 ## Kitfile Types
 
-These types mirror the Kitfile schema. They are returned by [`info`](../api-reference.md#inforepository-tag-flags) and [`inspect`](../api-reference.md#inspectrepository-tag-flags), and can also be used when constructing Kitfiles programmatically.
+These types mirror the Kitfile schema. They are returned by [`info`](api-reference.md#inforepository-tag-flags) and [`inspect`](api-reference.md#inspectrepository-tag-flags), and can also be used when constructing Kitfiles programmatically.
 
 ### `Kitfile`
 
@@ -427,31 +427,49 @@ type Package = {
 
 ---
 
-### `Model`
+### `LayerCommons`
 
-Model artifact definition in a Kitfile.
+Base interface extended by all Kitfile layer types. Provides the common `path` and `description` fields.
 
 ```typescript
-interface Model {
-  name?: string;
-  path?: string;
-  parts?: ModelPart[];
-  license?: string;
+interface LayerCommons {
+  path: string;
   description?: string;
-  format?: string;
-  parameters?: Record<string, string | number>;
 }
 ```
 
 | Property | Type | Description |
 |---|---|---|
-| `name` | `string` | Display name for the model. |
-| `path` | `string` | Path to the model file or directory. |
-| `parts` | [`ModelPart[]`](#modelpart) | Sub-parts of a composite model (e.g. split weight files). |
-| `license` | `string` | SPDX license identifier. |
+| `path` | `string` | Path to the artifact file or directory. |
 | `description` | `string` | Human-readable description. |
-| `format` | `string` | Model format (e.g. `'gguf'`, `'safetensors'`). |
-| `parameters` | `Record<string, string \| number>` | Arbitrary model parameters (e.g. context length, quantization). |
+
+---
+
+### `Model`
+
+Model artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
+
+```typescript
+interface Model extends LayerCommons {
+  name?: string;
+  framework?: string;
+  version?: string;
+  license?: string;
+  parts?: ModelPart[];
+  parameters?: unknown;
+}
+```
+
+| Property | Type | Description |
+|---|---|---|
+| `path` | `string` | Path to the model file or directory. *(from `LayerCommons`)* |
+| `description` | `string` | Human-readable description. *(from `LayerCommons`)* |
+| `name` | `string` | Display name for the model. |
+| `framework` | `string` | ML framework (e.g. `'pytorch'`, `'tensorflow'`). |
+| `version` | `string` | Model version. |
+| `license` | `string` | SPDX license identifier. |
+| `parts` | [`ModelPart[]`](#modelpart) | Sub-parts of a composite model (e.g. split weight files). |
+| `parameters` | `unknown` | Arbitrary model parameters. |
 
 ---
 
@@ -461,72 +479,93 @@ A sub-part of a composite model.
 
 ```typescript
 interface ModelPart {
+  name?: string;
   path?: string;
   type?: string;
-  license?: string;
 }
 ```
+
+| Property | Type | Description |
+|---|---|---|
+| `name` | `string` | Display name for this part. |
+| `path` | `string` | Path to the part file. |
+| `type` | `string` | Part type identifier. |
 
 ---
 
 ### `Dataset`
 
-Dataset artifact definition in a Kitfile.
+Dataset artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
 
 ```typescript
-interface Dataset {
+interface Dataset extends LayerCommons {
   name?: string;
-  path?: string;
-  description?: string;
   license?: string;
   parameters?: unknown;
 }
 ```
 
+| Property | Type | Description |
+|---|---|---|
+| `path` | `string` | Path to the dataset file or directory. *(from `LayerCommons`)* |
+| `description` | `string` | Human-readable description. *(from `LayerCommons`)* |
+| `name` | `string` | Display name for the dataset. |
+| `license` | `string` | SPDX license identifier. |
+| `parameters` | `unknown` | Arbitrary dataset parameters. |
+
 ---
 
 ### `Code`
 
-Source code artifact definition in a Kitfile.
+Source code artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
 
 ```typescript
-interface Code {
-  path: string;
-  description: string;
+interface Code extends LayerCommons {
+  license?: string;
 }
 ```
+
+| Property | Type | Description |
+|---|---|---|
+| `path` | `string` | Path to the source code file or directory. *(from `LayerCommons`)* |
+| `description` | `string` | Human-readable description. *(from `LayerCommons`)* |
+| `license` | `string` | SPDX license identifier. |
 
 ---
 
 ### `Doc`
 
-Documentation artifact definition in a Kitfile.
+Documentation artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
 
 ```typescript
-interface Doc {
-  path: string;
-  description: string;
-}
+interface Doc extends LayerCommons {}
 ```
+
+| Property | Type | Description |
+|---|---|---|
+| `path` | `string` | Path to the documentation file or directory. *(from `LayerCommons`)* |
+| `description` | `string` | Human-readable description. *(from `LayerCommons`)* |
 
 ---
 
 ### `Prompt`
 
-Prompt artifact definition in a Kitfile.
+Prompt artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
 
 ```typescript
-interface Prompt {
-  path?: string;
-  description?: string;
-}
+interface Prompt extends LayerCommons {}
 ```
+
+| Property | Type | Description |
+|---|---|---|
+| `path` | `string` | Path to the prompt file or directory. *(from `LayerCommons`)* |
+| `description` | `string` | Human-readable description. *(from `LayerCommons`)* |
 
 ---
 
 ## Manifest Types
 
-These types represent the OCI image manifest returned by [`inspect`](../api-reference.md#inspectrepository-tag-flags).
+These types represent the OCI image manifest returned by [`inspect`](api-reference.md#inspectrepository-tag-flags).
 
 ### `Manifest`
 

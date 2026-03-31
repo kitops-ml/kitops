@@ -32,7 +32,7 @@ const yaml = buildKitfile({
   model: {
     name: 'sentiment-classifier',
     path: './model/weights.pt',
-    format: 'pytorch',
+    framework: 'pytorch',
   },
   datasets: [
     { name: 'training-set', path: './data/train.csv', license: 'CC-BY-4.0' },
