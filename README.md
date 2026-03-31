@@ -157,6 +157,7 @@ KitOps works with the tools you already use:
 * [KServe](https://kitops.org/docs/integrations/kserve/) - Serve models directly from ModelKits
 * [Kubeflow Pipelines](https://kitops.org/docs/integrations/kubeflow/) - Use ModelKits in ML pipeline steps
 * [ModelPack](https://kitops.org/docs/integrations/modelpack/) - CNCF vendor-neutral packaging format
+* [KubeStellar Console](https://console.kubestellar.io/missions/install-kitops) - Guided installation with pre-flight checks, validation, and troubleshooting
 
 See the full [integration list](https://kitops.org/docs/integrations/integrations/).
 
