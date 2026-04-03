@@ -57,9 +57,9 @@ onUnmounted(() => {
 <div class="mt-32 md:mt-40 px-6 md:px-12 text-center content-container">
   <div class="relative">
     <div class="bg-radial from-[--alpha(var(--color-gold)/30%)] via-[--alpha(#996931/5%)] to-transparent from-0% to-60% absolute size-full lg:size-160 top-1/2 left-1/2 -translate-1/2"></div>
-    <h1 class="z-0 relative mt-4! font-medium!">The Enterprise Model Registry <br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">for Secure AI</span></h1>
+    <h1 class="z-0 relative mt-4! font-medium!">The Enterprise Registry for <br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">Models, Agents, and MCP Servers</span></h1>
     <h2 class="z-0 relative font-bold! font-sans! text-3xl! my-6!">Secure. Portable. No Lock‑In.</h2>
-    <p class="z-0 relative h4 font-normal! text-off-white!">The only model registry that works anywhere containers run — from public cloud to the most locked‑down air‑gapped environments.</p>
+    <p class="z-0 relative h4 font-normal! text-off-white!">The only AI registry that packages and governs models, agent skills, and MCP servers as OCI artifacts — from public cloud to the most locked‑down air‑gapped environments.</p>
   </div>
 
   <div class="flex flex-col lg:flex-row justify-center items-center gap-10 mt-10 md:mt-14 xl:mt-22">
@@ -139,8 +139,8 @@ onUnmounted(() => {
 <div class="my-32 md:my-40 xl:my-60 px-6 md:px-12 text-center max-w-[1152px] content-container">
   <h2>Why Kitops exists</h2>
   <div class="p1 space-y-8! mt-8 max-w-4xl mx-auto">
-    <p>Enterprise AI teams face three problems with traditional model registries: <strong>security gaps, vendor lock‑in, and deployment friction</strong>.<br>KitOps solves them all.</p>
-    <p>Unlike proprietary registries that trap you in closed ecosystems, KitOps stores models, datasets, code, and configs as OCI artifacts in <strong>your</strong> container registries — Docker Hub, ECR, GCR, Harbor, Artifactory, and beyond.</p>
+    <p>Enterprise AI is no longer just models. Teams are deploying agents, MCP servers, skills, and policies — all of which need the same versioning, security, and governance as container images. KitOps packages them all as standard OCI artifacts in the registries you already run.</p>
+    <p>From proprietary repos that trap your AI artifacts in closed ecosystems to fragile ad‑hoc approaches that bypass your security toolchain — KitOps brings models, agent skills, MCP servers, datasets, and configuration under one governed workflow.</p>
     <p>With 100,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on <strong>security, compliance, or uptime</strong>.</p>
   </div>
 
@@ -169,34 +169,18 @@ onUnmounted(() => {
 
   <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-3 gap-3">
     <div>
-      <div class="p2 text-gold!">Security That’s Built In — Not Bolted On</div>
-      <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Immutable by design</span> — once published, artifacts can’t be tampered with</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Cryptographically signed</span> — every model, dataset, and config is verifiable</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Provenance tracking</span> — full supply chain auditability out of the box</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Defense in depth</span> — layered SHA digest verification for all artifacts</li>
-      </ul>
+      <div class="p2 text-gold!">One Package for Your Entire AI Stack</div>
+      <p class="p2">Bundle models, datasets, code, agent skills, MCP servers, guardrail configs, and policies into a single versioned OCI artifact. No more scattered repos, zip files, or git submodules for your AI components.</p>
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Fits Into Your Toolchain — No Re‑Platforming</div>
-      <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">OCI‑native</span> — runs on any compliant container registry</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">No proprietary formats</span> — open standards mean zero lock‑in</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">CI/CD‑ready</span> — GitHub Actions, GitLab CI, Jenkins, Azure DevOps, and more </li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Deployment‑friendly</span> — works with Kubernetes, Docker, and existing pipelines</li>
-      </ul>
+      <div class="p2 text-gold! xs:mt-12">Supply Chain Security, Built In</div>
+      <p class="p2">Sign with Cosign. Scan before promotion. Generate SBOMs. Every component is SHA‑256 hashed and tamper‑evident — the same security posture you apply to container images, now applied to your agents and MCP servers.</p>
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Enterprise‑Grade from Day One</div>
-      <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Air‑gapped deployments</span> — fully supported</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Multi‑cloud portability</span> — same artifact runs anywhere</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Deduplicated storage</span> — cuts registry costs by up to 80%</li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">Automatic containerization</span> — for any model  </li>
-        <li class="pl-3 text-[#B8B8B8]"><span class="text-white">RBAC integration</span> — aligns with your security policies</li>
-      </ul>
+      <div class="p2 text-gold! xs:mt-12">Your Registry. Your Rules.</div>
+      <p class="p2">Store ModelKits in Docker Hub, ECR, GCR, Harbor, Artifactory, or Jozu Hub. No proprietary registry required. Your existing access controls, scanning, and compliance workflows just work.</p>
     </div>
   </div>
 
@@ -303,29 +287,21 @@ onUnmounted(() => {
 
   <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-3 gap-3">
     <div>
-      <div class="p2 text-gold!">Momentum Focused</div>
-      <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]!">Trusted in production</li>
-        <li class="pl-3 text-[#B8B8B8]!">Relied on by Enterprise teams</li>
-        <li class="pl-3 text-[#B8B8B8]!">Engineered for adoption</li>
-      </ul>
+      <div class="p2 text-gold!">Immutable Packages</div>
+      <p class="p2">Every model, agent skill, and MCP server is a versioned, immutable OCI artifact. What you deployed is exactly what was tested.</p>
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Trust & Security Focused</div>
+      <div class="p2 text-gold! xs:mt-12">Content‑Addressable Storage</div>
+      <p class="p2">SHA‑256 digests for every component. Tamper detection works the same way it does for your container images — because it is the same infrastructure.</p>
+    </div>
+
+    <div>
+      <div class="p2 text-gold! xs:mt-12">Designed for Air Gap</div>
       <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]!">Built to meet proven standards</li>
         <li class="pl-3 text-[#B8B8B8]!">Designed for air-gapped environments</li>
         <li class="pl-3 text-[#B8B8B8]!">Security by default</li>
-      </ul>
-    </div>
-
-    <div>
-      <div class="p2 text-gold! xs:mt-12">Integration & Workflow Focused</div>
-      <ul class="p2 list-disc! list-inside! leading-tight!">
         <li class="pl-3 text-[#B8B8B8]!">Native to your stack</li>
-        <li class="pl-3 text-[#B8B8B8]!">Works at enterprise scale</li>
-        <li class="pl-3 text-[#B8B8B8]!">Moves at CI/CD speed</li>
       </ul>
     </div>
   </div>
@@ -341,7 +317,35 @@ onUnmounted(() => {
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 w-max mx-auto">
       <div>
         <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
-          Air-gapped deployments
+          Cryptographic Security
+
+          <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
+              <path d="M3 12.26C3 17.2306 7.02944 21.26 12 21.26C16.9706 21.26 21 17.2306 21 12.26C21 7.28945 16.9706 3.26001 12 3.26001C7.02944 3.26001 3 7.28945 3 12.26Z" fill="#EB9D42" fill-opacity="0.39"/>
+              <path d="M15 10.26L11 14.26L9 12.26M12 21.26C7.02944 21.26 3 17.2306 3 12.26C3 7.28945 7.02944 3.26001 12 3.26001C16.9706 3.26001 21 7.28945 21 12.26C21 17.2306 16.9706 21.26 12 21.26Z" stroke="#FFAF52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Sign and verify models, agent skills, and MCP servers with the same Cosign workflow used for container images.
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
+          Full Version Packaging
+
+          <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
+              <path d="M3 12.26C3 17.2306 7.02944 21.26 12 21.26C16.9706 21.26 21 17.2306 21 12.26C21 7.28945 16.9706 3.26001 12 3.26001C7.02944 3.26001 3 7.28945 3 12.26Z" fill="#EB9D42" fill-opacity="0.39"/>
+              <path d="M15 10.26L11 14.26L9 12.26M12 21.26C7.02944 21.26 3 17.2306 3 12.26C3 7.28945 7.02944 3.26001 12 3.26001C16.9706 3.26001 21 7.28945 21 12.26C21 17.2306 16.9706 21.26 12 21.26Z" stroke="#FFAF52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Package your complete AI stack — models, skills, MCP servers, policies — as a single immutable OCI artifact with selective pull for any component.
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
+          Designed for Air Gap
 
           <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
@@ -352,54 +356,26 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-
-      <div>
-        <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
-          Multi-cloud portability
-
-          <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
-              <path d="M3 12.26C3 17.2306 7.02944 21.26 12 21.26C16.9706 21.26 21 17.2306 21 12.26C21 7.28945 16.9706 3.26001 12 3.26001C7.02944 3.26001 3 7.28945 3 12.26Z" fill="#EB9D42" fill-opacity="0.39"/>
-              <path d="M15 10.26L11 14.26L9 12.26M12 21.26C7.02944 21.26 3 17.2306 3 12.26C3 7.28945 7.02944 3.26001 12 3.26001C16.9706 3.26001 21 7.28945 21 12.26C21 17.2306 16.9706 21.26 12 21.26Z" stroke="#FFAF52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Same artifact runs everywhere
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
-          Deduplicated storage
-
-          <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
-              <path d="M3 12.26C3 17.2306 7.02944 21.26 12 21.26C16.9706 21.26 21 17.2306 21 12.26C21 7.28945 16.9706 3.26001 12 3.26001C7.02944 3.26001 3 7.28945 3 12.26Z" fill="#EB9D42" fill-opacity="0.39"/>
-              <path d="M15 10.26L11 14.26L9 12.26M12 21.26C7.02944 21.26 3 17.2306 3 12.26C3 7.28945 7.02944 3.26001 12 3.26001C16.9706 3.26001 21 7.28945 21 12.26C21 17.2306 16.9706 21.26 12 21.26Z" stroke="#FFAF52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Cuts registry costs by up to 80%
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-0 lg:mt-4 w-max mx-auto">
       <div>
         <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
-          Automatic containerization
+          Automated Compliance
 
           <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
               <path d="M3 12.26C3 17.2306 7.02944 21.26 12 21.26C16.9706 21.26 21 17.2306 21 12.26C21 7.28945 16.9706 3.26001 12 3.26001C7.02944 3.26001 3 7.28945 3 12.26Z" fill="#EB9D42" fill-opacity="0.39"/>
               <path d="M15 10.26L11 14.26L9 12.26M12 21.26C7.02944 21.26 3 17.2306 3 12.26C3 7.28945 7.02944 3.26001 12 3.26001C16.9706 3.26001 21 7.28945 21 12.26C21 17.2306 16.9706 21.26 12 21.26Z" stroke="#FFAF52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            For any model
+            Generate AI Bill of Materials covering models, agent skills, and MCP tool dependencies. Map directly to EU AI Act and NIST AI RMF requirements.
           </div>
         </div>
       </div>
 
       <div>
         <div class="h-full bg-black p-6 rounded-xl border border-[#363636] p1 w-full max-w-[340px] mx-auto">
-          RBAC integration
+          Artifact Tracking
 
           <div class="flex gap-3 mt-5 text-gold! leading-tight p2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" class="min-w-6 mt-1">
@@ -437,8 +413,9 @@ onUnmounted(() => {
         </svg>
       </div>
       <div class="mt-8 flex flex-col flex-1 p2">
-        <p>Package Your First Model</p>
-        <code class="text-base mt-3">kit pack . -t myregistry.com/my-model:latest</code>
+        <p>Package Your First Agent</p>
+        <p class="text-[#B8B8B8] mt-2">Bundle a model, MCP server config, and agent skills into a signed ModelKit in under 5 minutes.</p>
+        <code class="text-base mt-3">kit pack . -t myregistry.com/my-agent:latest</code>
       </div>
     </div>
 
@@ -547,6 +524,24 @@ onUnmounted(() => {
     <template #title>Is enterprise support available for Kit?</template>
 
     <p class="!mt-6">Enterprise support for ModelKits and the Kit CLI is available from <a href="https://www.jozu.com/" class="underline" target="_blank">Jozu</a>.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Can I use KitOps to package MCP servers and agent skills?</template>
+
+    <p class="!mt-6">Yes. KitOps packages any AI/ML component — models, datasets, code, configuration, MCP server definitions, agent skills, guardrail configs, and policies — as a single versioned OCI artifact. MCP servers and agent skills get the same cryptographic signing, scanning, and governance as your models.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>Why OCI artifacts instead of git repos or zip files for AI?</template>
+
+    <p class="!mt-6">OCI artifacts give you immutable versioning, cryptographic signatures, supply chain scanning, and content-addressable storage — the same infrastructure you already use for container images. Git repos work for source code, but production AI deployments need the tamper-evidence, provenance, and policy gating that OCI provides.</p>
+  </Accordion>
+
+  <Accordion content-class="!space-y-[1em]">
+    <template #title>How does KitOps relate to the CNCF ModelPack specification?</template>
+
+    <p class="!mt-6">KitOps is the reference implementation of ModelPack, the CNCF specification for vendor-neutral AI/ML packaging. KitOps also supports its own ModelKit format with broader artifact coverage including MCP servers, agent skills, and policies.</p>
   </Accordion>
 </div>
 
