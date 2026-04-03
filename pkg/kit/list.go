@@ -53,6 +53,7 @@ type ModelInfo struct {
 }
 
 func List(ctx context.Context, opts *ListOptions) ([]ModelInfo, error) {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
 	if opts.RemoteRef == nil {
 		return listLocalKits(ctx, opts)
 	}

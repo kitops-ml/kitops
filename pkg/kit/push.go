@@ -43,15 +43,7 @@ type PushResult struct {
 }
 
 func Push(ctx context.Context, opts *PushOptions) (*PushResult, error) {
-	if opts.NetworkOptions.Concurrency < 1 {
-		opts.NetworkOptions.Concurrency = 5
-	}
-	if opts.NetworkOptions.CredentialsPath == "" {
-		opts.NetworkOptions.CredentialsPath = constants.CredentialsPath(opts.ConfigHome)
-		if !opts.NetworkOptions.PlainHTTP && !opts.NetworkOptions.TLSVerify {
-			opts.NetworkOptions.TLSVerify = true
-		}
-	}
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
 
 	remoteRepo, err := remote.NewRepository(
 		ctx,

@@ -40,19 +40,13 @@ type LoginOptions struct {
 
 // Login logs in to a registry and saves credentials.
 func Login(ctx context.Context, opts *LoginOptions) error {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
 	credentialsStorePath := constants.CredentialsPath(opts.ConfigHome)
 	store, err := network.NewCredentialStore(credentialsStorePath)
 	if err != nil {
 		return err
 	}
-	networkOpts := opts.NetworkOptions
-	if networkOpts.CredentialsPath == "" {
-		networkOpts.CredentialsPath = credentialsStorePath
-		if !networkOpts.PlainHTTP && !networkOpts.TLSVerify {
-			networkOpts.TLSVerify = true
-		}
-	}
-	reg, err := remote.NewRegistry(opts.Registry, &networkOpts)
+	reg, err := remote.NewRegistry(opts.Registry, &opts.NetworkOptions)
 	if err != nil {
 		return fmt.Errorf("could not resolve registry %s: %w", opts.Registry, err)
 	}

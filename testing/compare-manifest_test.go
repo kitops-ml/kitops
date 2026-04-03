@@ -24,7 +24,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/kitops-ml/kitops/pkg/cmd/diff"
+	"github.com/kitops-ml/kitops/pkg/kit"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -51,7 +51,7 @@ func loadManifest(t *testing.T, filename string) *ocispec.Manifest {
 	return &manifest
 }
 
-func loadDiffResult(t *testing.T, filename string) diff.DiffResult {
+func loadDiffResult(t *testing.T, filename string) kit.DiffResult {
 	t.Helper()
 
 	data, err := os.ReadFile(filename)
@@ -59,7 +59,7 @@ func loadDiffResult(t *testing.T, filename string) diff.DiffResult {
 		t.Fatalf("failed to read diff result file %q: %v", filename, err)
 	}
 
-	var dr diff.DiffResult
+	var dr kit.DiffResult
 	if err := json.Unmarshal(data, &dr); err != nil {
 		t.Fatalf("failed to unmarshal diff result file %q: %v", filename, err)
 	}
@@ -102,7 +102,7 @@ func TestCompareManifests(t *testing.T) {
 			manifestB := loadManifest(t, filepath.Join("testdata", "compare-manifest", tc.manifestBPath))
 			expected := loadDiffResult(t, filepath.Join("testdata", "compare-manifest", tc.expectedDiffPath))
 
-			result := diff.CompareManifests(manifestA, manifestB)
+			result := kit.CompareManifests(manifestA, manifestB)
 
 			if err := compareDiffResults(&expected, result); err != nil {
 				t.Errorf("Test %s failed: %v", tc.name, err)
@@ -136,7 +136,7 @@ func compareDescriptors(a, b []ocispec.Descriptor) bool {
 	return true
 }
 
-func compareDiffResults(expected, received *diff.DiffResult) error {
+func compareDiffResults(expected, received *kit.DiffResult) error {
 	if expected.SameConfig != received.SameConfig {
 		return fmt.Errorf("SameConfig mismatch: expected %v, got %v", expected.SameConfig, received.SameConfig)
 	}

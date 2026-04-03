@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package kitinit
+package kit
 
 import (
 	"testing"
@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuildPackageFromRepo(t *testing.T) {
+func TestBuildPackage(t *testing.T) {
 	testcases := []struct {
 		name            string
 		repo            string
@@ -75,7 +75,7 @@ func TestBuildPackageFromRepo(t *testing.T) {
 
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			pkg := buildPackageFromRepo(tt.repo, tt.inputName, tt.inputDesc, tt.inputAuthor)
+			pkg := BuildPackage(tt.repo, tt.inputName, tt.inputDesc, tt.inputAuthor)
 			assert.Equal(t, tt.expectedName, pkg.Name)
 			assert.Equal(t, tt.expectedDesc, pkg.Description)
 			assert.Equal(t, tt.expectedAuthors, pkg.Authors)

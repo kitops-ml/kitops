@@ -49,15 +49,7 @@ type PullResult struct {
 
 func Pull(ctx context.Context, opts *PullOptions) (*PullResult, error) {
 	pullOpts := *opts
-	if pullOpts.NetworkOptions.Concurrency < 1 {
-		pullOpts.NetworkOptions.Concurrency = 5
-	}
-	if pullOpts.NetworkOptions.CredentialsPath == "" {
-		pullOpts.NetworkOptions.CredentialsPath = constants.CredentialsPath(pullOpts.ConfigHome)
-		if !pullOpts.NetworkOptions.PlainHTTP && !pullOpts.NetworkOptions.TLSVerify {
-			pullOpts.NetworkOptions.TLSVerify = true
-		}
-	}
+	applyNetworkDefaults(&pullOpts.NetworkOptions, pullOpts.ConfigHome)
 	storageHome := constants.StoragePath(pullOpts.ConfigHome)
 	localRepo, err := local.NewLocalRepo(storageHome, pullOpts.ModelRef)
 	if err != nil {

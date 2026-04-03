@@ -49,6 +49,7 @@ type InspectResult struct {
 }
 
 func Inspect(ctx context.Context, opts *InspectOptions) (*InspectResult, error) {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
 	if opts.CheckRemote {
 		return getRemoteInspect(ctx, opts)
 	}

@@ -38,6 +38,7 @@ type InfoOptions struct {
 }
 
 func Info(ctx context.Context, opts *InfoOptions) (*artifact.KitFile, error) {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
 	if opts.CheckRemote {
 		return getRemoteConfig(ctx, opts)
 	}

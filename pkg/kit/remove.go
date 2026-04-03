@@ -82,7 +82,7 @@ func removeAllModels(ctx context.Context, opts *RemoveOptions) error {
 			tags := localRepo.GetTags(manifestDesc)
 			for _, tag := range tags {
 				if err := localRepo.Untag(ctx, tag); err != nil {
-					output.Errorf("Failed to untag %s:%s: %w", repository, tag, err)
+					output.Errorf("Failed to untag %s:%s: %s", repository, tag, err)
 				}
 				output.Infof("Untagged %s:%s", repository, tag)
 			}

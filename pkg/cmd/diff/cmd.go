@@ -20,14 +20,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -60,10 +58,9 @@ kit diff local://jozu.ml/foo:latest remote://jozu.ml/foo:latest
 )
 
 type diffOptions struct {
-	options.NetworkOptions
-	configHome string
-	refA       *registry.Reference
-	refB       *registry.Reference
+	kit.DiffOptions
+	argA string
+	argB string
 }
 
 func DiffCommand() *cobra.Command {
@@ -87,53 +84,26 @@ func runCommand(opts *diffOptions) func(cmd *cobra.Command, args []string) error
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		var (
-			diffA, diffB *diffInfo
-			errA, errB   error
-		)
-		var wg sync.WaitGroup
-		wg.Add(2)
-
-		go func() {
-			defer wg.Done()
-			diffA, errA = getManifest(cmd.Context(), args[0], opts.refA, opts)
-		}()
-
-		go func() {
-			defer wg.Done()
-			diffB, errB = getManifest(cmd.Context(), args[1], opts.refB, opts)
-		}()
-
-		wg.Wait()
-
-		if errA != nil {
-			return output.Fatalf("Failed to get manifest for ModelKit1: %s", errA)
-		}
-		if errB != nil {
-			return output.Fatalf("Failed to get manifest for ModelKit2: %s", errB)
+		result, err := kit.Diff(cmd.Context(), &opts.DiffOptions)
+		if err != nil {
+			return output.Fatalf("%s", err)
 		}
 
-		// Compare the two manifests
-		if diffA.Descriptor.Digest == diffB.Descriptor.Digest {
+		if result.Identical {
 			output.Infoln("ModelKits are identical")
 			return nil
 		}
 
-		result := CompareManifests(diffA.Manifest, diffB.Manifest)
-		// Header
 		output.Infoln("Comparing:")
-		output.Infof("  ModelKit1: %s\n", opts.refA.String())
-		output.Infof("  ModelKit2: %s\n\n", opts.refB.String())
+		output.Infof("  ModelKit1: %s\n", opts.RefA.String())
+		output.Infof("  ModelKit2: %s\n\n", opts.RefB.String())
 
 		output.Infoln("Configurations:")
 		output.Infoln("---------------------------------------")
 		if result.SameConfig {
-			output.Infof("  Configs are identical (Digest: %s)\n\n", diffA.Manifest.Config.Digest[:17])
-
+			output.Infof("  Configs are identical\n\n")
 		} else {
-			output.Infof("Configs differ:\n")
-			output.Infof("  ModelKit1 Config Digest: %s\n", diffA.Manifest.Config.Digest[:17])
-			output.Infof("  ModelKit2 Config Digest: %s\n\n", diffB.Manifest.Config.Digest[:17])
+			output.Infof("Configs differ\n\n")
 		}
 
 		output.Infoln("Annotations:")
@@ -145,38 +115,50 @@ func runCommand(opts *diffOptions) func(cmd *cobra.Command, args []string) error
 		}
 
 		displayLayers("Shared Layers", result.SharedLayers)
-		displayLayers(fmt.Sprintf("Unique Layers to ModelKit1 (%s)", opts.refA.String()), result.UniqueLayersA)
-		displayLayers(fmt.Sprintf("Unique Layers to ModelKit2 (%s)", opts.refB.String()), result.UniqueLayersB)
+		displayLayers(fmt.Sprintf("Unique Layers to ModelKit1 (%s)", opts.RefA.String()), result.UniqueLayersA)
+		displayLayers(fmt.Sprintf("Unique Layers to ModelKit2 (%s)", opts.RefB.String()), result.UniqueLayersB)
 		return nil
 	}
 }
 
 func (opts *diffOptions) complete(ctx context.Context, args []string) error {
-
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 
-	imageName := removePrefix(args[0])
-	refA, _, err := artifact.ParseReference(imageName)
+	opts.argA = args[0]
+	opts.argB = args[1]
+	opts.LocalityA = localityFromPrefix(args[0])
+	opts.LocalityB = localityFromPrefix(args[1])
+
+	refA, _, err := artifact.ParseReference(removePrefix(args[0]))
 	if err != nil {
 		return fmt.Errorf("failed to parse reference for ref1: %w", err)
 	}
-	opts.refA = refA
+	opts.RefA = refA
 
-	imageName = removePrefix(args[1])
-	refB, _, err := artifact.ParseReference(imageName)
+	refB, _, err := artifact.ParseReference(removePrefix(args[1]))
 	if err != nil {
 		return fmt.Errorf("failed to parse reference for ref2: %w", err)
 	}
-	opts.refB = refB
+	opts.RefB = refB
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 		return err
 	}
 	return nil
+}
+
+func localityFromPrefix(arg string) string {
+	if strings.HasPrefix(arg, remotePrefix) {
+		return "remote"
+	}
+	if strings.HasPrefix(arg, localPrefix) {
+		return "local"
+	}
+	return ""
 }
 
 func removePrefix(arg string) string {
