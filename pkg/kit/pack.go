@@ -49,6 +49,10 @@ type PackResult struct {
 	Descriptor ocispec.Descriptor
 }
 
+// Pack packs a ModelKit from a Kitfile and context directory into local storage.
+// Note: Pack temporarily changes the process working directory to ContextDir
+// (required for correct tar relative paths) and restores it on return.
+// It is not safe to call concurrently from multiple goroutines.
 func Pack(ctx context.Context, opts *PackOptions) (*PackResult, error) {
 	contextDir, err := filepath.Abs(opts.ContextDir)
 	if err != nil {
