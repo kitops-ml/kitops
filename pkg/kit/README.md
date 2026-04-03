@@ -23,13 +23,17 @@ for _, k := range kits {
 
 ## Available operations
 
-- `kit.Info`
-- `kit.Inspect`
+- `kit.Pack`
+- `kit.Unpack`
+- `kit.Push`
+- `kit.Pull`
+- `kit.Tag`
 - `kit.List`
+- `kit.Remove`
 - `kit.Login`
 - `kit.Logout`
-- `kit.Pull`
-- `kit.Push`
-- `kit.Remove`
-- `kit.Tag`
-<!--  -->
+- `kit.Inspect`
+- `kit.Info`
+- `kit.Diff`
+- `kit.Init`
+- `kit.CompareManifests`

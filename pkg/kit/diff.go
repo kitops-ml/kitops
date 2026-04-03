@@ -50,12 +50,7 @@ type DiffResult struct {
 }
 
 func Diff(ctx context.Context, opts *DiffOptions) (*DiffResult, error) {
-	if opts.NetworkOptions.CredentialsPath == "" {
-		opts.NetworkOptions.CredentialsPath = constants.CredentialsPath(opts.ConfigHome)
-		if !opts.NetworkOptions.PlainHTTP && !opts.NetworkOptions.TLSVerify {
-			opts.NetworkOptions.TLSVerify = true
-		}
-	}
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
 
 	type manifestResult struct {
 		manifest *ocispec.Manifest
