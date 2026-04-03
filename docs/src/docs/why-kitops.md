@@ -96,7 +96,7 @@ KitOps:
 
 ### KitOps and Agentic AI Frameworks
 
-Agent frameworks like LangChain, CrewAI, and Claude handle orchestration and execution. But they don’t solve the packaging and versioning problem: which prompts, skills, and MCP server configs were running when the agent worked correctly?
+Agent frameworks like LangChain, CrewAI, as well as models like Claude can handle agentic orchestration and execution. But they don’t solve the packaging and versioning problem: which prompts, skills, and MCP server configs were running when the agent worked correctly?
 
 KitOps:
 - Versions prompts, skill files, and MCP configs as immutable artifacts
