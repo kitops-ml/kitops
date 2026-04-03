@@ -82,7 +82,7 @@ If you are building a ModelKit from a Hugging Face repository you can use the [k
 
 ### 2/ Generating a Kitfile From a Directory
 
-If you have your AI/ML project artifacts in a directory structure already then the easiest way to get started is with [kit init](../cli/cli-reference/#kit-init). From the root of the directory with the AI/ML artifacts you wish to pack in the ModelKit run:
+If you have your AI project artifacts in a directory structure already then the easiest way to get started is with [kit init](../cli/cli-reference/#kit-init). From the root of the directory with the artifacts you wish to pack in the ModelKit run:
 
 ```sh
 kit init .
@@ -95,15 +95,16 @@ You can learn more about the syntax, options, and flags in our [CLI docs](../cli
 
 ### 3/ Writing Your Own Kitfile
 
-There are five parts to a Kitfile:
+There are six parts to a Kitfile:
 
 1. The `package` section: Metadata about the ModelKit, including the author, description, and license
 1. The `model` section: Information about the serialized model
 1. The `datasets` section: Information on included datasets
-1. The `code` section: Information about codebases related to the project, including Jupyter notebook folders
+1. The `code` section: Information about codebases, scripts, and MCP server configurations
+1. The `prompts` section: Prompt files, agent skill files, and other text-based AI configuration
 1. The `docs` section: Information about documentation for the ModelKit
 
-A Kitfile only needs the `package` section, plus one or more of the other sections.
+A Kitfile needs a `manifestVersion` plus at least one of the other sections. The `package` section is recommended for metadata but not strictly required. Not every ModelKit needs a model - you can create ModelKits that contain only prompts and skill files, or only code and MCP server configurations.
 
 The `model` section can contain a single model, or you can create model dependencies with `model parts` which is covered in the [KitFile format documentation](../kitfile/format/#model).
 

@@ -6,32 +6,34 @@ keywords: kitfile format, kitops kitfile example, modelkit yaml, ai model manife
 
 # Kitfile Format for ModelKits
 
-The **Kitfile** is the blueprint for every AI/ML project packaged with KitOps.
+The **Kitfile** is the blueprint for every AI project packaged with KitOps.
 
-It’s a simple, YAML-based manifest that defines what goes into a ModelKit: models, datasets, notebooks, documentation, and metadata.
+It’s a simple, YAML-based manifest that defines what goes into a ModelKit: models, datasets, code, prompts, agent skill files, MCP server configurations, and documentation.
 
 ModelKits use Kitfiles to package and version your project so it can be shared, stored, or deployed from any OCI-compatible registry.
 
-## ✨ Why Use a Kitfile?
+## Why Use a Kitfile?
 
 A Kitfile helps you:
-- Package your AI/ML project with full traceability
+- Package your AI project with full traceability - whether it’s a model, an agent configuration, or both
 - Make your work reproducible across environments
-- Collaborate with DevOps, ML engineers, and app developers using a shared format
-- Integrate seamlessly into CI/CD pipelines and registries
+- Collaborate with DevOps, ML engineers, AI engineers, and app developers using a shared format
+- Integrate into CI/CD pipelines and registries
 
-## 📚 Kitfile Sections
+## Kitfile Sections
 
 Each Kitfile includes one or more of the following sections:
 
-| Section       | Description |
-|---------------|-------------|
-| `package`     | Project metadata (name, version, license, authors) |
-| `code`        | Paths to notebooks or scripts |
-| `model`       | The serialized model and framework info |
-| `datasets`    | Training, validation, or other datasets |
-| `docs`        | Additional documentation to include |
-| `prompts`     | Prompt files for use with LLMs |
+| Section       | Description | Example contents |
+|---------------|-------------|------------------|
+| `package`     | Project metadata (name, version, license, authors) | - |
+| `model`       | The serialized model and framework info | Model weights, GGUF files |
+| `datasets`    | Training, validation, or other datasets | CSV files, Parquet datasets |
+| `code`        | Code, scripts, and server configurations | Jupyter notebooks, MCP server code and config files |
+| `prompts`     | Prompt files and agent skill files | System prompts, SKILL.md, .cursorrules |
+| `docs`        | Additional documentation | README, usage guides |
+
+The `prompts` section is the natural home for agent skill files and prompt templates. The `code` section is where MCP server code and configuration files go. You can organize these however fits your project - the key is that everything gets versioned together.
 
 You can extract the Kitfile from any existing ModelKit:
 
@@ -39,13 +41,13 @@ You can extract the Kitfile from any existing ModelKit:
 kit unpack [registry/repo:tag] --config -d .
 ```
 
-## ✅ Minimal Kitfile Example
+## Minimal Kitfile Examples
 
 The only required fields are:
 - `manifestVersion`
 - At least one of `code`, `model`, `datasets`, `docs`, or `prompts` section
 
-Example:
+A ModelKit for a dataset:
 ```yaml
 manifestVersion: v1.0.0
 
@@ -56,12 +58,30 @@ datasets:
     path: ./data/test.csv
 ```
 
+A ModelKit for agent skills and prompts (no model required):
+```yaml
+manifestVersion: v1.0.0
+
+package:
+  name: customer-support-agent
+  description: Skill files and prompts for the customer support agent
+  version: 2.1.0
+
+prompts:
+  - path: ./prompts/system.prompt.md
+    description: System prompt for the support agent
+  - path: ./skills/escalation.skill.md
+    description: Skill for escalating tickets to human agents
+  - path: ./skills/refund-processing.skill.md
+    description: Skill for processing refund requests
+```
+
 ### Notes on Kitfile Behavior
 - Kitfiles must use relative paths (not absolute)
-- ModelKits can include only one model, but multiple datasets or code bases
-- You can currently only build ModelKits from local files — but support for remote sources (e.g. DVC, S3) is coming soon
+- ModelKits can include only one model, but multiple datasets, code entries, or prompts
+- You can currently only build ModelKits from local files, but support for remote sources (e.g. DVC, S3) is coming soon
 
-## 🧱 Example: Full Kitfile
+## Example: Full Kitfile with Model
 
 ```yaml
 manifestVersion: v1.0.0
@@ -96,6 +116,41 @@ datasets:
 prompts:
   - path: system.prompt.md
     description: System prompt for model inference
+```
+
+## Example: Agentic AI Kitfile
+
+This Kitfile packages agent skill files, prompts, and an MCP server configuration together. No model is needed when the agent uses a hosted API (e.g., Claude, GPT).
+
+```yaml
+manifestVersion: v1.0.0
+
+package:
+  name: sales-research-agent
+  description: Agent configuration for automated sales research pipeline
+  authors:
+    - Platform Team
+  version: 3.0.1
+
+prompts:
+  - path: ./prompts/system-prompt.md
+    description: Core system prompt defining agent persona and constraints
+  - path: ./prompts/research-prompt.md
+    description: Prompt template for company research tasks
+  - path: ./skills/linkedin-enrichment.skill.md
+    description: Skill for enriching leads with LinkedIn data
+  - path: ./skills/competitive-analysis.skill.md
+    description: Skill for generating competitive analysis summaries
+
+code:
+  - path: ./mcp-servers/crm-connector
+    description: MCP server for CRM data access
+  - path: ./mcp-servers/web-scraper
+    description: MCP server for web scraping with rate limiting
+
+docs:
+  - path: ./README.md
+    description: Agent setup and deployment guide
 ```
 
 ## Learn More

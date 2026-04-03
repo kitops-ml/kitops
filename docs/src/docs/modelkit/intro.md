@@ -8,42 +8,44 @@ keywords: modelkit, modelkit overview, oci ai packaging, ml model registry, shar
 
 ![ModelKit](./ModelKit_chart.svg)
 
->**ModelKit is a standardized, OCI-compliant packaging format for AI/ML projects.**
+>**ModelKit is a standardized, OCI-compliant packaging format for AI projects.**
 
-It bundles everything your model needs — datasets, training code, config files, documentation, and the model itself — into a single shareable artifact.
+It bundles the artifacts your AI project depends on - models, datasets, code, prompts, agent skill files, MCP server configurations, and documentation - into a single versioned, shareable artifact.
 
-Use ModelKits to version, share, and deploy AI models across teams and environments using familiar DevOps tools like DockerHub, GitHub Packages, or private registries.
+Despite the name, not every ModelKit contains a model. A ModelKit can package any combination of AI project artifacts. You might create a ModelKit that contains only prompts and skill files for an agentic AI system, or one that bundles an MCP server with its configuration, or a complete package with model weights, training data, prompts, and code.
+
+Use ModelKits to version, share, and deploy AI projects across teams and environments using familiar DevOps tools like DockerHub, GitHub Packages, or private registries.
 
 ➡️ [Get started with ModelKits](../../get-started.md) in under 15 minutes
-➡️ [See how security-focused teams use ModelKits](../../use-cases.md)
+➡️ [See how teams use ModelKits](../../use-cases.md)
 
-## 🔑 Key Features
+## Key Features
 
 * **OCI-compliant and tool-friendly**
-  Store, tag, and version ModelKits in any container registry — no custom infrastructure needed.
+  Store, tag, and version ModelKits in any container registry. No custom infrastructure needed.
 
 * **Selective unpacking**
-  Unpack only the parts you need (e.g. just the dataset or model weights) to speed up pipelines and reduce compute overhead.
+  Unpack only the parts you need (e.g. just the prompts, just the model weights, just the MCP config) to speed up pipelines and reduce overhead.
 
 * **No duplication for shared assets**
-  Reuse datasets or configs across multiple kits without bloating storage.
+  Reuse datasets, prompts, or configs across multiple kits without bloating storage.
 
 * **Familiar versioning and tagging**
-  Use registry-native tags (e.g. `:latest`, `:prod`, `:rollback`) to track model state and history.
+  Use registry-native tags (e.g. `:latest`, `:prod`, `:rollback`) to track project state and history.
 
-* **Built for ML workflows**
-  Supports AI-specific needs like serialized model handling, reproducible training snapshots, and data lineage.
+* **Built for AI workflows**
+  Supports models, datasets, prompts, agent skill files, MCP server configurations, and code. Handles both large binary files (model weights) and small text files (prompts, configs) in the same artifact.
 
 * **Streamlined collaboration**
-  Teams can pull, inspect, and repack models just like container images — making it easier to collaborate across roles and environments.
+  Teams can pull, inspect, and repack ModelKits just like container images, making it easier to collaborate across roles and environments.
 
-## ⚡ Why It Matters
+## Why It Matters
 
-ModelKit simplifies the messy handoff between data scientists, engineers, and operations. It gives teams a common, versioned package that works across clouds, registries, and deployment setups — without reinventing storage or delivery.
+ModelKit simplifies the messy handoff between data scientists, AI engineers, agent developers, and operations. It gives teams a common, versioned package that works across clouds, registries, and deployment setups without reinventing storage or delivery.
 
-It’s more than a format — it’s a building block for secure, reproducible AI.
+For self-hosted model teams, it’s the packaging layer that ties model weights to their training data, configuration, and documentation. For agentic AI teams, it’s the versioning system that ties prompts, skills, and MCP configs to a known-good state. For teams doing both, it’s one format that covers everything.
 
-## 🔄 ModelPack Format Support
+## ModelPack Format Support
 
 KitOps supports both **ModelKit** and **ModelPack** artifact formats:
 
