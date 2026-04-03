@@ -4,18 +4,21 @@ description: Learn how organizations use KitOps to securely package, track, and 
 keywords: kitops use cases, modelpack, ai model deployment workflow, mlops handoff, versioning ai models, secure ai pipelines, eu ai act compliance, ai model governance, mlflow handoff, reproducible ml deployment
 ---
 
-# How Teams Use KitOps 🛠️
+# How Teams Use KitOps
 
-KitOps helps organizations package, share, and deploy AI/ML models securely and reproducibly — using the same tools they already use for containers.
+KitOps helps organizations package, share, and deploy AI projects securely and reproducibly - using the same tools they already use for containers.
 
 Teams around the world are using KitOps for:
 - Reproducible handoff from development to production
+- Versioning agent configurations, prompts, and skills alongside models
 - Security and compliance (including EU AI Act, NIST AI, ISO 42001)
-- Organizing all model versions in one standard system
+- Organizing AI project artifacts in one standard system
 
 ➡️ See [compatible tools](../integrations/integrations.md)
 
-## Level 1: Production Handoff
+## Self-Hosted Model Deployment
+
+### Level 1: Production Handoff
 
 > Use Case: Reproducible, secure model handoff across teams using CI/CD
 
@@ -25,28 +28,28 @@ Most teams start by using KitOps to version a model when it’s ready for stagin
 - App integration testing
 - Secure, consistent model handoffs across teams
 
-Organizations that are self-hosting models ❤️ KitOps because it:
+Organizations that are self-hosting models use KitOps because it:
 - Prevents unknown models from entering production
 - Enforces licensing and provenance checks (e.g. for Hugging Face imports)
 - Keeps datasets, model, and code synced and trackable
 
-### In Practice
+#### In Practice
 
 CI/CD pipelines using GitHub Actions, Dagger, or other systems can:
-1.	Pull models or data
-2.	Run compliance / security tests
-3.	Package project artifacts as a signed, versioned ModelKit
-4.	Push the ModelKit to a private OCI registry
+1. Pull models or data
+2. Run compliance / security tests
+3. Package project artifacts as a signed, versioned ModelKit
+4. Push the ModelKit to a private OCI registry
 
 ➡️ See [how CI/CD with KitOps works](../integrations/cicd.md)
 
-## Level 2: Model Security
+### Level 2: Model Security
 
 > Use Case: Scan and gate models during development or before release
 
 Teams working in regulated industries or secure environments use KitOps to enforce security and integrity before a model is accepted into production.
 
-### In Practice
+#### In Practice
 
 1. Build a ModelKit for each experiment run in [MLFlow](../integrations/mlflow.md) / Weights & Biases
 1. Sign the ModelKit
@@ -55,20 +58,20 @@ Teams working in regulated industries or secure environments use KitOps to enfor
 1. Only allow signed and attested ModelKits to move into forward environments
 1. Track which model passed, which failed, and prevent risky surprises
 
-Even when using other tools (MLFlow, Hugging Face, notebooks), KitOps provides a reliable security and auditing layer that protects environments from unsecure, or mistaken deployments.
+Even when using other tools (MLFlow, Hugging Face, notebooks), KitOps provides a reliable security and auditing layer that protects environments from unsecure or mistaken deployments.
 
-## Level 3: Versioning Everything
+### Level 3: Versioning Everything
 
 > Use Case: Full model, code, and dataset lifecycle tracking
 
-Mature teams — especially those under compliance scrutiny — extend KitOps to development. Every milestone (new dataset, tuning checkpoint, retraining event) is stored as a versioned ModelKit.
+Mature teams - especially those under compliance scrutiny - extend KitOps to development. Every milestone (new dataset, tuning checkpoint, retraining event) is stored as a versioned ModelKit.
 
 Benefits:
 - One standard system (OCI) for every model version
 - Tamper-evident and content-addressable storage
 - Eliminates confusion over which assets belong together
 
-### In Practice
+#### In Practice
 
 1. Build a set of approved ModelKits by [importing from Hugging Face](../hf-import.md) or adding your own internal artifacts
 1. Push ModelKits to your OCI registry
@@ -76,6 +79,48 @@ Benefits:
 1. Version datasets as ModelKits and link them from project ModelKits
 1. Perform signing, security testing and attestations as projects progress
 1. Enforce policies using [OPA](https://www.openpolicyagent.org/) or similar technologies
+
+## Agentic AI and Prompt Management
+
+### Versioning Prompts, Skills, and Agent Configurations
+
+> Use Case: Lock down agent state so every execution is reproducible
+
+Agentic AI systems depend on more than just the model. The prompts, skill files, and MCP server configurations that shape agent behavior change frequently and have as much impact on outcomes as the model itself. When an agent breaks in production, the first question is: what changed? Without versioned artifacts, that question is hard to answer.
+
+KitOps solves this by packaging prompts, skill files, and agent configurations into versioned, immutable ModelKits. Each ModelKit captures the exact state of an agent’s dependencies at a point in time. You can diff two versions to see what changed, roll back to a known-good state, and promote tested configurations through environments.
+
+#### In Practice
+
+1. Store your system prompts, agent skill files (e.g., SKILL.md, .cursorrules), and configuration in a project directory
+1. Write a Kitfile that references them (skills and prompts go in the `prompts` section; MCP server configs go in the `code` section)
+1. Run `kit pack` to create a versioned ModelKit
+1. Push to your OCI registry with a meaningful tag (e.g., `:staging`, `:prod-2026-03-15`)
+1. In your deployment pipeline, `kit pull` the exact version you need
+1. When something breaks, diff the current version against the last known-good version
+
+This works whether your agents use Claude, GPT, Llama, or any other model. The agent framework handles orchestration; KitOps handles the packaging and versioning of everything that defines agent behavior.
+
+### MCP Server Configuration Management
+
+> Use Case: Version and distribute MCP server configurations across environments
+
+MCP (Model Context Protocol) servers give agents access to tools and data sources. As your MCP server inventory grows, managing configurations across development, staging, and production becomes its own problem.
+
+KitOps lets you package MCP server code and configurations as ModelKits. Each environment pulls the exact MCP configuration it needs from the registry. Changes to MCP configs go through the same version, sign, scan, promote workflow as any other artifact.
+
+#### In Practice
+
+1. Package your MCP server code and config files in a ModelKit using the `code` section of the Kitfile
+1. Tag versions by environment (`:dev`, `:staging`, `:prod`)
+1. Use `kit unpack --filter=code` to extract only the MCP configuration when deploying
+1. Sign the ModelKit so downstream consumers can verify the MCP server hasn’t been tampered with
+
+### Combining Models and Agent Artifacts
+
+> Use Case: Ship a complete, self-contained AI system as one artifact
+
+For teams running self-hosted models inside agentic systems, KitOps can package everything in a single ModelKit: the model weights, the prompts that shape its behavior, the skill files that define agent capabilities, the MCP server configurations, and the datasets used for evaluation. One artifact, one version, one source of truth.
 
 ➡️ [Get started](../get-started.md) with KitOps in your team.
 
