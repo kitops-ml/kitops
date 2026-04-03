@@ -19,13 +19,34 @@ package artifact
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/url"
+	"path"
+	"path/filepath"
+	"regexp"
 	"slices"
+	"strings"
 	"time"
 
+	"github.com/kitops-ml/kitops/pkg/output"
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	"github.com/opencontainers/go-digest"
 	"go.yaml.in/yaml/v3"
+)
+
+const modelPartTypeMaxLen = 64
+
+var modelPartTypeRegexp = regexp.MustCompile(`^[\w][\w.-]*$`)
+
+// PathType represents different types of paths in Kitfile fields, e.g. local on-disk paths or remote S3 URLs.
+type PathType int
+
+const (
+	UnknownPathType PathType = iota
+	LocalPathType
+	ModelReferencePathType
+	S3PathType
 )
 
 type (
@@ -90,6 +111,8 @@ type (
 	DataSet struct {
 		Name        string `json:"name,omitempty" yaml:"name,omitempty"`
 		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
+		RemotePath  string `json:"remotePath,omitempty" yaml:"remotePath,omitempty"`
+		RemoteHash  string `json:"remoteHash,omitempty" yaml:"remoteHash,omitempty"`
 		Description string `json:"description,omitempty" yaml:"description,omitempty"`
 		License     string `json:"license,omitempty" yaml:"license,omitempty"`
 		// Parameters is an arbitrary section of yaml that can be used to store any additional
@@ -104,6 +127,7 @@ type (
 	}
 
 	Prompt struct {
+		Name        string `json:"name,omitempty" yaml:"name,omitempty"`
 		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
 		Description string `json:"description,omitempty" yaml:"description,omitempty"`
 		*LayerInfo  `json:",inline" yaml:",inline"`
@@ -117,13 +141,17 @@ type (
 	}
 )
 
-func (kf *KitFile) LoadModel(kitfileContent io.ReadCloser) error {
+func (kf *KitFile) LoadModel(kitfileContent io.ReadCloser) (err error) {
 	decoder := yaml.NewDecoder(kitfileContent)
 	decoder.KnownFields(true)
 	if err := decoder.Decode(kf); err != nil {
 		return err
 	}
-	return nil
+	warnings, err := kf.Validate()
+	for _, warning := range warnings {
+		output.Logln(output.LogLevelWarn, warning)
+	}
+	return err
 }
 
 func (kf *KitFile) MarshalToJSON() ([]byte, error) {
@@ -143,6 +171,129 @@ func (kf *KitFile) MarshalToYAML() ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (kf *KitFile) Validate() (warnings []string, err error) {
+	if kf.ManifestVersion != "1.0.0" {
+		warnings = append(warnings, fmt.Sprintf("Unrecognized manifestVersion %s: treating Kitfile as 1.0.0", kf.ManifestVersion))
+	}
+
+	var errs []string
+	addErr := func(format string, a ...any) {
+		s := fmt.Sprintf(format, a...)
+		errs = append(errs, fmt.Sprintf("  * %s", s))
+	}
+
+	// Map of paths to the component that uses them; used to detect duplicate paths
+	paths := map[string][]string{}
+	addPath := func(path, source string) {
+		if path == "" {
+			path = "."
+		}
+		path = filepath.Clean(path)
+		paths[path] = append(paths[path], source)
+	}
+
+	if kf.Model != nil {
+		addPath(kf.Model.Path, fmt.Sprintf("model %s", kf.Model.Name))
+		modelPathType, err := GetPathType(kf.Model.Path)
+		if err != nil {
+			addErr("invalid path for model: %s", err)
+		}
+		if modelPathType != LocalPathType && modelPathType != ModelReferencePathType {
+			addErr("invalid path for model: only local paths and ModelKit references are permitted")
+		}
+		for _, part := range kf.Model.Parts {
+			addPath(part.Path, fmt.Sprintf("modelpart %s", part.Name))
+			partPathType, err := GetPathType(part.Path)
+			if err != nil {
+				addErr("invalid path for model part (%s): %s", part.Path, err)
+			}
+			if partPathType != LocalPathType {
+				addErr("invalid path for model part (%s): only local paths are permitted", part.Path)
+			}
+			if part.Type != "" {
+				if !modelPartTypeRegexp.MatchString(part.Type) {
+					addErr("modelpart %s has invalid type (must be alphanumeric with dots, dashes, and underscores)", part.Name)
+				}
+				if len(part.Type) > modelPartTypeMaxLen {
+					addErr("modelpart %s type is too long (must be fewer than %d characters)", part.Name, modelPartTypeMaxLen)
+				}
+			}
+		}
+	}
+	for idx, code := range kf.Code {
+		addPath(code.Path, fmt.Sprintf("code layer %d", idx))
+		pathType, err := GetPathType(code.Path)
+		if err != nil {
+			addErr("invalid path for code (%s): %s", code.Path, err)
+		}
+		if pathType != LocalPathType {
+			addErr("invalid path for code (%s): only local paths are permitted", code.Path)
+		}
+	}
+	for idx, dataset := range kf.DataSets {
+		addPath(dataset.Path, fmt.Sprintf("dataset layer %d", idx))
+		pathType, err := GetPathType(dataset.Path)
+		if err != nil {
+			addErr("invalid path for dataset (%s): %s", dataset.Path, err)
+		}
+		if pathType != LocalPathType {
+			addErr("invalid path for dataset (%s): only local paths are permitted", dataset.Path)
+		}
+		if dataset.RemotePath != "" {
+			remotePathType, err := GetPathType(dataset.RemotePath)
+			if err != nil {
+				addErr("invalid remote path for dataset (%s): %s", dataset.RemotePath, err)
+			}
+			if remotePathType != S3PathType {
+				addErr("only S3 URLs are supported for remote dataset paths (%s)", dataset.RemotePath)
+			}
+			if dataset.RemoteHash == "" {
+				addErr("remoteHash is required when remote dataset paths are used (%s)", dataset.RemotePath)
+			}
+		} else {
+			if dataset.RemoteHash != "" {
+				addErr("remote hash is only applicable when remotePath is set")
+			}
+		}
+	}
+	for idx, doc := range kf.Docs {
+		addPath(doc.Path, fmt.Sprintf("docs layer %d", idx))
+		pathType, err := GetPathType(doc.Path)
+		if err != nil {
+			addErr("invalid path for doc (%s): %s", doc.Path, err)
+		}
+		if pathType != LocalPathType {
+			addErr("invalid path for doc (%s): only local paths are permitted", doc.Path)
+		}
+	}
+	for _, prompt := range kf.Prompts {
+		pathType, err := GetPathType(prompt.Path)
+		if err != nil {
+			addErr("invalid path for prompt (%s): %s", prompt.Path, err)
+		}
+		if pathType != LocalPathType {
+			addErr("invalid path for prompt (%s): only local paths are permitted", prompt.Path)
+		}
+	}
+
+	for layerPath, layerIds := range paths {
+		if len := len(layerIds); len > 1 {
+			addErr("%s and %s use the same path %s", strings.Join(layerIds[:len-1], ", "), layerIds[len-1], layerPath)
+		}
+		if path.IsAbs(layerPath) || filepath.IsAbs(layerPath) {
+			addErr("absolute paths are not supported in a Kitfile (path %s in %s)", layerPath, layerIds[0])
+		}
+	}
+
+	if len(errs) > 0 {
+		// Iterating through the paths map is random; sort to get a consistent message
+		slices.Sort(errs)
+		return warnings, fmt.Errorf("errors while validating Kitfile: \n%s", strings.Join(errs, "\n"))
+	}
+
+	return warnings, nil
 }
 
 func (kf *KitFile) ToModelPackConfig(diffIDs []digest.Digest) modelspecv1.Model {
@@ -203,4 +354,25 @@ func (kf *KitFile) collectLicenses() []string {
 	licenses = slices.Compact(licenses)
 
 	return licenses
+}
+
+func GetPathType(path string) (PathType, error) {
+	if IsModelKitReference(path) {
+		return ModelReferencePathType, nil
+	}
+
+	// Treat things that don't parse as URLs as local paths
+	parsed, err := url.Parse(path)
+	if err != nil || (parsed.Scheme == "" && parsed.Host == "") {
+		return LocalPathType, nil
+	}
+
+	switch parsed.Scheme {
+	case "s3":
+		return S3PathType, nil
+	case "http", "https":
+		return UnknownPathType, fmt.Errorf("HTTP urls are not supported in paths (%s)", path)
+	}
+
+	return UnknownPathType, fmt.Errorf("unrecognized URL in path: %s", path)
 }

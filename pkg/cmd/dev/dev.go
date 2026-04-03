@@ -31,8 +31,8 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/lib/harness"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
@@ -66,7 +66,7 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		return err
 	}
 	output.Infof("Loaded Kitfile: %s", options.modelFile)
-	if util.IsModelKitReference(kitfile.Model.Path) {
+	if artifact.IsModelKitReference(kitfile.Model.Path) {
 		resolvedKitfile, err := kfutils.ResolveKitfile(ctx, options.configHome, kitfile.Model.Path, kitfile.Model.Path)
 		if err != nil {
 			return fmt.Errorf("failed to resolve referenced modelkit %s: %w", kitfile.Model.Path, err)
@@ -192,11 +192,11 @@ func extractModelKitToCache(ctx context.Context, options *DevStartOptions) error
 	}
 
 	// Add model filter
-	modelFilter, err := unpack.ParseFilter("model,kitfile")
+	modelFilter, err := kitfile.ParseFilter("model,kitfile")
 	if err != nil {
 		return fmt.Errorf("failed to create model filter: %w", err)
 	}
-	libOpts.FilterConfs = []unpack.FilterConf{*modelFilter}
+	libOpts.FilterConfs = []kitfile.FilterConf{*modelFilter}
 
 	err = unpack.UnpackModelKit(ctx, libOpts)
 	if err != nil {

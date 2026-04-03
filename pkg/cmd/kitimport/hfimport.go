@@ -25,10 +25,9 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/external/hf"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
-	"github.com/kitops-ml/kitops/pkg/lib/hf"
-	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	repoutil "github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/lib/util"
@@ -39,7 +38,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 	// Handle full HF URLs by extracting repository name from URL
 	repo, repoType, err := hf.ParseHuggingFaceRepo(opts.repo)
 	if err != nil {
-		return fmt.Errorf("could not process URL %s: %w", opts.repo, err)
+		return fmt.Errorf("could not process repository %s: %w", opts.repo, err)
 	}
 
 	tmpDir, cleanupTmp, err := cache.MkCacheDir("import", "")
@@ -63,9 +62,6 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 		kitfile = &artifact.KitFile{}
 		if err := kitfile.LoadModel(os.Stdin); err != nil {
 			return fmt.Errorf("failed to read Kitfile from input: %w", err)
-		}
-		if err := kfutils.ValidateKitfile(kitfile); err != nil {
-			return err
 		}
 	} else if opts.kitfilePath != "" {
 		kf, err := readExistingKitfile(opts.kitfilePath)

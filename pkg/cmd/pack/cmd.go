@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
@@ -131,7 +131,7 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 	opts.storageHome = constants.StoragePath(opts.configHome)
 
 	if opts.fullTagRef != "" {
-		modelRef, extraRefs, err := util.ParseReference(opts.fullTagRef)
+		modelRef, extraRefs, err := artifact.ParseReference(opts.fullTagRef)
 		if err != nil {
 			return fmt.Errorf("failed to parse reference: %w", err)
 		}
@@ -142,7 +142,7 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 		opts.modelRef = modelRef
 		opts.extraRefs = extraRefs
 	} else {
-		opts.modelRef = util.DefaultReference()
+		opts.modelRef = artifact.DefaultReference()
 	}
 
 	if err := mediatype.IsValidCompression(opts.compression); err != nil {

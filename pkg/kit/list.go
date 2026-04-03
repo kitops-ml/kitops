@@ -26,6 +26,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -37,8 +38,9 @@ import (
 
 type ListOptions struct {
 	options.NetworkOptions
-	ConfigHome string
-	RemoteRef  *registry.Reference
+	ConfigHome  string
+	RemoteRef   *registry.Reference
+	FilterConfs []kitfile.FilterConf
 }
 
 type ModelInfo struct {
@@ -66,7 +68,7 @@ func listLocalKits(ctx context.Context, opts *ListOptions) ([]ModelInfo, error) 
 	}
 	var allInfo []ModelInfo
 	for _, repo := range localRepos {
-		infos, err := readInfoFromRepo(ctx, repo)
+		infos, err := readInfoFromRepo(ctx, repo, opts.FilterConfs)
 		if err != nil {
 			return nil, err
 		}
@@ -76,21 +78,28 @@ func listLocalKits(ctx context.Context, opts *ListOptions) ([]ModelInfo, error) 
 	return allInfo, nil
 }
 
-func readInfoFromRepo(ctx context.Context, repo local.LocalRepo) ([]ModelInfo, error) {
+func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []kitfile.FilterConf) ([]ModelInfo, error) {
 	var infos []ModelInfo
 	manifestDescs := repo.GetAllModels()
 	for _, manifestDesc := range manifestDescs {
 		manifest, config, err := util.GetManifestAndKitfile(ctx, repo, manifestDesc)
 		if err != nil {
 			if errors.Is(err, util.ErrNotAModelKit) {
+				// Shouldn't happen since this is a local repo, but either way it's not a supported artifact
 				continue
 			}
+			// Allow artifacts without Kitfiles as all that will be lacking is some metadata; we can still
+			// describe them
 			if !errors.Is(err, util.ErrNoKitfile) {
 				return nil, err
 			}
 		}
+		if !kitfile.KitfileContainsMatchingLayer(config, filterConfs) {
+			continue
+		}
 		tags := repo.GetTags(manifestDesc)
-		repository := util.FormatRepositoryForDisplay(repo.GetRepoName())
+		// Strip localhost from repo if present, since we added it
+		repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
 		if repository == "" {
 			repository = "<none>"
 		}
@@ -117,16 +126,16 @@ func listRemoteKits(ctx context.Context, opts *ListOptions) ([]ModelInfo, error)
 		return nil, fmt.Errorf("failed to read repository: %w", err)
 	}
 	if opts.RemoteRef.Reference != "" {
-		info, err := listImageTag(ctx, repo, opts.RemoteRef)
+		info, err := listImageTag(ctx, repo, opts.RemoteRef, opts.FilterConfs)
 		if info == nil || err != nil {
 			return nil, err
 		}
 		return []ModelInfo{*info}, nil
 	}
-	return listTags(ctx, repo, opts.RemoteRef)
+	return listTags(ctx, repo, opts.RemoteRef, opts.FilterConfs)
 }
 
-func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference) ([]ModelInfo, error) {
+func listTags(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []kitfile.FilterConf) ([]ModelInfo, error) {
 	var tags []string
 	err := repo.Tags(ctx, "", func(tagsPage []string) error {
 		tags = append(tags, tagsPage...)
@@ -143,7 +152,7 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 			Repository: ref.Repository,
 			Reference:  tag,
 		}
-		info, err := listImageTag(ctx, repo, tagRef)
+		info, err := listImageTag(ctx, repo, tagRef, filterConfs)
 		if err != nil && !errors.Is(err, util.ErrNotAModelKit) {
 			return nil, err
 		}
@@ -155,7 +164,7 @@ func listTags(ctx context.Context, repo registry.Repository, ref *registry.Refer
 	return allInfos, nil
 }
 
-func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference) (*ModelInfo, error) {
+func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.Reference, filterConfs []kitfile.FilterConf) (*ModelInfo, error) {
 	manifestDesc, err := repo.Resolve(ctx, ref.Reference)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve reference %s: %w", ref.Reference, err)
@@ -165,6 +174,9 @@ func listImageTag(ctx context.Context, repo registry.Repository, ref *registry.R
 		return nil, fmt.Errorf("failed to read modelkit: %w", err)
 	}
 	if _, err := mediatype.ModelFormatForManifest(manifest); err != nil {
+		return nil, nil
+	}
+	if !kitfile.KitfileContainsMatchingLayer(config, filterConfs) {
 		return nil, nil
 	}
 	info := &ModelInfo{

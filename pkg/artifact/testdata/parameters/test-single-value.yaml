@@ -5,7 +5,7 @@ kitfileYaml: |
     name: test-kitfile
   model:
     name: test-model
-    path: /tmp/path/to/model
+    path: tmp/path/to/model
     parameters: |
       test-string
-kitfileJson: '{"manifestVersion":"1.0.0","package":{"name":"test-kitfile"},"model":{"name":"test-model","path":"/tmp/path/to/model","parameters":"test-string\n"}}'
+kitfileJson: '{"manifestVersion":"1.0.0","package":{"name":"test-kitfile"},"model":{"name":"test-model","path":"tmp/path/to/model","parameters":"test-string\n"}}'

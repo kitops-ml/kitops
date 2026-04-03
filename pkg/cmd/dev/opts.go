@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"os"
 
+	"oras.land/oras-go/v2/registry"
+
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
-	"oras.land/oras-go/v2/registry"
 )
 
 type DevBaseOptions struct {
@@ -67,7 +68,7 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 
 	if len(args) == 1 {
 		// Check if the argument is a ModelKit reference
-		if ref, _, err := util.ParseReference(args[0]); err == nil && ref.Reference != "" {
+		if ref, _, err := artifact.ParseReference(args[0]); err == nil && ref.Reference != "" {
 			// This looks like a ModelKit reference
 			opts.modelRef = ref
 			output.Debugf("Detected ModelKit reference: %s", ref.String())

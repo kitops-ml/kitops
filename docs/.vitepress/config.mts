@@ -127,6 +127,15 @@ export default defineConfig({
         ]
       },
       {
+        text: 'Kit TypeScript Library',
+        items: [
+          { text: 'Overview', link: '/docs/kitops-ts' },
+          { text: 'Getting Started', link: '/docs/kitops-ts/getting-started/' },
+          { text: 'API Reference', link: '/docs/kitops-ts/api-reference/' },
+          { text: 'Examples', link: '/docs/kitops-ts/examples/' },
+        ]
+      },
+      {
         text: 'Integrations',
         items: [
           { text: 'Integration List', link: '/docs/integrations/integrations/' },

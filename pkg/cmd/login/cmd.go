@@ -23,7 +23,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/util"
@@ -46,10 +45,7 @@ kit login docker.io --password-stdin -u docker_user`
 )
 
 type loginOptions struct {
-	options.NetworkOptions
-	registry          string
-	configHome        string
-	credential        auth.Credential
+	kit.LoginOptions
 	username          string
 	password          string
 	passwordFromStdIn bool
@@ -81,13 +77,7 @@ func runCommand(opts *loginOptions) func(cmd *cobra.Command, args []string) erro
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		kitOpts := &kit.LoginOptions{
-			NetworkOptions: opts.NetworkOptions,
-			ConfigHome:     opts.configHome,
-			Registry:       opts.registry,
-			Credential:     opts.credential,
-		}
-		err := kit.Login(cmd.Context(), kitOpts)
+		err := kit.Login(cmd.Context(), &opts.LoginOptions)
 		if err != nil {
 			return output.Fatalln(err)
 		}
@@ -96,12 +86,12 @@ func runCommand(opts *loginOptions) func(cmd *cobra.Command, args []string) erro
 }
 
 func (opts *loginOptions) complete(ctx context.Context, args []string) error {
-	opts.registry = args[0]
+	opts.Registry = args[0]
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 
 	if opts.password != "" && opts.username != "" {
 		output.Infof("Warning: Using --password via CLI is insecure. Consider using --password-stdin instead")
@@ -135,18 +125,18 @@ func (opts *loginOptions) complete(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		opts.credential = auth.Credential{
+		opts.Credential = auth.Credential{
 			Username: username,
 			Password: password,
 		}
 	} else {
 		// If username is empty, assume password is an OAuth token
 		if username == "" {
-			opts.credential = auth.Credential{
+			opts.Credential = auth.Credential{
 				RefreshToken: password,
 			}
 		} else {
-			opts.credential = auth.Credential{
+			opts.Credential = auth.Credential{
 				Username: username,
 				Password: password,
 			}

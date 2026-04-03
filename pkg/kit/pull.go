@@ -24,6 +24,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
@@ -70,7 +71,7 @@ func Pull(ctx context.Context, opts *PullOptions) (*PullResult, error) {
 }
 
 func runPullRecursive(ctx context.Context, localRepo local.LocalRepo, opts *PullOptions, pulledRefs []string) (ocispec.Descriptor, error) {
-	refStr := util.FormatRepositoryForDisplay(opts.ModelRef.String())
+	refStr := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 	if idx := getIndex(pulledRefs, refStr); idx != -1 {
 		cycleStr := fmt.Sprintf("[%s=>%s]", strings.Join(pulledRefs[idx:], "=>"), refStr)
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("found cycle in modelkit references: %s", cycleStr)
@@ -100,11 +101,11 @@ func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.De
 		}
 		return err
 	}
-	if config.Model == nil || !util.IsModelKitReference(config.Model.Path) {
+	if config.Model == nil || !artifact.IsModelKitReference(config.Model.Path) {
 		return nil
 	}
 	output.Infof("Pulling referenced image %s", config.Model.Path)
-	parentRef, _, err := util.ParseReference(config.Model.Path)
+	parentRef, _, err := artifact.ParseReference(config.Model.Path)
 	if err != nil {
 		return err
 	}

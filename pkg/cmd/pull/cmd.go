@@ -20,14 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 const (
@@ -40,9 +38,7 @@ kit pull registry.example.com/my-model:latest`
 )
 
 type pullOptions struct {
-	options.NetworkOptions
-	configHome string
-	modelRef   *registry.Reference
+	kit.PullOptions
 }
 
 func (opts *pullOptions) complete(ctx context.Context, args []string) error {
@@ -50,9 +46,9 @@ func (opts *pullOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 
-	modelRef, extraTags, err := util.ParseReference(args[0])
+	modelRef, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
@@ -66,7 +62,7 @@ func (opts *pullOptions) complete(ctx context.Context, args []string) error {
 		output.Infof("No tag specified for pull. Using 'latest' as default ('%s:latest')", args[0])
 		modelRef.Reference = "latest"
 	}
-	opts.modelRef = modelRef
+	opts.ModelRef = modelRef
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 		return err
@@ -97,14 +93,9 @@ func runCommand(opts *pullOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		kitOpts := &kit.PullOptions{
-			NetworkOptions: opts.NetworkOptions,
-			ConfigHome:     opts.configHome,
-			ModelRef:       opts.modelRef,
-		}
 
-		output.Infof("Pulling %s", opts.modelRef.String())
-		result, err := kit.Pull(cmd.Context(), kitOpts)
+		output.Infof("Pulling %s", opts.ModelRef.String())
+		result, err := kit.Pull(cmd.Context(), &opts.PullOptions)
 		if err != nil {
 			return output.Fatalln(err)
 		}

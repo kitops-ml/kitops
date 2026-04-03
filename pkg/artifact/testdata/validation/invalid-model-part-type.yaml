@@ -1,0 +1,8 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  model:
+    path: test-path
+    parts:
+      - path: part-path
+        type: contains a space
+errRegexp: "has invalid type"

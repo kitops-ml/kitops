@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  prompts:
+    - path: https://example.com
+errRegexp: "invalid path for prompt.*HTTP urls are not supported in paths"

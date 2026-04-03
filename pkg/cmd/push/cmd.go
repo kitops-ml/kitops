@@ -22,15 +22,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
@@ -52,10 +50,7 @@ kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest`
 )
 
 type pushOptions struct {
-	options.NetworkOptions
-	configHome   string
-	srcModelRef  *registry.Reference
-	destModelRef *registry.Reference
+	kit.PushOptions
 }
 
 func (opts *pushOptions) complete(ctx context.Context, args []string) error {
@@ -63,9 +58,9 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 
-	srcRef, extraTags, err := util.ParseReference(args[0])
+	srcRef, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference %s: %w", args[0], err)
 	}
@@ -76,11 +71,11 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 		output.Infof("No tag specified for push. Using 'latest' as default ('%s:latest')", args[0])
 		srcRef.Reference = "latest"
 	}
-	opts.srcModelRef = srcRef
+	opts.SrcModelRef = srcRef
 	if len(args) == 1 {
-		opts.destModelRef = srcRef
+		opts.DestModelRef = srcRef
 	} else {
-		destRef, extraTags, err := util.ParseReference(args[1])
+		destRef, extraTags, err := artifact.ParseReference(args[1])
 		if err != nil {
 			return fmt.Errorf("failed to parse target reference %s: %w", args[1], err)
 		}
@@ -91,10 +86,10 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 			output.Infof("No tag specified for push target. Using 'latest' as default ('%s:latest')", args[1])
 			destRef.Reference = "latest"
 		}
-		opts.destModelRef = destRef
+		opts.DestModelRef = destRef
 	}
 
-	if opts.destModelRef.Registry == "localhost" {
+	if opts.DestModelRef.Registry == "localhost" {
 		return fmt.Errorf("registry is required when pushing")
 	}
 
@@ -133,19 +128,13 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		kitOpts := &kit.PushOptions{
-			NetworkOptions: opts.NetworkOptions,
-			ConfigHome:     opts.configHome,
-			SrcModelRef:    opts.srcModelRef,
-			DestModelRef:   opts.destModelRef,
-		}
 
-		if opts.srcModelRef.String() != opts.destModelRef.String() {
-			output.Infof("Pushing %s to %s", opts.srcModelRef.String(), opts.destModelRef.String())
+		if opts.SrcModelRef.String() != opts.DestModelRef.String() {
+			output.Infof("Pushing %s to %s", opts.SrcModelRef.String(), opts.DestModelRef.String())
 		} else {
-			output.Infof("Pushing %s", opts.srcModelRef.String())
+			output.Infof("Pushing %s", opts.SrcModelRef.String())
 		}
-		result, err := kit.Push(cmd.Context(), kitOpts)
+		result, err := kit.Push(cmd.Context(), &opts.PushOptions)
 		respErr := &errcode.ErrorResponse{}
 		if ok := errors.As(err, &respErr); ok {
 			output.Debugf("Got error pushing: %s", err)

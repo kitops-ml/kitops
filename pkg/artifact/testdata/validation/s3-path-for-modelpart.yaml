@@ -1,0 +1,7 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  model:
+    path: testpath
+    parts:
+    - path: s3://test-s3/key
+errRegexp: "invalid path for model part.*only local paths are permitted"

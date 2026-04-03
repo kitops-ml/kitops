@@ -20,20 +20,21 @@ import (
 	"context"
 
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 )
 
 // UnpackOptions re-exports unpack.UnpackOptions for library API.
 type UnpackOptions = unpack.UnpackOptions
 
-// FilterConf re-exports unpack.FilterConf for library API.
-type FilterConf = unpack.FilterConf
+// FilterConf re-exports kitfile.FilterConf for library API.
+type FilterConf = kitfile.FilterConf
 
 // Unpack unpacks a ModelKit to the filesystem.
 func Unpack(ctx context.Context, opts *UnpackOptions) error {
 	return unpack.UnpackModelKit(ctx, opts)
 }
 
-// ParseFilter re-exports unpack.ParseFilter for convenience.
+// ParseFilter re-exports kitfile.ParseFilter for convenience.
 func ParseFilter(filter string) (*FilterConf, error) {
-	return unpack.ParseFilter(filter)
+	return kitfile.ParseFilter(filter)
 }

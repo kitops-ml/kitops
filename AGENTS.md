@@ -3,346 +3,79 @@
 
 ## Code Generation Instructions
 
-1. **Change ONLY what the design explicitly requires**
-   - If the design doesn't mention it, don't touch it
-   - Existing working code stays unless specifically targeted
-   - No "while I'm here" improvements
+1. **Minimum necessary changes only**
+   - Change only what's explicitly required. No refactoring adjacent code, no adding comments/docs, no "improvements" beyond scope.
+   - Read existing code before modifying it. Follow existing patterns in the file.
 
-2. **Minimal implementation principle**
-   - Shortest path to satisfy requirements
-   - No defensive programming unless specified
-   - No future-proofing beyond stated needs
-   - Remove rather than add when possible
-
-3. **Zero bloat policy**
-   - No comments explaining obvious code
-   - No extra abstraction layers
-   - No helper functions unless design demands them
-
-4. **Change verification**
-   Before modifying anything, confirm:
-   - Is this change explicitly in the design?
-   - Am I adding anything not required?
-   - Can this be done with less code?
-
-5. **Implementation order**
-   - Map design requirements to specific files/functions
-   - Execute changes in dependency order
-   - Test each change in isolation before proceeding
-
-6. **Review marker requirement (MANDATORY)**
+2. **Review marker requirement (MANDATORY)**
    After modifying ANY source file, append this marker as the LAST line:
-   
+
    - Go files (.go): `// AGENT_MODIFIED: Human review required before merge`
    - Markdown (.md): `<!-- AGENT_MODIFIED: Human review required before merge -->`
    - YAML (.yaml, .yml): `# AGENT_MODIFIED: Human review required before merge`
    - Shell (.sh): `# AGENT_MODIFIED: Human review required before merge`
    - Dockerfile: `# AGENT_MODIFIED: Human review required before merge`
-   
+
    DO NOT add markers to:
    - Binary files
    - Generated files (*.pb.go, go.sum, package-lock.json)
    - Vendored dependencies (/vendor/)
    - Files you only read but didn't modify
-   
+
    Humans will remove these markers as they review each file. PRs with remaining markers will be rejected by CI.
 
-**What you MUST ignore:**
+3. **License header requirement (MANDATORY for Go files)**
+   Every `.go` file must start with the Apache 2.0 license header. CI enforces this via `addlicense` and will block the PR if missing.
 
-- Urges to refactor adjacent code
-- Desire to add "helpful" documentation
-- Temptation to implement "better" solutions than specified
-- Any scope creep whatsoever
+   ```go
+   // Copyright 2024 The KitOps Authors.
+   //
+   // Licensed under the Apache License, Version 2.0 (the "License");
+   // you may not use this file except in compliance with the License.
+   // You may obtain a copy of the License at
+   //
+   //     http://www.apache.org/licenses/LICENSE-2.0
+   //
+   // Unless required by applicable law or agreed to in writing, software
+   // distributed under the License is distributed on an "AS IS" BASIS,
+   // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   // See the License for the specific language governing permissions and
+   // limitations under the License.
+   //
+   // SPDX-License-Identifier: Apache-2.0
+   ```
+
+   When creating new `.go` files, add this header before the `package` declaration. To fix missing headers in bulk:
+
+   ```bash
+   go install github.com/google/addlicense@latest
+   addlicense -s -l apache -c "The KitOps Authors." $(find . -name '*.go')
+   ```
 
 ## Code Review Instructions
 
-### Your Role
+### Pre-Review Check (MANDATORY)
 
-Chief Software Quality Control Engineer with 15+ years of experience. Philosophy: "Half-finished code is worse than no code, but false alarms waste time."
+Before reviewing code, search the entire PR for `AGENT_MODIFIED`. If any markers are found, reject immediately — all modified files must be human-reviewed and markers removed before merge.
 
 ### Review Principles
 
-**Require Evidence**: Every reported issue MUST include evidence  
-**Investigate**: Follow the investigation protocol  
-**Prioritize Impact**: Don't mark as critical unless it clearly breaks functionality, introduces security vulnerability, or causes significant performance degradation  
-**Check Intent vs. Outcome**: Compare PR description with actual changes. Mismatches are high-priority  
-**Avoid Hypotheticals**: No potential problems without concrete examples in current code
+- **Evidence over speculation**: Every issue must cite specific code locations and concrete failure conditions. No hypothetical "this could be a problem" without a demonstrable trigger.
+- **Disprove yourself first**: Before reporting an issue, search for mitigations — check callers, defensive code in parent functions, and similar patterns elsewhere in the codebase.
+- **Compare intent vs. outcome**: Read the PR description. Flag mismatches between stated goals and actual changes.
+- **Severity requires confidence**: Only mark critical if you have high confidence AND it breaks core functionality or security. Uncertain issues are suggestions, not blockers.
 
-### Investigation Protocol (MANDATORY)
+### KitOps-Specific Review Concerns
 
-For EVERY potential issue:
+- **Path traversal in tar layers**: Verify `filesystem.VerifySubpath()` is used. Check that archive entries can't escape the context/unpack directory via `../` or absolute paths.
+- **CWD assumptions**: Code in pack/unpack/import runs after `os.Chdir` — verify paths are correct relative to the shifted working directory.
+- **OCI spec compliance**: Layers, manifests, and media types must conform to the OCI and ModelKit specification.
+- **Registry credential handling**: Auth tokens and credentials in `pkg/lib/network/` must not leak into logs or error messages.
+- **Symlink safety**: File operations in `pkg/lib/filesystem/` must not follow symlinks outside the context directory.
 
-**Step 1: Disprove Yourself**
+### Output
 
-- Look for why you might be wrong
-- Search for mitigations you missed
-- Check if this is intentional behavior
-- Find defensive code in parent/child functions
-
-**Step 2: Expand Search Radius**
-
-- Check 100+ lines around suspicious code
-- Trace all callers of this function
-- Follow data flow to origin and destination
-- Search for similar patterns that DO have protection
-
-**Step 3: Test Your Hypothesis**
-
-For runtime issues:
-
-- Write hypothetical test case that would fail
-- Trace exact execution path to failure
-- Calculate concrete resource consumption
-
-For logic issues:
-
-- Identify specific inputs that break it
-- Show state corruption that results
-- Demonstrate business impact
-
-For security issues:
-
-- Construct attack vector
-- Show what attacker gains
-- Verify no defense-in-depth stops it
-
-**Step 4: Assign Confidence**
-
-- HIGH (>80%): Found no mitigations, can show specific failure
-- MEDIUM (50-80%): Likely issue but uncertainty remains
-- LOW (<50%): Possible issue but significant doubts
-
-**Step 5: Determine True Severity**
-
-- Critical: HIGH confidence + breaks core functionality/security
-- Important: HIGH confidence + degraded experience OR MEDIUM confidence + serious impact
-- Minor: MEDIUM confidence + limited impact
-
-### Evidence Format
-
-Each issue MUST include:
-
-1. **Issue Statement**: One sentence - what breaks and under what conditions
-2. **Location**: `path/file:lines` with minimal code snippet
-3. **Investigation Summary**: Files examined, mitigations not found, why existing code doesn't prevent this
-4. **Trigger Conditions**: Specific conditions causing the issue
-5. **Impact Statement**: Scope, severity, likelihood
-
-### Review Checklist
-
-**Pre-Review: Agent Review Markers (MANDATORY FIRST CHECK)**
-
-BEFORE reviewing code quality, check for agent review markers:
-
-1. Search entire PR for string: `AGENT_MODIFIED`
-2. If ANY markers found:
-   - **IMMEDIATE REJECTION**: Do not proceed with code review
-   - Rejection reason: "PR contains unremoved agent review markers. All modified files must be human-reviewed and markers removed before merge."
-   - List specific files containing markers
-3. If NO markers found: Proceed with normal review
-
-This check prevents unreviewed AI-generated code from merging. The CI will also enforce this, but catch it early.
-
-**Core Quality Assessment**
-
-- Functionality: Meets PR purpose without breaking existing features
-- Logic Errors: Validate conditionals, loops, algorithms
-- Error Handling: Proper exception handling, graceful degradation
-- Edge Cases: Missing handling of boundaries relevant to changes
-- Backward Compatibility: APIs, configs, data contracts remain compatible
-
-**Security Analysis**
-
-- Input Validation: SQL injection, XSS, command injection
-- Authentication/Authorization: Access controls, privilege escalation
-- Data Exposure: Sensitive data in logs, responses, errors
-- Secrets Management: Hardcoded credentials, API keys
-- Unsafe Patterns: Deserialization, SSRF, path traversal
-
-**Performance & Efficiency**
-
-- Algorithmic Complexity: O(n²) where O(n) suffices
-- Database Queries: N+1 problems, missing indexes
-- Memory Usage: Leaks, unnecessary object creation
-- Network Calls: Redundant API calls, missing caching
-- Resource Management: File handles, connections, cleanup
-- Concurrency: Locks, race conditions, blocking I/O
-
-### Output Format
-
-**🔴 Critical Issues** (Must Fix)
-
-- Security vulnerabilities
-- Logic errors breaking functionality
-- Performance bottlenecks
-
-**🟡 Improvement Opportunities** (Should Fix)
-
-- Code quality issues
-- Minor performance improvements
-- Style/convention violations
-
-**💡 Suggestions** (Nice to Have)
-
-- Optimization ideas
-- Alternative approaches
-
-**📋 Missing Components**
-
-- Tests that should be added
-- Documentation updates needed
-
-### Final Recommendation
-
-One of:
-
-- ✅ **APPROVE**: Ready to merge
-- 🔄 **REQUEST CHANGES**: Must fix before merge
-- 💬 **COMMENT**: Feedback for author's discretion
-
-## Project Details & Development Lifecycle
-
-This section explains how development, build, and testing workflows operate in the Jozu Hub product repository.
-
-### Repository Structure
-
-The Jozu Hub product repository follows a standard Helm chart structure with additional testing and tooling:
-
-- `charts/jozu-hub/` - Main Helm chart for Jozu Hub deployment
-- `docs/` - Documentation including installation and configuration guides
-- `tests/` - Go-based testing framework with Helm test integration
-- `tools/` - Development tools including local development setup
-- `scripts/` - Automation scripts for builds, documentation, and releases
-
-### Development Workflow
-
-#### Local Development Setup
-
-Local development uses Kind (Kubernetes in Docker) clusters managed through scripts in `tools/local-dev/`:
-
-1. **Cluster Creation**: `prepare-kind-cluster.sh` creates a Kind cluster with proper configuration
-2. **DNS Setup**: `setup-kind-dns.sh` configures CoreDNS for local domain resolution
-3. **Image Loading**: `tools/local-dev/Makefile` provides targets to build and load local images into Kind
-
-The `tools/local-dev/Makefile` defines image building patterns:
-
-```makefile
-load-api:
-    @echo "» Building $(API_LOCAL_TAG) in folder $(FOLDER)"
-    (cd $(FOLDER) && docker build -t $(API_LOCAL_TAG) .)
-    kind load docker-image $(API_LOCAL_TAG) --name $(KIND_CLUSTER)
-```
-
-#### Component Architecture
-
-The system consists of multiple microservices defined in `scripts/common.sh`:
-
-```bash
-services=(api workers runway modelscan ui uiproxy)
-
-declare -A image_repo_map=(
-  [api]=jozu-hub-api
-  [workers]=jozu-hub-workers
-  [runway]=jozu-runway
-  [modelscan]=jozu-modelscan
-  [ui]=jozu-hub-ui
-  [uiproxy]=jozu-hub-ui-proxy
-)
-```
-
-Each service has corresponding Docker images and GitHub repositories mapped in `scripts/common.sh`.
-
-### Build System
-
-#### Documentation Generation
-
-Documentation is automatically generated using helm-docs:
-
-- `scripts/regenerate-documentation.sh` generates chart README and values reference
-- `scripts/regenerate-schema.sh` creates JSON schema for Helm values
-- Templates are stored in `charts/_templates.gotmpl`
-
-#### Schema Generation
-
-JSON schema validation is automatically generated for Helm values using the `helm-schema` tool. The process is managed by `scripts/regenerate-schema.sh`:
-
-Generated schema is saved as `charts/jozu-hub/values.schema.json` and provides:
-
-- JSON Schema Draft 7 validation for Helm values
-- Type validation for configuration properties
-- Documentation integration with helm-docs
-- IDE support for values.yaml editing
-
-#### Image Management
-
-Image versions and SHAs are extracted from production values using `scripts/extract-shas.sh`:
-
-### Testing Framework (helm test)
-
-#### Test Structure
-
-The testing framework is located in `tests/` and follows this structure:
-
-- `cmd/test-runner/` - Main test orchestrator
-- `pkg/testsuites/` - Individual test suites (infrastructure, connectivity, workflows)
-- `pkg/config/` - Configuration management with strict validation
-- `pkg/clients/` - Client libraries for PostgreSQL, NATS, and HTTP
-
-#### Test Runner Architecture
-
-The test runner in `tests/cmd/test-runner/main.go` manages test execution:
-
-#### Test Execution Workflow
-
-The primary testing workflow uses `tests/Makefile`:
-
-The complete workflow is executed via:
-
-```bash
-make kind-full  # Combines setup, test, and cleanup
-```
-
-### Helm Chart Integration
-
-#### Values Configuration
-
-The Helm chart supports extensive configuration through values documented in `docs/04-values-reference.md`. Key configuration areas include:
-
-- **Images**: Repository and tag specification for all components
-- **Secrets**: External secret references for PostgreSQL, NATS, registry credentials, and signing keys
-- **Ingress**: Configuration for UI and API access
-- **Workflows**: Argo Workflows integration in the `jozu-workflows` namespace
-- **RBAC**: Service account and role definitions
-
-#### Secret Management
-
-Secrets are configured through existing Kubernetes secrets as documented in `docs/02-configuring.md`:
-
-- **PostgreSQL**: Database credentials in `jozu-hub` namespace
-- **Registry**: OCI registry authentication
-- **Signing**: Cosign keys for ModelKit signing in `jozu-workflows` namespace
-- **SMTP/Auth**: OAuth and email configuration
-
-#### Namespace Architecture
-
-The system operates across multiple namespaces:
-
-- `jozu-hub` - Main application components
-- `jozu-workflows` - Argo Workflows and signing operations
-- Custom namespaces for PostgreSQL and NATS when using external operators
-
-### Release Process
-
-The release orchestrator workflow automates on-premise releases by:
-
-1. Cloning GitOps repository with current production state
-2. Extracting SHA-based images from ECR using `scripts/extract-shas.sh`
-3. Retagging and pushing to `images.jozu.com`
-4. Updating `values.yaml` and `Chart.yaml`
-5. Packaging and pushing Helm chart
-6. Tagging microservice repositories with release version
-
-This process ensures on-premise releases match the exact production state without manual intervention.
+Categorize findings as **Critical** (must fix — breaks functionality or security), **Important** (should fix), or **Suggestion** (author's discretion). End with one of: APPROVE, REQUEST CHANGES, or COMMENT.
 
 ## Project Overview
 
@@ -419,6 +152,23 @@ All commands follow consistent structure:
 - Command definition: `pkg/cmd/{command}/cmd.go`
 - Main logic: `pkg/cmd/{command}/{command}.go`
 - Options/configuration in separate files when complex
+
+### CWD Switching During Pack/Unpack (Implementation Gotcha)
+
+Pack, unpack, and import all change the process working directory via `os.Chdir` to simulate `tar -C` semantics. This ensures relative paths inside OCI tar layers are correct (relative to the context directory, not wherever the user ran `kit` from).
+
+**Where it happens:**
+
+- `pkg/cmd/pack/cmd.go` — changes to `contextDir`, **not restored** (CLI exits after)
+- `pkg/lib/filesystem/unpack/core.go` — changes to `UnpackDir`, **restored via defer**
+- `pkg/cmd/kitimport/util.go` — changes to `contextDir`, **restored via defer** (required on Windows to allow temp dir cleanup)
+
+**Rules when modifying pack/unpack/import code:**
+
+1. Any code running **after** `os.Chdir` in pack operates in the context directory, not the original cwd
+2. If calling pack logic from a library context (not a CLI command that exits), you **must** save and restore cwd
+3. New commands that reuse packing internals must account for the cwd shift
+4. `filesystem.VerifySubpath()` validates that paths stay within bounds after the cwd change — do not bypass it
 
 ### Testing Structure
 

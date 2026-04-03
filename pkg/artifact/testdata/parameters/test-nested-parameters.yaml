@@ -5,7 +5,7 @@ kitfileYaml: |
     name: test-kitfile
   model:
     name: test-model
-    path: /tmp/path/to/model
+    path: tmp/path/to/model
     parameters:
       test-list-of-lists:
         - - a-1
@@ -28,4 +28,4 @@ kitfileYaml: |
         test-a: a
         test-b: b
         test-c: c
-kitfileJson: '{"manifestVersion":"1.0.0","package":{"name":"test-kitfile"},"model":{"name":"test-model","path":"/tmp/path/to/model","parameters":{"test-list-of-lists":[["a-1","a-2"],["b-1","b-2"]],"test-maps":{"a":{"b":{"c":{"d":{"e":"f"}}}}},"test-nested-list":["item-a","item-b",{"item-object":[{"subfield-1":1},{"subfield-2":2}]}],"test-nested-map":{"test-a":"a","test-b":"b","test-c":"c"}}}}'
+kitfileJson: '{"manifestVersion":"1.0.0","package":{"name":"test-kitfile"},"model":{"name":"test-model","path":"tmp/path/to/model","parameters":{"test-list-of-lists":[["a-1","a-2"],["b-1","b-2"]],"test-maps":{"a":{"b":{"c":{"d":{"e":"f"}}}}},"test-nested-list":["item-a","item-b",{"item-object":[{"subfield-1":1},{"subfield-2":2}]}],"test-nested-map":{"test-a":"a","test-b":"b","test-c":"c"}}}}'

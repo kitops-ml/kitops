@@ -25,14 +25,13 @@ import (
 	"text/tabwriter"
 	gotemplate "text/template"
 
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 const (
@@ -54,6 +53,16 @@ appear multiple times in the list, distinguished by their DIGEST.
 The SIZE displayed for each modelkit represents the total storage space
 occupied by all its components.
 
+Use the --filter (-f) flag to narrow results based on modelkit contents. Only
+modelkits containing at least one layer matching the filter will be shown.
+
+Valid filters have the format
+    [types]:[filters]
+where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets,
+code, docs, or prompts) and [filters] is an optional comma-separated list of names
+or paths to match against. Multiple --filter flags use OR logic (a modelkit is
+listed if it matches any filter).
+
 Use the --format flag to change how results are printed. Valid values are
 "table", "json", or a Go template. When a value other than "table" or "json"
 is supplied, the flag contents are treated as a Go template executed once per
@@ -72,15 +81,26 @@ Template placeholders:
 kit list
 
 # List modelkits from a remote repository
-kit list registry.example.com/my-namespace/my-model`
+kit list registry.example.com/my-namespace/my-model
+
+# List only modelkits that contain prompt layers
+kit list -f prompts
+
+# List only modelkits containing a model
+kit list -f model
+
+# List modelkits that have either prompts or datasets
+kit list -f prompts -f datasets
+
+# List modelkits with a specific named prompt
+kit list -f prompts:pdf-processing`
 )
 
 type listOptions struct {
-	options.NetworkOptions
-	configHome string
-	remoteRef  *registry.Reference
-	format     string
-	template   string
+	kit.ListOptions
+	format   string
+	template string
+	filters  []string
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
@@ -88,16 +108,16 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 	if len(args) > 0 {
-		remoteRef, extraTags, err := util.ParseReference(args[0])
+		remoteRef, extraTags, err := artifact.ParseReference(args[0])
 		if err != nil {
 			return fmt.Errorf("invalid reference: %w", err)
 		}
 		if len(extraTags) > 0 {
 			return fmt.Errorf("repository cannot reference multiple tags")
 		}
-		opts.remoteRef = remoteRef
+		opts.RemoteRef = remoteRef
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
@@ -112,6 +132,15 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 	default:
 		opts.template = opts.format
 		opts.format = "template"
+	}
+
+	// Parse filters using library functionality
+	for _, filter := range opts.filters {
+		filterConf, err := kitfile.ParseFilter(filter)
+		if err != nil {
+			return fmt.Errorf("invalid filter %q: %w", filter, err)
+		}
+		opts.FilterConfs = append(opts.FilterConfs, *filterConf)
 	}
 
 	printConfig(opts)
@@ -132,6 +161,7 @@ func ListCommand() *cobra.Command {
 
 	cmd.Args = cobra.MaximumNArgs(1)
 	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table, json, or Go template string")
+	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter modelkits by content type (e.g., model, datasets, code, docs, prompts). Can be specified multiple times")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
@@ -144,25 +174,9 @@ func runCommand(opts *listOptions) func(*cobra.Command, []string) error {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		kitOpts := &kit.ListOptions{
-			NetworkOptions: opts.NetworkOptions,
-			ConfigHome:     opts.configHome,
-			RemoteRef:      opts.remoteRef,
-		}
-		lines, err := kit.List(cmd.Context(), kitOpts)
+		infos, err := kit.List(cmd.Context(), &opts.ListOptions)
 		if err != nil {
 			return output.Fatalln(err)
-		}
-		infos := make([]modelInfo, len(lines))
-		for i := range lines {
-			infos[i] = modelInfo{
-				Repo:      lines[i].Repo,
-				Digest:    lines[i].Digest,
-				Tags:      lines[i].Tags,
-				ModelName: lines[i].ModelName,
-				Size:      lines[i].Size,
-				Author:    lines[i].Author,
-			}
 		}
 		return formatAndPrint(cmd.OutOrStdout(), infos, opts)
 	}
@@ -204,7 +218,7 @@ func formatAndPrint(w io.Writer, infos []modelInfo, opts *listOptions) error {
 func printSummary(w io.Writer, infos []modelInfo) {
 	var lines []string
 	for _, info := range infos {
-		lines = append(lines, info.format()...)
+		lines = append(lines, formatModelInfo(&info)...)
 	}
 	tw := tabwriter.NewWriter(w, 0, 2, 3, ' ', 0)
 	fmt.Fprintln(tw, listTableHeader)
@@ -215,7 +229,7 @@ func printSummary(w io.Writer, infos []modelInfo) {
 }
 
 func printConfig(opts *listOptions) {
-	if opts.remoteRef != nil {
-		output.Debugf("Listing remote model kits in %s", opts.remoteRef.String())
+	if opts.RemoteRef != nil {
+		output.Debugf("Listing remote model kits in %s", opts.RemoteRef.String())
 	}
 }

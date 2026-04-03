@@ -31,7 +31,9 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/external/s3api"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -74,7 +76,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	ref := opts.ModelRef
 	store, err := getStoreForRef(ctx, opts)
 	if err != nil {
-		ref := util.FormatRepositoryForDisplay(opts.ModelRef.String())
+		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 		return fmt.Errorf("failed to find reference %s: %s", ref, err)
 	}
 	manifestDesc, err := store.Resolve(ctx, ref.Reference)
@@ -101,13 +103,13 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		config = genconfig
 	} else {
 		// These steps only make sense if we have a legitimate Kitfile available
-		if config.Model != nil && util.IsModelKitReference(config.Model.Path) {
+		if config.Model != nil && artifact.IsModelKitReference(config.Model.Path) {
 			output.Infof("Unpacking referenced modelkit %s", config.Model.Path)
 			if err := unpackParent(ctx, config.Model.Path, opts, visitedRefs); err != nil {
 				return err
 			}
 		}
-		if shouldUnpackLayer(config, opts.FilterConfs) {
+		if kitfile.LayerMatchesAnyFilter(config, opts.FilterConfs) {
 			if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
 				return err
 			}
@@ -138,7 +140,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
 			entry := config.Model
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -147,7 +149,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.ModelPartBaseType:
 			entry := config.Model.Parts[modelPartIdx]
 			modelPartIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -158,7 +160,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			if layerDesc.Annotations[constants.LayerSubtypeAnnotation] == constants.LayerSubtypePrompt {
 				entry := config.Prompts[promptIdx]
 				promptIdx += 1
-				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 					continue
 				}
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -166,7 +168,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			} else {
 				entry := config.Code[codeIdx]
 				codeIdx += 1
-				if !shouldUnpackLayer(entry, opts.FilterConfs) {
+				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 					continue
 				}
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -174,9 +176,21 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			}
 
 		case mediatype.DatasetBaseType:
-			entry := config.DataSets[datasetIdx]
-			datasetIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			// Since some datasets may be remote, we need to search the Kitfile for the next non-remote dataset
+			var entry *artifact.DataSet
+			for idx := datasetIdx; idx < len(config.DataSets); idx++ {
+				dataset := config.DataSets[idx]
+				if dataset.RemotePath != "" {
+					continue
+				}
+				entry = &dataset
+				datasetIdx = idx + 1
+				break
+			}
+			if entry == nil {
+				continue
+			}
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -185,7 +199,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.DocsBaseType:
 			entry := config.Docs[docsIdx]
 			docsIdx += 1
-			if !shouldUnpackLayer(entry, opts.FilterConfs) {
+			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
 			}
 			layerInfo, layerPath = entry.LayerInfo, entry.Path
@@ -217,6 +231,59 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
+
+	// Handle remotely stored files: first build a list so we can show a warning if remote files are skipped
+	remoteFiles := map[string]s3api.S3ObjectReference{}
+	for _, dataset := range config.DataSets {
+		if dataset.RemotePath == "" || !kitfile.LayerMatchesAnyFilter(dataset, opts.FilterConfs) {
+			continue
+		}
+		ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
+		if err != nil {
+			return fmt.Errorf("failed to parse S3 object reference for dataset %s: %w", dataset.Path, err)
+		}
+		remoteFiles[dataset.Path] = *ref
+	}
+	if len(remoteFiles) > 0 {
+		if !opts.IncludeRemote {
+			output.Logf(output.LogLevelWarn, "ModelKit contains remote datasets. To unpack, specify the --include-remote flag")
+		} else {
+			client, err := s3api.SetUpClient(ctx)
+			if err != nil {
+				return err
+			}
+			for path, s3Ref := range remoteFiles {
+				_, relPath, err := filesystem.VerifySubpath(opts.UnpackDir, path)
+				if err != nil {
+					return fmt.Errorf("error verifying path %s for remote reference: %w", path, err)
+				}
+
+				output.Debugf("Downloading remote dataset: Bucket: %s, Key: %s", s3Ref.Bucket, s3Ref.Key)
+				if fi, exists := filesystem.PathExists(relPath); exists {
+					if opts.IgnoreExisting {
+						output.Debugf("File %s already exists; skipping", path)
+						continue
+					}
+					if !opts.Overwrite {
+						return fmt.Errorf("failed to unpack remote dataset: path '%s' already exists", path)
+					}
+					if !fi.Mode().IsRegular() {
+						return fmt.Errorf("failed to unpack remote dataset: path '%s' already exists and is not a regular file", path)
+					}
+				}
+
+				pathDir := filepath.Dir(relPath)
+				if err := os.MkdirAll(pathDir, 0755); err != nil {
+					return fmt.Errorf("failed to create directory %s: %w", pathDir, err)
+				}
+				if err := s3api.DownloadObject(ctx, client, &s3Ref, relPath); err != nil {
+					return fmt.Errorf("failed to download remote dataset for path %s: %w", path, err)
+				}
+				output.Infof("Downloaded remote S3 dataset for path %s", path)
+			}
+		}
+	}
+
 	output.Debugf("Unpacked %d model part layers", modelPartIdx)
 	output.Debugf("Unpacked %d code layers", codeIdx)
 	output.Debugf("Unpacked %d dataset layers", datasetIdx)
@@ -232,7 +299,7 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 		return fmt.Errorf("found cycle in modelkit references: %s", cycleStr)
 	}
 
-	parentRef, _, err := util.ParseReference(ref)
+	parentRef, _, err := artifact.ParseReference(ref)
 	if err != nil {
 		return err
 	}
@@ -240,16 +307,16 @@ func unpackParent(ctx context.Context, ref string, optsIn *UnpackOptions, visite
 	opts.ModelRef = parentRef
 	// Unpack only model, ignore code/datasets
 	if len(opts.FilterConfs) == 0 {
-		modelFilter, err := ParseFilter("model")
+		modelFilter, err := kitfile.ParseFilter("model")
 		if err != nil {
 			// Shouldn't happen, ever
 			return fmt.Errorf("failed to parse filter for parent modelkit: %w", err)
 		}
-		opts.FilterConfs = []FilterConf{*modelFilter}
+		opts.FilterConfs = []kitfile.FilterConf{*modelFilter}
 	} else {
-		var filterConfs []FilterConf
+		var filterConfs []kitfile.FilterConf
 		for _, conf := range opts.FilterConfs {
-			if conf.matchesBaseType("model") {
+			if conf.MatchesBaseType("model") {
 				// Drop any other base types from this filter
 				conf.BaseTypes = []string{"model"}
 				filterConfs = append(filterConfs, conf)

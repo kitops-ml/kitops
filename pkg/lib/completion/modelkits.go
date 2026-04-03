@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-	"github.com/spf13/cobra"
 )
 
 func GetLocalModelKitsCompletion(ctx context.Context, toComplete string) []string {
@@ -44,7 +45,7 @@ func GetLocalModelKitsCompletion(ctx context.Context, toComplete string) []strin
 
 	var completions []string
 	for _, repo := range localRepos {
-		repoName := util.FormatRepositoryForDisplay(repo.GetRepoName())
+		repoName := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
 		tags, digests := getTagsAndDigestsForRepo(repo)
 		switch {
 		// Note: this case _has_ to come first, as digests themselves contain colons

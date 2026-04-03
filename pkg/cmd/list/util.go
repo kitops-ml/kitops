@@ -18,6 +18,8 @@ package list
 
 import (
 	"fmt"
+
+	"github.com/kitops-ml/kitops/pkg/kit"
 )
 
 const (
@@ -25,16 +27,9 @@ const (
 	listTableFmt    = "%s\t%s\t%s\t%s\t%s\t%s"
 )
 
-type modelInfo struct {
-	Repo      string   `json:"repo"`
-	Digest    string   `json:"digest"`
-	Tags      []string `json:"tags"`
-	ModelName string   `json:"modelName"`
-	Size      string   `json:"size"`
-	Author    string   `json:"author"`
-}
+type modelInfo = kit.ModelInfo
 
-func (m *modelInfo) format() []string {
+func formatModelInfo(m *modelInfo) []string {
 	if len(m.Tags) == 0 {
 		line := fmt.Sprintf(listTableFmt, m.Repo, "<none>", m.Author, m.ModelName, m.Size, m.Digest)
 		return []string{line}

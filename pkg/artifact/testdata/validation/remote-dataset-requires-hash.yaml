@@ -1,0 +1,6 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  datasets:
+    - path: some/local/path
+      remotePath: s3://mybucket/mykey
+errRegexp: "remoteHash is required when remote dataset paths are used"

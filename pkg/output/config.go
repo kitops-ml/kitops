@@ -28,6 +28,8 @@ var (
 	progressEnabled           = true
 	stdout          io.Writer = os.Stdout
 	stderr          io.Writer = os.Stderr
+
+	currentLogger Logger = &defaultLogger{}
 )
 
 func SetLogLevel(level LogLevel) {
@@ -60,6 +62,13 @@ func SetProgressBars(style string) {
 	progressStyle = style
 	progressEnabled = shouldPrintProgress()
 }
+
+// SetLogger replaces the default logger. All package-level log functions
+// (Logln, Logf, Errorln, etc.) will delegate to l. ProgressLogger output
+// is not routed through l — it writes directly to the progress bar writer
+// to avoid corrupting terminal output. Callers who set a custom logger
+// should also call SetProgressBars("none") to disable progress bars.
+func SetLogger(l Logger) { currentLogger = l }
 
 func ProgressEnabled() bool {
 	return progressEnabled

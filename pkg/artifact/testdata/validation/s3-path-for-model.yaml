@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  model:
+    path: s3://test-s3/key
+errRegexp: "invalid path for model.*only local paths and ModelKit references are permitted"

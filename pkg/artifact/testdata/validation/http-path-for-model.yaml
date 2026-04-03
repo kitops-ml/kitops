@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  model:
+    path: https://example.com
+errRegexp: "invalid path for model.*HTTP urls are not supported in paths"

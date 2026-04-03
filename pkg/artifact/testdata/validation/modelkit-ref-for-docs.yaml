@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  docs:
+    - path: docker.io/kit-org/kit-repo:latest
+errRegexp: "invalid path for doc.*only local paths are permitted"

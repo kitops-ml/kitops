@@ -20,14 +20,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 const (
@@ -71,46 +70,44 @@ organization to maintain clarity and avoid confusion.`
 )
 
 type tagOptions struct {
-	configHome string
-	sourceRef  *registry.Reference
-	targetRef  *registry.Reference
+	kit.TagOptions
 }
 
 func (opts *tagOptions) complete(ctx context.Context, args []string) error {
-
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
-	modelRef, _, err := util.ParseReference(args[0])
+	opts.ConfigHome = configHome
+	modelRef, _, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
 	if modelRef.Reference == "" {
 		return fmt.Errorf("source ModelKit reference requires a tag or digest (%s:<tag>)", args[0])
 	}
-	opts.sourceRef = modelRef
+	opts.SourceRef = modelRef
 
-	modelRef, _, err = util.ParseReference(args[1])
+	modelRef, _, err = artifact.ParseReference(args[1])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
 	if modelRef.Reference == "" {
 		return fmt.Errorf("target ModelKit reference requires a tag or digest (%s:<tag>)", args[1])
 	}
-	opts.targetRef = modelRef
+	opts.TargetRef = modelRef
 	return nil
 }
 
 func TagCommand() *cobra.Command {
+	opts := &tagOptions{}
 
 	cmd := &cobra.Command{
 		Use:     "tag SOURCE_MODELKIT[:TAG] TARGET_MODELKIT[:TAG]",
 		Short:   shortDesc,
 		Long:    longDesc,
 		Example: example,
-		RunE:    runCommand(&tagOptions{}),
+		RunE:    runCommand(opts),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) >= 1 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
@@ -128,16 +125,11 @@ func runCommand(opts *tagOptions) func(cmd *cobra.Command, args []string) error 
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		kitOpts := &kit.TagOptions{
-			ConfigHome: opts.configHome,
-			SourceRef:  opts.sourceRef,
-			TargetRef:  opts.targetRef,
-		}
-		err := kit.Tag(cmd.Context(), kitOpts)
+		err := kit.Tag(cmd.Context(), &opts.TagOptions)
 		if err != nil {
 			return output.Fatalf("Failed to tag modelkit: %s", err)
 		}
-		output.Infof("Modelkit %s tagged as %s", opts.sourceRef, opts.targetRef)
+		output.Infof("Modelkit %s tagged as %s", opts.SourceRef, opts.TargetRef)
 		return nil
 	}
 }

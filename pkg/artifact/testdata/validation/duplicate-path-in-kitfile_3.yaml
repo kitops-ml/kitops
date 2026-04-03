@@ -1,0 +1,7 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  model:
+    path: test-path/
+  datasets:
+    - path: test-path
+errRegexp: "use the same path test-path"

@@ -47,7 +47,7 @@ func TestParameterMarshalUnmarshal(t *testing.T) {
 			kf := &KitFile{}
 			rc := io.NopCloser(strings.NewReader(tt.KitfileYaml))
 			err := kf.LoadModel(rc)
-			if !assert.NoError(t, err) {
+			if !assert.NoError(t, err, "Unexpected error loading test Kitfile") {
 				return
 			}
 
@@ -63,6 +63,37 @@ func TestParameterMarshalUnmarshal(t *testing.T) {
 			}
 			if tt.KitfileJson != "" {
 				assert.Equal(t, tt.KitfileJson, string(unmarshalledJson))
+			}
+		})
+	}
+}
+
+type verifyTestCase struct {
+	Name      string
+	Kitfile   string `yaml:"kitfile"`
+	ErrRegexp string `yaml:"errRegexp"`
+}
+
+func (tc verifyTestCase) withName(name string) verifyTestCase {
+	tc.Name = name
+	return tc
+}
+
+func TestValidateKitfile(t *testing.T) {
+	tests := loadAllTestCasesOrPanic[verifyTestCase](t, filepath.Join("testdata", "validation"))
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			kf := &KitFile{}
+			rc := io.NopCloser(strings.NewReader(tt.Kitfile))
+
+			err := kf.LoadModel(rc)
+			if tt.ErrRegexp == "" {
+				assert.NoError(t, err, "Should not return an error")
+			} else {
+				if !assert.Error(t, err, "Validation should have returned an error") {
+					return
+				}
+				assert.Regexp(t, tt.ErrRegexp, err.Error(), "Expect error to match")
 			}
 		})
 	}
@@ -139,9 +170,9 @@ model:
   path: model-files
   license: "license-h"
   parts:
-  - path: part-files
+  - path: part-files-1
     license: "license-f"
-  - path: part-files
+  - path: part-files-2
     license: "license-e"
 datasets:
 - path: dataset
@@ -167,9 +198,9 @@ model:
   path: model-files
   license: MIT
   parts:
-  - path: part-files
+  - path: part-files-1
     license: Apache-2.0
-  - path: part-files
+  - path: part-files-2
     license: MIT
 datasets:
 - path: dataset

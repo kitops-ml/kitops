@@ -23,19 +23,6 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 )
 
-// IsModelKitReference returns true if the ref string "looks" like a modelkit reference
-func IsModelKitReference(ref string) bool {
-	// If it doesn't have ':' or '@' it's probably not a reference
-	if !strings.Contains(ref, ":") && !strings.Contains(ref, "@") {
-		return false
-	}
-	// Does it parse?
-	if _, _, err := ParseReference(ref); err != nil {
-		return false
-	}
-	return true
-}
-
 func LayerPathsFromKitfile(kitfile *artifact.KitFile) []string {
 	cleanPath := func(path string) string {
 		return filepath.Clean(strings.TrimSpace(path))

@@ -23,11 +23,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/opencontainers/go-digest"
@@ -71,7 +71,7 @@ func removeAllModels(ctx context.Context, opts *RemoveOptions) error {
 		return fmt.Errorf("failed to read local storage: %w", err)
 	}
 	for _, localRepo := range localRepos {
-		repository := util.FormatRepositoryForDisplay(localRepo.GetRepoName())
+		repository := artifact.FormatRepositoryForDisplay(localRepo.GetRepoName())
 
 		models := localRepo.GetAllModels()
 		skipManifests := map[digest.Digest]bool{}
@@ -91,6 +91,7 @@ func removeAllModels(ctx context.Context, opts *RemoveOptions) error {
 				output.Errorf("Failed to remove %s@%s: %s", repository, manifestDesc.Digest, err)
 				continue
 			}
+			// Skip future manifest descriptors with this digest, since we just removed it.
 			skipManifests[manifestDesc.Digest] = true
 			output.Infof("Removed %s@%s", repository, manifestDesc.Digest)
 		}
@@ -105,7 +106,7 @@ func removeUntaggedModels(ctx context.Context, opts *RemoveOptions) error {
 	}
 	for _, localRepo := range localRepos {
 		manifests := localRepo.GetAllModels()
-		repo := util.FormatRepositoryForDisplay(localRepo.GetRepoName())
+		repo := artifact.FormatRepositoryForDisplay(localRepo.GetRepoName())
 		for _, manifestDesc := range manifests {
 			tags := localRepo.GetTags(manifestDesc)
 			if len(tags) > 0 {
@@ -132,13 +133,13 @@ func removeModel(ctx context.Context, opts *RemoveOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to remove: %s", err)
 	}
-	displayRef := util.FormatRepositoryForDisplay(opts.ModelRef.String())
+	displayRef := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 	output.Infof("Removed %s (digest %s)", displayRef, desc.Digest)
 
 	for _, tag := range opts.ExtraTags {
 		ref := *opts.ModelRef
 		ref.Reference = tag
-		displayRef := util.FormatRepositoryForDisplay(ref.String())
+		displayRef := artifact.FormatRepositoryForDisplay(ref.String())
 		desc, err := removeModelRef(ctx, localRepo, &ref, opts.ForceDelete)
 		if err != nil {
 			output.Errorf("Failed to remove tag %s: %s", tag, err)
@@ -153,7 +154,7 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 	desc, err := oras.Resolve(ctx, localRepo, ref.Reference, oras.ResolveOptions{})
 	if err != nil {
 		if err == errdef.ErrNotFound {
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("model %s not found", util.FormatRepositoryForDisplay(ref.String()))
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("model %s not found", artifact.FormatRepositoryForDisplay(ref.String()))
 		}
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("error resolving model: %s", err)
 	}
@@ -161,7 +162,7 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 	if err := ref.ValidateReferenceAsDigest(); err == nil || forceDelete {
 		output.Debugf("Deleting manifest with digest %s", ref.Reference)
 		if err := localRepo.Delete(ctx, desc); err != nil {
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to delete model: %ws", err)
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to delete model: %w", err)
 		}
 		return desc, nil
 	}
@@ -192,19 +193,21 @@ func removeRemoteModel(ctx context.Context, opts *RemoveOptions) error {
 	desc, err := repository.Resolve(ctx, opts.ModelRef.Reference)
 	if err != nil {
 		if errors.Is(err, errdef.ErrNotFound) {
-			return fmt.Errorf("model %s not found", util.FormatRepositoryForDisplay(opts.ModelRef.String()))
+			return fmt.Errorf("model %s not found", artifact.FormatRepositoryForDisplay(opts.ModelRef.String()))
 		}
 		return fmt.Errorf("error resolving modelkit: %w", err)
 	}
 
-	if !util.ReferenceIsDigest(opts.ModelRef.Reference) && !opts.ForceDelete {
-		output.Infof("Untagging remote ModelKit %s", util.FormatRepositoryForDisplay(opts.ModelRef.String()))
+	// If user supplied a tag instead of a digest, only do an untag; assume the remote will prune untagged ModelKits
+	if !artifact.ReferenceIsDigest(opts.ModelRef.Reference) && !opts.ForceDelete {
+		output.Infof("Untagging remote ModelKit %s", artifact.FormatRepositoryForDisplay(opts.ModelRef.String()))
 		return untagRemoteModel(ctx, opts.ModelRef.Reference, repository)
 	}
 
+	// Otherwise, delete the ModelKit itself, which will delete all tags that point to it
 	deleteRef := *opts.ModelRef
 	deleteRef.Reference = desc.Digest.String()
-	output.Infof("Deleting remote ModelKit %s", util.FormatRepositoryForDisplay(deleteRef.String()))
+	output.Infof("Deleting remote ModelKit %s", artifact.FormatRepositoryForDisplay(deleteRef.String()))
 	if err := repository.Delete(ctx, desc); err != nil {
 		if errResp, ok := err.(*errcode.ErrorResponse); ok && errResp.StatusCode == http.StatusMethodNotAllowed {
 			return fmt.Errorf("removing models is unsupported by registry %s", opts.ModelRef.Registry)
@@ -215,6 +218,8 @@ func removeRemoteModel(ctx context.Context, opts *RemoveOptions) error {
 }
 
 func untagRemoteModel(ctx context.Context, tag string, repo registry.Repository) error {
+	// Temporary: registry.Repository does not support the Untagger interface, so we need to be explicit about typing
+	// This should be removed once the Untagger implementation is moved into the oras-go library.
 	untaggerRepo, ok := repo.(content.Untagger)
 	if !ok {
 		return fmt.Errorf("remote repository implementation does not support untagging ModelKits")

@@ -32,7 +32,6 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
-	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/util"
@@ -78,9 +77,6 @@ func readExistingKitfile(kfPath string) (*artifact.KitFile, error) {
 	kitfile := &artifact.KitFile{}
 	if err := kitfile.LoadModel(kfFile); err != nil {
 		return nil, fmt.Errorf("failed to load Kitfile from %s: %w", kfPath, err)
-	}
-	if err := kfutils.ValidateKitfile(kitfile); err != nil {
-		return nil, fmt.Errorf("kitfile (%s) is invalid: %w", kfPath, err)
 	}
 	return kitfile, nil
 }

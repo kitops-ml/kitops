@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package unpack
+package kitfile
 
 import (
 	"fmt"
@@ -27,23 +27,21 @@ import (
 
 var validFilterTypes = []string{"kitfile", "model", "datasets", "code", "prompts", "docs"}
 
-// FilterConf represents filter configuration for unpacking operations.
 type FilterConf struct {
 	BaseTypes []string
 	Filters   []string
 }
 
-func (fc *FilterConf) matches(baseType, field string) bool {
-	return fc.matchesBaseType(baseType) && fc.matchesField(field)
+func (fc *FilterConf) Matches(baseType, field string) bool {
+	return fc.MatchesBaseType(baseType) && fc.MatchesField(field)
 }
 
-func (fc *FilterConf) matchesBaseType(baseType string) bool {
+func (fc *FilterConf) MatchesBaseType(baseType string) bool {
 	return slices.Contains(fc.BaseTypes, baseType)
 }
 
-func (fc *FilterConf) matchesField(field string) bool {
+func (fc *FilterConf) MatchesField(field string) bool {
 	if len(fc.Filters) == 0 {
-		// By default everything matches
 		return true
 	}
 	return slices.Contains(fc.Filters, field)
@@ -71,15 +69,14 @@ func ParseFilter(filter string) (*FilterConf, error) {
 		return conf, nil
 	}
 
-	filters := strings.Split(typesAndIds[1], ",")
-	conf.Filters = filters
+	conf.Filters = strings.Split(typesAndIds[1], ",")
 	return conf, nil
 }
 
-// shouldUnpackLayer determines if we should unpack a layer in a Kitfile by matching
+// LayerMatchesAnyFilter determines if we should unpack a layer in a Kitfile by matching
 // fields against the filters. Matching is done against path and name (if present).
 // If filters is empty, we assume everything should be unpacked
-func shouldUnpackLayer(layer any, filters []FilterConf) bool {
+func LayerMatchesAnyFilter(layer any, filters []FilterConf) bool {
 	if len(filters) == 0 {
 		return true
 	}
@@ -92,7 +89,7 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 	switch l := layer.(type) {
 	case artifact.KitFile:
 		for _, filter := range filters {
-			if filter.matchesBaseType("kitfile") {
+			if filter.MatchesBaseType("kitfile") {
 				return true
 			}
 		}
@@ -110,8 +107,7 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 		// Code does not have a ID/name field so we can only match on path
 		return matchesFilters("code", l.Path, filters)
 	case artifact.Prompt:
-		// Prompts do not have a ID/name field so we can only match on path
-		return matchesFilters("prompts", l.Path, filters)
+		return matchesFilters("prompts", l.Name, filters) || matchesFilters("prompts", l.Path, filters)
 	default:
 		return false
 	}
@@ -119,10 +115,63 @@ func shouldUnpackLayer(layer any, filters []FilterConf) bool {
 
 func matchesFilters(baseType, field string, filterConfs []FilterConf) bool {
 	for _, filterConf := range filterConfs {
-		if filterConf.matches(baseType, field) {
+		if filterConf.Matches(baseType, field) {
 			return true
 		}
 	}
+	return false
+}
+
+// KitfileContainsMatchingLayer returns true if the given Kitfile contains at least one layer
+// that matches any of the provided filters. If filters is empty, returns true.
+// This reuses shouldUnpackLayer to ensure identical matching semantics.
+func KitfileContainsMatchingLayer(kf *artifact.KitFile, filters []FilterConf) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	if kf == nil {
+		return false
+	}
+
+	if LayerMatchesAnyFilter(*kf, filters) {
+		return true
+	}
+
+	if kf.Model != nil {
+		if LayerMatchesAnyFilter(*kf.Model, filters) {
+			return true
+		}
+		for _, part := range kf.Model.Parts {
+			if LayerMatchesAnyFilter(part, filters) {
+				return true
+			}
+		}
+	}
+
+	for _, ds := range kf.DataSets {
+		if LayerMatchesAnyFilter(ds, filters) {
+			return true
+		}
+	}
+
+	for _, code := range kf.Code {
+		if LayerMatchesAnyFilter(code, filters) {
+			return true
+		}
+	}
+
+	for _, doc := range kf.Docs {
+		if LayerMatchesAnyFilter(doc, filters) {
+			return true
+		}
+	}
+
+	for _, prompt := range kf.Prompts {
+		if LayerMatchesAnyFilter(prompt, filters) {
+			return true
+		}
+	}
+
 	return false
 }
 

@@ -22,11 +22,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -91,6 +92,7 @@ type unpackOptions struct {
 	modelRef       *registry.Reference
 	overwrite      bool
 	ignoreExisting bool
+	includeRemote  bool
 }
 
 // unpackConf configures which elements of the modelkit should be unpacked.
@@ -109,7 +111,7 @@ func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("default config path not set on command context")
 	}
 	opts.configHome = configHome
-	modelRef, extraTags, err := util.ParseReference(args[0])
+	modelRef, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse reference: %w", err)
 	}
@@ -158,6 +160,7 @@ func UnpackCommand() *cobra.Command {
 	cmd.Flags().BoolVarP(&opts.overwrite, "overwrite", "o", false, "Overwrites existing files and directories in the target unpack directory without prompting")
 	cmd.Flags().BoolVarP(&opts.ignoreExisting, "ignore-existing", "i", false, "Skip unpacking files if a file with that name already exists")
 	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times")
+	cmd.Flags().BoolVar(&opts.includeRemote, "include-remote", false, "Include remote datasets in unpacked files")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackKitfile, "kitfile", false, "Unpack only Kitfile (deprecated: use --filter=kitfile)")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackModels, "model", false, "Unpack only model (deprecated: use --filter=model)")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackCode, "code", false, "Unpack only code (deprecated: use --filter=code)")
@@ -199,19 +202,20 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 			Overwrite:      opts.overwrite,
 			IgnoreExisting: opts.ignoreExisting,
 			NetworkOptions: opts.NetworkOptions,
+			IncludeRemote:  opts.includeRemote,
 		}
 
 		// Handle deprecated flags by converting to filters
 		conf := opts.unpackConf
 		if conf.unpackKitfile || conf.unpackModels || conf.unpackCode || conf.unpackDatasets || conf.unpackDocs {
-			deprecatedFilters := unpack.FiltersFromUnpackConf(
+			deprecatedFilters := kitfile.FiltersFromUnpackConf(
 				conf.unpackKitfile, conf.unpackModels, conf.unpackCode,
 				conf.unpackDatasets, conf.unpackDocs)
 			libOpts.FilterConfs = deprecatedFilters
 		} else if len(opts.filters) > 0 {
 			// Parse filters using library functionality
 			for _, filter := range opts.filters {
-				filterConf, err := unpack.ParseFilter(filter)
+				filterConf, err := kitfile.ParseFilter(filter)
 				if err != nil {
 					return output.Fatalf("Invalid filter %q: %s", filter, err)
 				}

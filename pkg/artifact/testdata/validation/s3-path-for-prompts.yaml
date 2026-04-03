@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  prompts:
+    - path: s3://test-s3/key
+errRegexp: "invalid path for prompt.*only local paths are permitted"

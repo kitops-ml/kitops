@@ -24,8 +24,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -141,7 +141,7 @@ func (li *localIndex) resolve(reference string) (ocispec.Descriptor, error) {
 	if reference == "" {
 		return ocispec.DescriptorEmptyJSON, errdef.ErrMissingReference
 	}
-	if util.ReferenceIsDigest(reference) {
+	if artifact.ReferenceIsDigest(reference) {
 		for _, desc := range li.Manifests {
 			if desc.Digest == digest.Digest(reference) {
 				return desc, nil
