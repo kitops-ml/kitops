@@ -21,6 +21,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
+	"github.com/kitops-ml/kitops/pkg/lib/skill"
 )
 
 // UnpackOptions represents the configuration for unpacking operations.
@@ -35,4 +36,8 @@ type UnpackOptions struct {
 	Overwrite      bool
 	IgnoreExisting bool
 	IncludeRemote  bool
+	// SkillOptions configures --as-skill behavior. When non-nil, prompt layers
+	// containing SKILL.md are installed as agent skills instead of being
+	// unpacked to their original paths.
+	SkillOptions *skill.SkillInstallOptions
 }

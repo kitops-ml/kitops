@@ -129,12 +129,12 @@ func TestDirContainsSkillMD(t *testing.T) {
 		{
 			name:   "has skill.md lowercase",
 			files:  []string{"skill.md"},
-			expect: true,
+			expect: false,
 		},
 		{
 			name:   "has Skill.md mixed case",
 			files:  []string{"Skill.md"},
-			expect: true,
+			expect: false,
 		},
 		{
 			name:   "no skill file",

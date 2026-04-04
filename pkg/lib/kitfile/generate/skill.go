@@ -18,67 +18,36 @@ package generate
 
 import (
 	"os"
-	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/skill"
 	"github.com/kitops-ml/kitops/pkg/output"
-
-	"go.yaml.in/yaml/v3"
 )
 
-type SkillFrontmatter struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	License     string `yaml:"license,omitempty"`
-}
-
-func parseSkillFrontmatter(skillMDPath string) *SkillFrontmatter {
+func parseSkillFrontmatter(skillMDPath string) *skill.SkillFrontmatter {
 	data, err := os.ReadFile(skillMDPath)
 	if err != nil {
 		output.Logf(output.LogLevelWarn, "Failed to read %s: %s", skillMDPath, err)
 		return nil
 	}
 
-	content := strings.ReplaceAll(string(data), "\r\n", "\n")
-	lines := strings.Split(content, "\n")
-	if len(lines) == 0 || lines[0] != "---" {
-		return nil
+	fm := skill.ParseSkillFrontmatter(data)
+	if fm == nil {
+		output.Logf(output.LogLevelWarn, "No valid frontmatter in %s", skillMDPath)
 	}
-
-	end := -1
-	for i := 1; i < len(lines); i++ {
-		if lines[i] == "---" {
-			end = i
-			break
-		}
-	}
-	if end == -1 {
-		return nil
-	}
-
-	frontmatterYAML := strings.Join(lines[1:end], "\n")
-	if strings.TrimSpace(frontmatterYAML) == "" {
-		return nil
-	}
-
-	var fm SkillFrontmatter
-	if err := yaml.Unmarshal([]byte(frontmatterYAML), &fm); err != nil {
-		output.Logf(output.LogLevelWarn, "Malformed frontmatter in %s: %s", skillMDPath, err)
-		return nil
-	}
-	return &fm
+	return fm
 }
 
 func dirContainsSkillMD(dir DirectoryListing) (bool, string) {
 	for _, file := range dir.Files {
-		if strings.EqualFold(file.Name, "skill.md") {
+		if file.Name == "SKILL.md" {
 			return true, file.Path
 		}
 	}
 	return false, ""
 }
 
-func buildPromptFromSkill(dir DirectoryListing) (artifact.Prompt, *SkillFrontmatter) {
+func buildPromptFromSkill(dir DirectoryListing) (artifact.Prompt, *skill.SkillFrontmatter) {
 	prompt := artifact.Prompt{
 		Path: dir.Path,
 	}
@@ -97,7 +66,7 @@ func buildPromptFromSkill(dir DirectoryListing) (artifact.Prompt, *SkillFrontmat
 }
 
 func applySkillMetadataToPackage(kitfile *artifact.KitFile, dir DirectoryListing) {
-	var skillFrontmatters []*SkillFrontmatter
+	var skillFrontmatters []*skill.SkillFrontmatter
 	for _, subDir := range dir.Subdirs {
 		if found, skillPath := dirContainsSkillMD(subDir); found {
 			if fm := parseSkillFrontmatter(skillPath); fm != nil {
