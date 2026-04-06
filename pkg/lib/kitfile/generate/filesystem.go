@@ -23,10 +23,11 @@ import (
 )
 
 type DirectoryListing struct {
-	Name    string
-	Path    string
-	Files   []FileListing
-	Subdirs []DirectoryListing
+	Name       string
+	Path       string
+	ContextDir string // root directory that relative paths are resolved against
+	Files      []FileListing
+	Subdirs    []DirectoryListing
 }
 
 type FileListing struct {
@@ -36,14 +37,20 @@ type FileListing struct {
 }
 
 func DirectoryListingFromFS(contextDir string) (*DirectoryListing, error) {
-	return genDirListingFromPath(".", contextDir)
+	dl, err := genDirListingFromPath(".", contextDir)
+	if err != nil {
+		return nil, err
+	}
+	dl.ContextDir = contextDir
+	return dl, nil
 }
 
 func genDirListingFromPath(curDir, contextDir string) (*DirectoryListing, error) {
 	dirName := filepath.Base(curDir)
 	result := &DirectoryListing{
-		Name: dirName,
-		Path: curDir,
+		Name:       dirName,
+		Path:       curDir,
+		ContextDir: contextDir,
 	}
 
 	fullPath := filepath.Join(contextDir, curDir)
