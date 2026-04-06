@@ -123,7 +123,7 @@ func TestReadSkillLayer_RejectsSymlinks(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("writing header: %v", err)
 	}
-	tw.Close()
+	_ = tw.Close()
 
 	tr := tar.NewReader(&buf)
 	_, _, _, err := ReadSkillLayer(tr)
@@ -147,7 +147,7 @@ func TestReadSkillLayer_RejectsOversizedEntry(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("writing header: %v", err)
 	}
-	tw.Close()
+	_ = tw.Close()
 
 	tr := tar.NewReader(&buf)
 	_, _, _, err := ReadSkillLayer(tr)

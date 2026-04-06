@@ -497,7 +497,7 @@ func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocisp
 	if err != nil {
 		return nil, fmt.Errorf("fetching layer: %w", err)
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	var cr io.ReadCloser
 	switch compression {
@@ -511,7 +511,7 @@ func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocisp
 	default:
 		return nil, fmt.Errorf("unsupported compression type %q for prompt layer %q", compression, entry.Path)
 	}
-	defer cr.Close()
+	defer func() { _ = cr.Close() }()
 
 	tr := tar.NewReader(cr)
 	entries, isSkill, frontmatterName, err := skill.ReadSkillLayer(tr)

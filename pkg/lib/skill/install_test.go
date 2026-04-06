@@ -152,8 +152,12 @@ func TestInstallSkill_IgnoreExisting(t *testing.T) {
 
 	// Pre-create the skill directory
 	skillDir := filepath.Join(tmpDir, ".claude", "skills", "existing-skill")
-	os.MkdirAll(skillDir, 0755)
-	os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("old"), 0644)
+	if err := os.MkdirAll(skillDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("old"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	entries := []TarEntry{
 		{
@@ -190,8 +194,12 @@ func TestInstallSkill_Overwrite(t *testing.T) {
 
 	// Pre-create the skill directory
 	skillDir := filepath.Join(tmpDir, ".claude", "skills", "overwrite-skill")
-	os.MkdirAll(skillDir, 0755)
-	os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("old"), 0644)
+	if err := os.MkdirAll(skillDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("old"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	entries := []TarEntry{
 		{
