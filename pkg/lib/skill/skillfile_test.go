@@ -161,14 +161,14 @@ func TestReadSkillLayer_RejectsOversizedEntry(t *testing.T) {
 
 func TestParseSkillFrontmatter(t *testing.T) {
 	tests := []struct {
-		name        string
-		content     string
-		expectNil   bool
+		name         string
+		content      string
+		expectNil    bool
 		expectedName string
 	}{
 		{
-			name:        "basic frontmatter",
-			content:     "---\nname: my-skill\ndescription: test\n---\n\nBody",
+			name:         "basic frontmatter",
+			content:      "---\nname: my-skill\ndescription: test\n---\n\nBody",
 			expectedName: "my-skill",
 		},
 		{
@@ -177,8 +177,8 @@ func TestParseSkillFrontmatter(t *testing.T) {
 			expectNil: true,
 		},
 		{
-			name:        "no name field",
-			content:     "---\ndescription: test\n---\n",
+			name:         "no name field",
+			content:      "---\ndescription: test\n---\n",
 			expectedName: "",
 		},
 		{

@@ -37,5 +37,3 @@ func TestGetAgentConfig(t *testing.T) {
 		t.Error("expected error for unknown agent")
 	}
 }
-
-

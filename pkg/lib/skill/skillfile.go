@@ -152,4 +152,3 @@ func ParseSkillFrontmatter(data []byte) *SkillFrontmatter {
 	}
 	return &fm
 }
-
