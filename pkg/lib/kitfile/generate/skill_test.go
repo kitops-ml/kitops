@@ -92,7 +92,7 @@ func TestParseSkillFrontmatter(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			fm := parseSkillFrontmatter(path)
+			fm := parseSkillFrontmatter(tmpDir, "SKILL.md")
 			if tt.expectNil {
 				if fm != nil {
 					t.Errorf("expected nil, got %+v", fm)

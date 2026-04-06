@@ -18,24 +18,24 @@ package generate
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/skill"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
-func parseSkillFrontmatter(skillMDPath string) *skill.SkillFrontmatter {
-	data, err := os.ReadFile(skillMDPath)
+// parseSkillFrontmatter reads a SKILL.md file and parses its frontmatter.
+// skillMDPath is relative to contextDir.
+func parseSkillFrontmatter(contextDir, skillMDPath string) *skill.SkillFrontmatter {
+	fullPath := filepath.Join(contextDir, skillMDPath)
+	data, err := os.ReadFile(fullPath)
 	if err != nil {
-		output.Logf(output.LogLevelWarn, "Failed to read %s: %s", skillMDPath, err)
+		output.Logf(output.LogLevelWarn, "Failed to read %s: %s", fullPath, err)
 		return nil
 	}
 
-	fm := skill.ParseSkillFrontmatter(data)
-	if fm == nil {
-		output.Logf(output.LogLevelWarn, "No valid frontmatter in %s", skillMDPath)
-	}
-	return fm
+	return skill.ParseSkillFrontmatter(data)
 }
 
 func dirContainsSkillMD(dir DirectoryListing) (bool, string) {
@@ -57,7 +57,7 @@ func buildPromptFromSkill(dir DirectoryListing) (artifact.Prompt, *skill.SkillFr
 		return prompt, nil
 	}
 
-	fm := parseSkillFrontmatter(skillPath)
+	fm := parseSkillFrontmatter(dir.ContextDir, skillPath)
 	if fm != nil {
 		prompt.Name = fm.Name
 		prompt.Description = fm.Description
@@ -69,7 +69,7 @@ func applySkillMetadataToPackage(kitfile *artifact.KitFile, dir DirectoryListing
 	var skillFrontmatters []*skill.SkillFrontmatter
 	for _, subDir := range dir.Subdirs {
 		if found, skillPath := dirContainsSkillMD(subDir); found {
-			if fm := parseSkillFrontmatter(skillPath); fm != nil {
+			if fm := parseSkillFrontmatter(subDir.ContextDir, skillPath); fm != nil {
 				skillFrontmatters = append(skillFrontmatters, fm)
 			}
 		}
