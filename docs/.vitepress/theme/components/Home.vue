@@ -292,8 +292,8 @@ onUnmounted(() => {
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Content‑Addressable Storage</div>
-      <p class="p2">SHA‑256 digests for every component. Tamper detection works the same way it does for your container images — because it is the same infrastructure.</p>
+      <div class="p2 text-gold! xs:mt-12">Content-Addressable Storage</div>
+      <p class="p2">SHA-256 digests for every component. Tamper detection works the same way it does for your container images — because it is the same infrastructure.</p>
     </div>
 
     <div>
