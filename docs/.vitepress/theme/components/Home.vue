@@ -59,7 +59,7 @@ onUnmounted(() => {
     <div class="bg-radial from-[--alpha(var(--color-gold)/30%)] via-[--alpha(#996931/5%)] to-transparent from-0% to-60% absolute size-full lg:size-160 top-1/2 left-1/2 -translate-1/2"></div>
     <h1 class="z-0 relative mt-4! font-medium!">The Enterprise Registry for <br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">Models, Agents, and MCP Servers</span></h1>
     <h2 class="z-0 relative font-bold! font-sans! text-3xl! my-6!">Secure. Portable. No Lock‑In.</h2>
-    <p class="z-0 relative h4 font-normal! text-off-white!">The only AI registry that packages and governs models, agent skills, and MCP servers as OCI artifacts — from public cloud to the most locked‑down air‑gapped environments.</p>
+    <p class="z-0 relative h4 font-normal! text-off-white!">The only AI registry that packages and governs models, agent skills, and MCP servers as OCI artifacts — from public cloud to the most locked‑down air-gapped environments.</p>
   </div>
 
   <div class="flex flex-col lg:flex-row justify-center items-center gap-10 mt-10 md:mt-14 xl:mt-22">
