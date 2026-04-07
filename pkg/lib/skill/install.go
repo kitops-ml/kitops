@@ -132,14 +132,14 @@ func stripPromptPrefix(entries []TarEntry, promptPath string) ([]TarEntry, error
 		}
 	}
 
-	// Directory prompt — strip the prefix from all entries.
-	// Use path.Rel (not filepath.Rel) since both sides are forward-slash normalized.
+	// Directory prompt — strip the normalized prefix from all descendant entries.
+	// Since both sides use forward slashes, do this by removing prefix + "/"
+	// from matching paths rather than using filepath-specific path handling.
 	result := make([]TarEntry, 0, len(entries))
 	for _, entry := range entries {
 		cleaned := normalizePath(entry.Header.Name)
-		// path package doesn't have Rel, so compute it manually:
-		// if cleaned starts with prefix + "/", take everything after.
-		// if cleaned == prefix, it's the directory entry itself — skip.
+		// If cleaned == prefix, it's the directory entry itself — skip it.
+		// Otherwise, if cleaned starts with prefix + "/", take everything after it.
 		if cleaned == prefix {
 			continue
 		}

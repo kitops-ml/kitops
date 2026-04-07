@@ -225,9 +225,20 @@ func GetProjectSkillsDir(agentName, projectDir string) (string, error) {
 	return filepath.Join(projectDir, cfg.SkillsDir), nil
 }
 
+// checkHomeDir returns an error if the user's home directory cannot be determined.
+func checkHomeDir() error {
+	if homeDir() == "" {
+		return fmt.Errorf("unable to determine user home directory")
+	}
+	return nil
+}
+
 // GetGlobalSkillsDir returns the absolute global skills directory for the
 // given agent.
 func GetGlobalSkillsDir(agentName string) (string, error) {
+	if err := checkHomeDir(); err != nil {
+		return "", err
+	}
 	cfg, err := GetAgentConfig(agentName)
 	if err != nil {
 		return "", err
@@ -240,6 +251,9 @@ func GetGlobalSkillsDir(agentName string) (string, error) {
 // Returns a sorted list of detected agent names.
 // Agents with no detection probe (replit, universal) are silently skipped.
 func DetectInstalledAgents() ([]string, error) {
+	if err := checkHomeDir(); err != nil {
+		return nil, err
+	}
 	var detected []string
 	for name, cfg := range agentRegistry {
 		if cfg.GlobalDetectDirs == nil {
