@@ -415,7 +415,7 @@ onUnmounted(() => {
       <div class="mt-8 flex flex-col flex-1 p2">
         <p>Package Your First Agent</p>
         <p class="text-[#B8B8B8] mt-2">Bundle a model, MCP server config, and agent skills into a signed ModelKit in under 5 minutes.</p>
-        <code class="text-base mt-3">kit pack . -t myregistry.com/my-agent:latest</code>
+        <code class="text-base mt-3">kit pack . -t myregistry.com/my-model:latest</code>
       </div>
     </div>
 
