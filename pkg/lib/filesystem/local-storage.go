@@ -65,11 +65,6 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 		return nil, fmt.Errorf("error creating manifest: %w", err)
 	}
 
-	if manifest.Annotations == nil {
-		manifest.Annotations = map[string]string{}
-	}
-	manifest.Annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
-
 	// If not storing a Kitfile, save the Kitfile to an annotation since it will be lost otherwise
 	if opts.ModelFormat == mediatype.ModelPackFormat {
 		kitfileBytes, err := kitfile.MarshalToJSON()
@@ -351,6 +346,7 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 		manifest.Annotations = map[string]string{}
 	}
 	manifest.Annotations[constants.CliVersionAnnotation] = constants.Version
+	manifest.Annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	return manifest, nil
 }
