@@ -172,19 +172,13 @@ func cloneHeader(h *tar.Header) *tar.Header {
 
 // InstallSkill writes the buffered tar entries as a skill to each agent's
 // skill directory. Does NOT fail-fast: attempts every agent, returns
-// per-agent results.
-func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, opts *SkillInstallOptions) InstallResult {
+// per-agent results. Returns an error if the entries cannot be prepared
+// (e.g. prefix stripping fails), in which case no agents are attempted.
+func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, opts *SkillInstallOptions) (InstallResult, error) {
 	// Strip the prompt's path prefix so files land at the skill root
 	stripped, err := stripPromptPrefix(entries, prompt.Path)
 	if err != nil {
-		result := InstallResult{SkillName: skillName, Prompt: prompt}
-		for _, agent := range opts.Agents {
-			result.Agents = append(result.Agents, AgentInstallResult{
-				Agent: agent,
-				Err:   err,
-			})
-		}
-		return result
+		return InstallResult{}, err
 	}
 	entries = stripped
 
@@ -240,7 +234,7 @@ func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, 
 		result.Agents = append(result.Agents, agentResult)
 	}
 
-	return result
+	return result, nil
 }
 
 // installForAgent handles installation for a single agent at a resolved path.
@@ -249,15 +243,17 @@ func installForAgent(entries []TarEntry, skillName, agent, skillDir string, opts
 		return AgentInstallResult{Agent: agent, Path: skillDir, Err: err}
 	}
 
-	baseDir := filepath.Dir(skillDir)
-	if _, _, err := filesystem.VerifySubpath(baseDir, skillName); err != nil {
-		return errResult(fmt.Errorf("invalid skill name %q: resolves outside skills directory", skillName))
+	// Validate skill name directly — it must be a safe relative path component
+	if _, _, err := filesystem.VerifySubpath(".", skillName); err != nil {
+		return errResult(fmt.Errorf("invalid skill name %q: %w", skillName, err))
 	}
 
+	// Validate all entries before writing anything
 	for _, entry := range entries {
 		if entry.Header.Name == "" {
-			continue
+			return errResult(fmt.Errorf("tar entry with empty name"))
 		}
+		// Verify entry resolves inside skill directory
 		if _, _, err := filesystem.VerifySubpath(skillDir, entry.Header.Name); err != nil {
 			return errResult(fmt.Errorf("illegal file path in prompt layer: %s", entry.Header.Name))
 		}
@@ -282,6 +278,13 @@ func installForAgent(entries []TarEntry, skillName, agent, skillDir string, opts
 
 	for _, entry := range entries {
 		outPath := filepath.Join(skillDir, entry.Header.Name)
+
+		// Verify the resolved write path is inside the skill directory.
+		// This is a defense-in-depth check — entry names were validated above,
+		// but filepath.Join can behave differently from VerifySubpath on edge cases.
+		if _, _, err := filesystem.VerifySubpath(skillDir, entry.Header.Name); err != nil {
+			return errResult(fmt.Errorf("illegal write path: %s", entry.Header.Name))
+		}
 
 		switch entry.Header.Typeflag {
 		case tar.TypeDir:
