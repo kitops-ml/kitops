@@ -66,7 +66,7 @@ func ReadSkillLayer(tr *tar.Reader) (entries []TarEntry, isSkill bool, frontmatt
 
 		// check individual entry size
 		if header.Size > MaxSkillEntrySize {
-			return nil, false, "", fmt.Errorf("prompt layer entry %q exceeds maximum size (%d bytes)", header.Name, MaxSkillEntrySize)
+			return nil, false, "", fmt.Errorf("prompt layer entry '%s' exceeds maximum size (%d bytes)", header.Name, MaxSkillEntrySize)
 		}
 
 		var content []byte
@@ -79,7 +79,7 @@ func ReadSkillLayer(tr *tar.Reader) (entries []TarEntry, isSkill bool, frontmatt
 			lr := io.LimitReader(tr, header.Size+1) // +1 to detect lying headers
 			content, err = io.ReadAll(lr)
 			if err != nil {
-				return nil, false, "", fmt.Errorf("reading tar entry %q: %w", header.Name, err)
+				return nil, false, "", fmt.Errorf("reading tar entry '%s': %w", header.Name, err)
 			}
 			if int64(len(content)) > header.Size {
 				content = content[:header.Size]

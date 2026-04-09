@@ -194,7 +194,7 @@ var agentRegistry = map[string]AgentConfig{
 func GetAgentConfig(name string) (AgentConfig, error) {
 	cfg, ok := agentRegistry[name]
 	if !ok {
-		return AgentConfig{}, fmt.Errorf("unknown agent %q", name)
+		return AgentConfig{}, fmt.Errorf("unknown agent '%s'", name)
 	}
 	return cfg, nil
 }
