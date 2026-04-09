@@ -115,21 +115,12 @@ func stripPromptPrefix(entries []TarEntry, promptPath string) ([]TarEntry, error
 		return entries, nil
 	}
 
-	// Determine if the prefix is a single file by checking if any entry
-	// matches the prefix exactly as a regular file
-	for _, e := range entries {
-		if normalizePath(e.Header.Name) == prefix && e.Header.Typeflag != tar.TypeDir {
-			// Single file prompt — strip to just the filename
-			result := make([]TarEntry, len(entries))
-			for i, entry := range entries {
-				result[i] = entry
-				if normalizePath(entry.Header.Name) == prefix {
-					result[i].Header = cloneHeader(entry.Header)
-					result[i].Header.Name = path.Base(prefix)
-				}
-			}
-			return result, nil
-		}
+	// Single file prompt — one entry whose name matches the prefix
+	if len(entries) == 1 && entries[0].Header.Typeflag != tar.TypeDir && normalizePath(entries[0].Header.Name) == prefix {
+		entry := entries[0]
+		entry.Header = cloneHeader(entry.Header)
+		entry.Header.Name = path.Base(prefix)
+		return []TarEntry{entry}, nil
 	}
 
 	// Directory prompt — strip the normalized prefix from all descendant entries.
