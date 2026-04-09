@@ -160,7 +160,7 @@ func stripPromptPrefix(entries []TarEntry, promptPath string) ([]TarEntry, error
 	}
 
 	if len(result) == 0 {
-		return nil, fmt.Errorf("prompt path %q does not match any tar entries in the layer", promptPath)
+		return nil, fmt.Errorf("prompt path '%s' does not match any tar entries in the layer", promptPath)
 	}
 	return result, nil
 }
@@ -225,7 +225,7 @@ func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, 
 			})
 			continue
 		}
-		seen[absDir] = []string{agent}
+		seen[absDir] = append(seen[absDir], agent)
 		order = append(order, agentPath{agent: agent, path: absDir})
 	}
 
@@ -245,7 +245,7 @@ func installForAgent(entries []TarEntry, skillName, agent, skillDir string, opts
 
 	// Validate skill name directly — it must be a safe relative path component
 	if _, _, err := filesystem.VerifySubpath(".", skillName); err != nil {
-		return errResult(fmt.Errorf("invalid skill name %q: %w", skillName, err))
+		return errResult(fmt.Errorf("invalid skill name '%s': %w", skillName, err))
 	}
 
 	// Validate all entries before writing anything

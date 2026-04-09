@@ -241,7 +241,7 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 			for _, filter := range opts.filters {
 				filterConf, err := kitfile.ParseFilter(filter)
 				if err != nil {
-					return output.Fatalf("Invalid filter %q: %s", filter, err)
+					return output.Fatalf("Invalid filter '%s': %s", filter, err)
 				}
 				libOpts.FilterConfs = append(libOpts.FilterConfs, *filterConf)
 			}
@@ -264,6 +264,15 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 			if len(libOpts.FilterConfs) == 0 {
 				promptFilter, _ := kitfile.ParseFilter("prompts")
 				libOpts.FilterConfs = []kitfile.FilterConf{*promptFilter}
+			} else {
+				// Warn if user specified non-prompt filters — they have no effect in skill mode
+				for _, fc := range libOpts.FilterConfs {
+					for _, bt := range fc.BaseTypes {
+						if bt != "prompts" {
+							output.Logf(output.LogLevelWarn, "Filter type '%s' has no effect with --as-skill (only 'prompts' filters apply)", bt)
+						}
+					}
+				}
 			}
 		}
 
@@ -295,10 +304,10 @@ func parseAsSkillFlag(value, unpackDir string, overwrite, ignoreExisting bool, m
 		for _, p := range parts {
 			name := strings.TrimSpace(p)
 			if name == "" {
-				return nil, fmt.Errorf("invalid agent list: empty agent name in %q", value)
+				return nil, fmt.Errorf("invalid agent list: empty agent name in '%s'", value)
 			}
 			if !skill.IsValidAgentName(name) {
-				return nil, fmt.Errorf("unknown agent %q. Valid agents: %s", name, strings.Join(skill.ValidAgentNames(), ", "))
+				return nil, fmt.Errorf("unknown agent '%s'. Valid agents: %s", name, strings.Join(skill.ValidAgentNames(), ", "))
 			}
 			agents = append(agents, name)
 		}
