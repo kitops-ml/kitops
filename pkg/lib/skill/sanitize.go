@@ -30,20 +30,17 @@ var (
 	leadingTrailingTrim = regexp.MustCompile(`^[.\-]+|[.\-]+$`)
 )
 
-// SanitizeName normalizes a skill name to lowercase kebab-case suitable for
+// sanitizeName normalizes a skill name to lowercase kebab-case suitable for
 // use as a directory name. Non-alphanumeric characters (except dots and
 // underscores) are replaced with hyphens. Leading/trailing dots and hyphens
-// are stripped. Result is truncated to 255 characters. Returns
-// "unnamed-skill" if the result would be empty.
-func SanitizeName(name string) string {
+// are stripped. Result is truncated to 255 characters. Returns empty string
+// if the input is empty or sanitizes to nothing.
+func sanitizeName(name string) string {
 	s := strings.ToLower(name)
 	s = nonAlphanumRegex.ReplaceAllString(s, "-")
 	s = leadingTrailingTrim.ReplaceAllString(s, "")
 	if len(s) > 255 {
 		s = s[:255]
-	}
-	if s == "" {
-		return "unnamed-skill"
 	}
 	return s
 }
@@ -57,11 +54,11 @@ func SanitizeName(name string) string {
 //  3. Parent directory name (for SKILL.md files or directory prompts)
 //  4. Fallback: repository name from modelRef
 func DeriveSkillName(frontmatterName string, prompt artifact.Prompt, modelRef *registry.Reference) string {
-	if frontmatterName != "" {
-		return SanitizeName(frontmatterName)
+	if s := sanitizeName(frontmatterName); s != "" {
+		return s
 	}
-	if prompt.Name != "" {
-		return SanitizeName(prompt.Name)
+	if s := sanitizeName(prompt.Name); s != "" {
+		return s
 	}
 
 	path := prompt.Path
@@ -70,7 +67,9 @@ func DeriveSkillName(frontmatterName string, prompt artifact.Prompt, modelRef *r
 		path = strings.TrimSuffix(path, "/")
 		base := filepath.Base(path)
 		if base != "." && base != "" {
-			return SanitizeName(base)
+			if s := sanitizeName(base); s != "" {
+				return s
+			}
 		}
 	} else {
 		base := filepath.Base(path)
@@ -79,15 +78,17 @@ func DeriveSkillName(frontmatterName string, prompt artifact.Prompt, modelRef *r
 			dir := filepath.Dir(path)
 			parent := filepath.Base(dir)
 			if parent != "." && parent != "" {
-				return SanitizeName(parent)
+				if s := sanitizeName(parent); s != "" {
+					return s
+				}
 			}
 			// SKILL.md at root — fall through to modelRef
 		} else {
 			// Use filename without extension
 			ext := filepath.Ext(base)
 			name := strings.TrimSuffix(base, ext)
-			if name != "" {
-				return SanitizeName(name)
+			if s := sanitizeName(name); s != "" {
+				return s
 			}
 		}
 	}
@@ -95,12 +96,11 @@ func DeriveSkillName(frontmatterName string, prompt artifact.Prompt, modelRef *r
 	// Fallback: repository name from model reference
 	if modelRef != nil {
 		repo := modelRef.Repository
-		// Extract last path component (e.g., "myrepo/my-model" → "my-model")
 		if idx := strings.LastIndex(repo, "/"); idx >= 0 {
 			repo = repo[idx+1:]
 		}
-		if repo != "" {
-			return SanitizeName(repo)
+		if s := sanitizeName(repo); s != "" {
+			return s
 		}
 	}
 
