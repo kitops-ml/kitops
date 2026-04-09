@@ -525,7 +525,10 @@ func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocisp
 	}
 
 	skillName := skill.DeriveSkillName(frontmatterName, entry, opts.ModelRef)
-	result := skill.InstallSkill(entries, skillName, entry, opts.SkillOptions)
+	result, err := skill.InstallSkill(entries, skillName, entry, opts.SkillOptions)
+	if err != nil {
+		return nil, err
+	}
 	return &result, nil
 }
 

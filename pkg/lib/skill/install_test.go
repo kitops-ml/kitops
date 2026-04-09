@@ -45,7 +45,10 @@ func TestInstallSkill_SingleFile(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "my-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	result, err := InstallSkill(entries, "my-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		for _, e := range result.Errors() {
 			t.Errorf("agent %s error: %v", e.Agent, e.Err)
@@ -84,7 +87,10 @@ func TestInstallSkill_MultipleAgents(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "test-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	result, err := InstallSkill(entries, "test-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		for _, e := range result.Errors() {
 			t.Errorf("agent %s error: %v", e.Agent, e.Err)
@@ -122,7 +128,10 @@ func TestInstallSkill_PathDedup(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "test-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	result, err := InstallSkill(entries, "test-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		for _, e := range result.Errors() {
 			t.Errorf("agent %s error: %v", e.Agent, e.Err)
@@ -177,7 +186,10 @@ func TestInstallSkill_IgnoreExisting(t *testing.T) {
 		IgnoreExisting: true,
 	}
 
-	result := InstallSkill(entries, "existing-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	result, err := InstallSkill(entries, "existing-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		t.Errorf("unexpected errors: %v", result.Errors())
 	}
@@ -219,7 +231,10 @@ func TestInstallSkill_Overwrite(t *testing.T) {
 		Overwrite:  true,
 	}
 
-	result := InstallSkill(entries, "overwrite-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	result, err := InstallSkill(entries, "overwrite-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		t.Errorf("unexpected errors: %v", result.Errors())
 	}
@@ -254,7 +269,10 @@ func TestInstallSkill_ExistingWithoutFlags(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "existing-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	result, err := InstallSkill(entries, "existing-skill", artifact.Prompt{Path: "SKILL.md"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if !result.HasErrors() {
 		t.Error("expected error when directory exists without -o or -i")
 	}
@@ -298,7 +316,10 @@ func TestInstallSkill_DirectoryPrefixStripping(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "docx", artifact.Prompt{Path: "skills/docx/"}, opts)
+	result, err := InstallSkill(entries, "docx", artifact.Prompt{Path: "skills/docx/"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		for _, e := range result.Errors() {
 			t.Errorf("agent %s error: %v", e.Agent, e.Err)
@@ -346,7 +367,10 @@ func TestInstallSkill_WindowsPromptPathOnUnix(t *testing.T) {
 	}
 
 	// Backslash path as stored in Kitfile from Windows pack
-	result := InstallSkill(entries, "docx", artifact.Prompt{Path: "skills\\docx\\"}, opts)
+	result, err := InstallSkill(entries, "docx", artifact.Prompt{Path: "skills\\docx\\"}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		for _, e := range result.Errors() {
 			t.Errorf("agent %s error: %v", e.Agent, e.Err)
@@ -390,7 +414,10 @@ func TestInstallSkill_DotPath(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "copy-edit", artifact.Prompt{Path: "."}, opts)
+	result, err := InstallSkill(entries, "copy-edit", artifact.Prompt{Path: "."}, opts)
+	if err != nil {
+		t.Fatalf("InstallSkill error: %v", err)
+	}
 	if result.HasErrors() {
 		for _, e := range result.Errors() {
 			t.Errorf("agent %s error: %v", e.Agent, e.Err)
@@ -429,8 +456,8 @@ func TestInstallSkill_PrefixMismatchErrors(t *testing.T) {
 		ProjectDir: tmpDir,
 	}
 
-	result := InstallSkill(entries, "test", artifact.Prompt{Path: "wrong-dir/"}, opts)
-	if !result.HasErrors() {
+	_, err := InstallSkill(entries, "test", artifact.Prompt{Path: "wrong-dir/"}, opts)
+	if err == nil {
 		t.Error("expected error when prompt path doesn't match tar entries")
 	}
 }
