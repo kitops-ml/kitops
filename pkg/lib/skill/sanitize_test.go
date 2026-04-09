@@ -24,7 +24,7 @@ import (
 	"oras.land/oras-go/v2/registry"
 )
 
-func TestSanitizeName(t *testing.T) {
+func Test_sanitizeName(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -36,8 +36,8 @@ func TestSanitizeName(t *testing.T) {
 		{"skill@2.0", "skill-2.0"},
 		{"...leading-dots", "leading-dots"},
 		{"trailing-dots...", "trailing-dots"},
-		{"", "unnamed-skill"},
-		{"   ", "unnamed-skill"},
+		{"", ""},
+		{"   ", ""},
 		{"a/b/c", "a-b-c"},
 		{"hello_world.v2", "hello_world.v2"},
 		{strings.Repeat("a", 300), strings.Repeat("a", 255)},
@@ -45,9 +45,9 @@ func TestSanitizeName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := SanitizeName(tt.input)
+			got := sanitizeName(tt.input)
 			if got != tt.expected {
-				t.Errorf("SanitizeName(%q) = %q, want %q", tt.input, got, tt.expected)
+				t.Errorf("sanitizeName(%q) = %q, want %q", tt.input, got, tt.expected)
 			}
 		})
 	}
