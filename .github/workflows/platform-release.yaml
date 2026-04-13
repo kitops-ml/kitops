@@ -90,7 +90,7 @@ jobs:
           ./build/scripts/sign ./dist/kitops-darwin-x86_64.zip
           ./build/scripts/sign ./dist/kitops-offline-darwin-x86_64.zip
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
             name: dist-macos
             if-no-files-found: error
@@ -125,7 +125,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
             name: dist-windows
             if-no-files-found: error
@@ -160,7 +160,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
             name: dist-linux
             if-no-files-found: error
@@ -178,7 +178,7 @@ jobs:
     steps:
       - name: Generate a token for docs update PR
         id: generate-token
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859   ## v3.0.0
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3   ## v3.1.1
         with:
           app-id: ${{ vars.KITOPS_BOT_ID }}
           private-key: ${{ secrets.KITOPS_BOT_PRIVATE_KEY }}
@@ -225,7 +225,7 @@ jobs:
       # homebrew recipe and pushing it to the repository:
       # 'kitops-ml/homebrew-kitops'
       - name: Upload homebrew-files as a build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: homebrew-files
           if-no-files-found: error
@@ -293,7 +293,7 @@ jobs:
     steps:
       - name: Generate a token
         id: generate-token
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859   ## v3.0.0
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3   ## v3.1.1
         with:
           app-id: ${{ vars.KITOPS_BOT_ID }}
           private-key: ${{ secrets.KITOPS_BOT_PRIVATE_KEY }}
@@ -390,7 +390,7 @@ jobs:
 
       - name: Build and push base Kit container
         id: build-kit-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -408,7 +408,7 @@ jobs:
 
       - name: Build and push Kit init container
         id: build-kit-init-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -426,7 +426,7 @@ jobs:
 
       - name: Build and push Kit KServe container
         id: build-kit-serve-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -444,7 +444,7 @@ jobs:
 
       - name: Build and push Kubeflow Pipeline components container
         id: build-kubeflow-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
