@@ -82,97 +82,48 @@ func resolveSkillsDir(agentName, projectDir string) (string, error) {
 	return GetGlobalSkillsDir(agentName)
 }
 
-// normalizePath converts a path to use forward slashes and cleans it. Tar
-// entries always use forward slashes, but prompt paths from Kitfiles packed on
-// Windows may contain backslashes. Replacing backslashes with forward slashes
-// before cleaning ensures consistent comparison on all platforms.
-func normalizePath(p string) string {
-	return path.Clean(strings.ReplaceAll(p, "\\", "/"))
-}
-
-// stripPromptPrefix removes the prompt's path prefix from tar entry names so
-// that files are installed directly under the skill directory instead of nested
-// under the original directory structure from the pack context.
+// relativeEntryName computes the path an entry should be written to relative
+// to the skill directory. It strips the prompt path prefix so that files land
+// at the skill root instead of being nested under the original pack structure.
 //
-// For example, if the prompt path is "skills/docx/" and a tar entry is
-// "skills/docx/SKILL.md", the entry name becomes "SKILL.md".
-// For a single-file prompt like "SKILL.md", the entry name is unchanged.
+// Tar entries always use forward slashes. Prompt paths from Kitfiles packed on
+// Windows may contain backslashes, so both are normalized to forward slashes.
 //
-// Returns an error if stripping would produce zero entries (indicates a
-// separator mismatch or path alignment bug).
-func stripPromptPrefix(entries []TarEntry, promptPath string) ([]TarEntry, error) {
-	if len(entries) == 0 {
-		return entries, nil
+// Returns empty string for entries that should be skipped (e.g. the directory
+// entry matching the prefix itself).
+func relativeEntryName(entryName, promptPath string) string {
+	normalize := func(p string) string {
+		return path.Clean(strings.ReplaceAll(p, "\\", "/"))
 	}
 
-	// Normalize to forward slashes so comparisons work regardless of
-	// whether the Kitfile was packed on Windows or Unix.
-	prefix := normalizePath(promptPath)
+	prefix := normalize(promptPath)
+	cleaned := normalize(entryName)
 
-	// "." means the entire context directory is the prompt — entries are
-	// already at root, no prefix to strip.
+	// "." prefix means entries are already at root
 	if prefix == "." {
-		return entries, nil
+		return cleaned
 	}
 
-	// Single file prompt — one entry whose name matches the prefix
-	if len(entries) == 1 && entries[0].Header.Typeflag != tar.TypeDir && normalizePath(entries[0].Header.Name) == prefix {
-		entry := entries[0]
-		entry.Header = cloneHeader(entry.Header)
-		entry.Header.Name = path.Base(prefix)
-		return []TarEntry{entry}, nil
+	// Single file: entry name matches the prefix exactly — use just the filename
+	if cleaned == prefix {
+		return path.Base(cleaned)
 	}
 
-	// Directory prompt — strip the normalized prefix from all descendant entries.
-	// Since both sides use forward slashes, do this by removing prefix + "/"
-	// from matching paths rather than using filepath-specific path handling.
-	result := make([]TarEntry, 0, len(entries))
-	for _, entry := range entries {
-		cleaned := normalizePath(entry.Header.Name)
-		// If cleaned == prefix, it's the directory entry itself — skip it.
-		// Otherwise, if cleaned starts with prefix + "/", take everything after it.
-		if cleaned == prefix {
-			continue
-		}
-		trimmed := strings.TrimPrefix(cleaned, prefix+"/")
-		if trimmed == cleaned {
-			// Entry is outside the prefix — skip
-			continue
-		}
-		if trimmed == "" || strings.HasPrefix(trimmed, "..") {
-			continue
-		}
-		newEntry := TarEntry{
-			Header:  cloneHeader(entry.Header),
-			Content: entry.Content,
-		}
-		newEntry.Header.Name = trimmed
-		result = append(result, newEntry)
+	// Directory: strip prefix + "/" from the entry
+	trimmed := strings.TrimPrefix(cleaned, prefix+"/")
+	if trimmed == cleaned {
+		return "" // outside the prefix
 	}
-
-	if len(result) == 0 {
-		return nil, fmt.Errorf("prompt path '%s' does not match any tar entries in the layer", promptPath)
+	if trimmed == "" || strings.HasPrefix(trimmed, "..") {
+		return ""
 	}
-	return result, nil
-}
-
-func cloneHeader(h *tar.Header) *tar.Header {
-	clone := *h
-	return &clone
+	return trimmed
 }
 
 // InstallSkill writes the buffered tar entries as a skill to each agent's
 // skill directory. Does NOT fail-fast: attempts every agent, returns
-// per-agent results. Returns an error if the entries cannot be prepared
-// (e.g. prefix stripping fails), in which case no agents are attempted.
-func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, opts *SkillInstallOptions) (InstallResult, error) {
-	// Strip the prompt's path prefix so files land at the skill root
-	stripped, err := stripPromptPrefix(entries, prompt.Path)
-	if err != nil {
-		return InstallResult{}, err
-	}
-	entries = stripped
-
+// per-agent results.
+func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, opts *SkillInstallOptions) InstallResult {
 	result := InstallResult{
 		SkillName: skillName,
 		Prompt:    prompt,
@@ -183,7 +134,7 @@ func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, 
 		agent string
 		path  string
 	}
-	seen := map[string][]string{} // resolved path : list of agent names
+	seen := map[string][]string{}
 	var order []agentPath
 
 	for _, agent := range opts.Agents {
@@ -206,9 +157,8 @@ func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, 
 			continue
 		}
 
-		if agents, ok := seen[absDir]; ok {
-			// Duplicate path — record as skipped
-			seen[absDir] = append(agents, agent)
+		if _, ok := seen[absDir]; ok {
+			seen[absDir] = append(seen[absDir], agent)
 			result.Agents = append(result.Agents, AgentInstallResult{
 				Agent:   agent,
 				Path:    absDir,
@@ -221,33 +171,43 @@ func InstallSkill(entries []TarEntry, skillName string, prompt artifact.Prompt, 
 	}
 
 	for _, ap := range order {
-		agentResult := installForAgent(entries, skillName, ap.agent, ap.path, opts)
+		agentResult := installForAgent(entries, skillName, prompt.Path, ap.agent, ap.path, opts)
 		result.Agents = append(result.Agents, agentResult)
 	}
 
-	return result, nil
+	return result
 }
 
 // installForAgent handles installation for a single agent at a resolved path.
-func installForAgent(entries []TarEntry, skillName, agent, skillDir string, opts *SkillInstallOptions) AgentInstallResult {
+// It strips the prompt path prefix from entry names at write time.
+func installForAgent(entries []TarEntry, skillName, promptPath, agent, skillDir string, opts *SkillInstallOptions) AgentInstallResult {
 	errResult := func(err error) AgentInstallResult {
 		return AgentInstallResult{Agent: agent, Path: skillDir, Err: err}
 	}
 
-	// Validate skill name directly — it must be a safe relative path component
+	// Validate skill name — it must be a safe relative path component
 	if _, _, err := filesystem.VerifySubpath(".", skillName); err != nil {
 		return errResult(fmt.Errorf("invalid skill name '%s': %w", skillName, err))
 	}
 
 	// Validate all entries before writing anything
+	var hasWritableEntries bool
 	for _, entry := range entries {
 		if entry.Header.Name == "" {
 			return errResult(fmt.Errorf("tar entry with empty name"))
 		}
-		// Verify entry resolves inside skill directory
-		if _, _, err := filesystem.VerifySubpath(skillDir, entry.Header.Name); err != nil {
+		rel := relativeEntryName(entry.Header.Name, promptPath)
+		if rel == "" {
+			continue // directory prefix entry — will be skipped during write
+		}
+		if _, _, err := filesystem.VerifySubpath(skillDir, rel); err != nil {
 			return errResult(fmt.Errorf("illegal file path in prompt layer: %s", entry.Header.Name))
 		}
+		hasWritableEntries = true
+	}
+
+	if !hasWritableEntries {
+		return errResult(fmt.Errorf("prompt path '%s' does not match any tar entries in the layer", promptPath))
 	}
 
 	// Check if skill directory already exists
@@ -267,29 +227,27 @@ func installForAgent(entries []TarEntry, skillName, agent, skillDir string, opts
 		return errResult(fmt.Errorf("creating skill directory: %w", err))
 	}
 
+	// Write entries, stripping the prompt path prefix at write time
 	for _, entry := range entries {
-		outPath := filepath.Join(skillDir, entry.Header.Name)
-
-		// Verify the resolved write path is inside the skill directory.
-		// This is a defense-in-depth check — entry names were validated above,
-		// but filepath.Join can behave differently from VerifySubpath on edge cases.
-		if _, _, err := filesystem.VerifySubpath(skillDir, entry.Header.Name); err != nil {
-			return errResult(fmt.Errorf("illegal write path: %s", entry.Header.Name))
+		rel := relativeEntryName(entry.Header.Name, promptPath)
+		if rel == "" {
+			continue
 		}
+		outPath := filepath.Join(skillDir, rel)
 
 		switch entry.Header.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(outPath, entry.Header.FileInfo().Mode()); err != nil {
-				return errResult(fmt.Errorf("creating directory %s: %w", entry.Header.Name, err))
+				return errResult(fmt.Errorf("creating directory %s: %w", rel, err))
 			}
 		default: // tar.TypeReg
 			if dir := filepath.Dir(outPath); dir != skillDir {
 				if err := os.MkdirAll(dir, 0755); err != nil {
-					return errResult(fmt.Errorf("creating parent directory for %s: %w", entry.Header.Name, err))
+					return errResult(fmt.Errorf("creating parent directory for %s: %w", rel, err))
 				}
 			}
 			if err := os.WriteFile(outPath, entry.Content, entry.Header.FileInfo().Mode()); err != nil {
-				return errResult(fmt.Errorf("writing file %s: %w", entry.Header.Name, err))
+				return errResult(fmt.Errorf("writing file %s: %w", rel, err))
 			}
 		}
 	}
