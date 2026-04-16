@@ -51,8 +51,9 @@ const (
 
 	// Kitops-specific annotations for modelkit artifacts
 	// TODO: update these to use the newer kitops.org domain
-	CliVersionAnnotation  = "ml.kitops.modelkit.cli-version"
-	KitfileJsonAnnotation = "ml.kitops.modelkit.kitfile"
+	CliVersionAnnotation      = "ml.kitops.modelkit.cli-version"
+	KitfileJsonAnnotation     = "ml.kitops.modelkit.kitfile"
+	OciImageCreatedAnnotation = "org.opencontainers.image.created"
 
 	// LayerSubtypeAnnotation stores additional type information for a given OCI manifest
 	// layer within its annotations (e.g. storing prompts within code-type layers)
