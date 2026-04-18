@@ -66,6 +66,9 @@ func UnpackModelKit(ctx context.Context, opts *UnpackOptions) error {
 			}
 		}()
 	}
+	if opts.SkillOptions != nil {
+		return unpackSkill(ctx, opts)
+	}
 	return unpackRecursive(ctx, opts, []string{})
 }
 
@@ -121,10 +124,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	// through the config's relevant field to get the correct path for unpacking
 	// We need to support older ModelKits (that were packed without diffIDs and digest
 	// in the config) for now, so we need to continue using the old structure.
-	// Skill-mode tracking
-	var skillErrors []error
-	var promptsFiltered, skillsFound int
-
 	var modelPartIdx, codeIdx, datasetIdx, docsIdx, promptIdx int
 	for _, layerDesc := range manifest.Layers {
 		// This variable supports older-format tar layers (that don't include the
@@ -144,9 +143,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		var layerInfo *artifact.LayerInfo
 		switch mediaType.Base() {
 		case mediatype.ModelBaseType:
-			if opts.SkillOptions != nil {
-				continue
-			}
 			entry := config.Model
 			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 				continue
@@ -155,10 +151,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking model %s to %s", config.Model.Name, config.Model.Path)
 
 		case mediatype.ModelPartBaseType:
-			if opts.SkillOptions != nil {
-				modelPartIdx += 1
-				continue
-			}
 			entry := config.Model.Parts[modelPartIdx]
 			modelPartIdx += 1
 			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
@@ -175,37 +167,9 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
 					continue
 				}
-
-				// Skill mode: install as agent skill
-				if opts.SkillOptions != nil {
-					promptsFiltered++
-					result, sErr := installPromptAsSkill(ctx, store, layerDesc, entry, mediaType.Compression(), opts)
-					if sErr != nil {
-						output.Logf(output.LogLevelWarn, "Error reading prompt %q: %s", entry.Path, sErr)
-						skillErrors = append(skillErrors, fmt.Errorf("prompt %q: %s", entry.Path, sErr))
-					} else if result != nil {
-						skillsFound++
-						for _, ar := range result.Agents {
-							if ar.Err != nil {
-								output.Infof("Failed to install skill '%s' for %s: %s", result.SkillName, ar.Agent, ar.Err)
-								skillErrors = append(skillErrors, fmt.Errorf("skill '%s' for %s: %s", result.SkillName, ar.Agent, ar.Err))
-							} else if ar.Skipped {
-								output.Infof("Skipped skill '%s' for %s: already exists (use -o to overwrite)", result.SkillName, ar.Agent)
-							} else {
-								output.Infof("Installed skill '%s' for %s → %s", result.SkillName, ar.Agent, ar.Path)
-							}
-						}
-					}
-					continue
-				}
-
 				layerInfo, layerPath = entry.LayerInfo, entry.Path
 				output.Infof("Unpacking prompt to %s", entry.Path)
 			} else {
-				if opts.SkillOptions != nil {
-					codeIdx += 1
-					continue
-				}
 				entry := config.Code[codeIdx]
 				codeIdx += 1
 				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
@@ -216,17 +180,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			}
 
 		case mediatype.DatasetBaseType:
-			if opts.SkillOptions != nil {
-				// Skip datasets but still advance the index past non-remote datasets
-				for idx := datasetIdx; idx < len(config.DataSets); idx++ {
-					if config.DataSets[idx].RemotePath != "" {
-						continue
-					}
-					datasetIdx = idx + 1
-					break
-				}
-				continue
-			}
 			// Since some datasets may be remote, we need to search the Kitfile for the next non-remote dataset
 			var entry *artifact.DataSet
 			for idx := datasetIdx; idx < len(config.DataSets); idx++ {
@@ -248,10 +201,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 			output.Infof("Unpacking dataset %s to %s", entry.Name, entry.Path)
 
 		case mediatype.DocsBaseType:
-			if opts.SkillOptions != nil {
-				docsIdx += 1
-				continue
-			}
 			entry := config.Docs[docsIdx]
 			docsIdx += 1
 			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
@@ -267,11 +216,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		case mediatype.UnknownBaseType:
 			// Should never happen as we check earlier, but for completeness' sake:
 			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
-		}
-
-		// In skill mode, prompts are handled above; nothing else to unpack
-		if opts.SkillOptions != nil {
-			continue
 		}
 
 		if layerInfo != nil {
@@ -290,22 +234,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression()); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
-	}
-
-	// Skill mode: end-of-loop summary
-	if opts.SkillOptions != nil {
-		if promptsFiltered == 0 {
-			output.Infof("No prompt layers matched the specified filters")
-			return nil
-		}
-		if skillsFound == 0 && len(skillErrors) == 0 {
-			output.Infof("No agent skills found in modelkit. Prompt layers must contain a SKILL.md file to be installed as skills.")
-			return nil
-		}
-		if len(skillErrors) > 0 {
-			return fmt.Errorf("failed to install %d skill(s)", len(skillErrors))
-		}
-		return nil
 	}
 
 	// Handle remotely stored files: first build a list so we can show a warning if remote files are skipped
@@ -366,6 +294,92 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	output.Debugf("Unpacked %d docs layers", docsIdx)
 	output.Debugf("Unpacked %d prompt layers", promptIdx)
 
+	return nil
+}
+
+// unpackSkill handles the --as-skill flow: prompt layers containing SKILL.md
+// are installed as agent skills and all other layer types are ignored.
+// Unlike unpackRecursive, it does not unpack the Kitfile, traverse parent
+// modelkits, or touch the filesystem outside the resolved skills directories.
+func unpackSkill(ctx context.Context, opts *UnpackOptions) error {
+	ref := opts.ModelRef
+	store, err := getStoreForRef(ctx, opts)
+	if err != nil {
+		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
+		return fmt.Errorf("failed to find reference %s: %s", ref, err)
+	}
+	manifestDesc, err := store.Resolve(ctx, ref.Reference)
+	if err != nil {
+		return fmt.Errorf("failed to resolve reference: %w", err)
+	}
+	manifest, err := util.GetManifest(ctx, store, manifestDesc)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest: %s", err)
+	}
+	config, err := util.GetKitfileForManifest(ctx, store, manifest)
+	if err != nil {
+		if errors.Is(err, util.ErrNoKitfile) {
+			output.Infof("No Kitfile found in modelkit; no prompt layers to install as skills")
+			return nil
+		}
+		return err
+	}
+
+	var promptsFiltered, skillsFound, skillErrorCount, promptIdx int
+
+	for _, layerDesc := range manifest.Layers {
+		mediaType, err := mediatype.ParseMediaType(layerDesc.MediaType)
+		if err != nil {
+			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping", layerDesc.MediaType)
+			continue
+		}
+		if mediaType.Base() != mediatype.CodeBaseType {
+			continue
+		}
+		if layerDesc.Annotations[constants.LayerSubtypeAnnotation] != constants.LayerSubtypePrompt {
+			continue
+		}
+
+		entry := config.Prompts[promptIdx]
+		promptIdx++
+		if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
+			continue
+		}
+
+		promptsFiltered++
+		result, sErr := installPromptAsSkill(ctx, store, layerDesc, entry, mediaType.Compression(), opts)
+		if sErr != nil {
+			output.Logf(output.LogLevelWarn, "Error reading prompt %q: %s", entry.Path, sErr)
+			skillErrorCount++
+			continue
+		}
+		if result == nil {
+			continue
+		}
+		skillsFound++
+		for _, ar := range result.Agents {
+			if ar.Err != nil {
+				output.Infof("Failed to install skill '%s' for %s: %s", result.SkillName, ar.Agent, ar.Err)
+				skillErrorCount++
+			} else if ar.Skipped {
+				output.Infof("Skipped skill '%s' for %s: already exists (use -o to overwrite)", result.SkillName, ar.Agent)
+			} else {
+				output.Infof("Installed skill '%s' for %s → %s", result.SkillName, ar.Agent, ar.Path)
+			}
+		}
+	}
+
+	if promptsFiltered == 0 {
+		output.Infof("No prompt layers matched the specified filters")
+		return nil
+	}
+	if skillsFound == 0 && skillErrorCount == 0 {
+		output.Infof("No agent skills found in modelkit. Prompt layers must contain a SKILL.md file to be installed as skills.")
+		return nil
+	}
+	if skillErrorCount > 0 {
+		return fmt.Errorf("failed to install %d skill(s)", skillErrorCount)
+	}
 	return nil
 }
 
