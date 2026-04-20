@@ -1049,7 +1049,14 @@ Additional filters match elements of the Kitfile on either the name (if present)
 the path used.
 
 The filter field can be specified multiple times. A layer will be unpacked if it matches
-any of the specified filters
+any of the specified filters.
+
+Use --as-skill to install SKILL.md prompt layers as agent skills instead of unpacking
+them to their original paths. Without a value, kit auto-discovers installed agents by
+checking their global config directories. With a value, specify agents as a comma-
+separated list (e.g. --as-skill=claude-code,cursor). By default, skills are installed
+globally (user-scoped). When -d is specified, skills are installed into that project
+directory instead.
 
 ```
 kit unpack [flags] [registry/]repository[:tag|@digest]
@@ -1075,29 +1082,42 @@ kit unpack myrepo/my-model:latest --filter=model --filter=datasets:validation
 
 # Unpack a modelkit from a remote registry with overwrite enabled
 kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked
+
+# Install SKILL.md prompt layers as agent skills (auto-detect agents)
+kit unpack myrepo/my-model:latest --as-skill
+
+# Install skills for specific agents (= required when specifying agents)
+kit unpack myrepo/my-model:latest --as-skill=claude-code,cursor,windsurf
+
+# Install skills into a project directory
+kit unpack myrepo/my-model:latest --as-skill -d /path/to/project
+
+# Overwrite existing skills
+kit unpack myrepo/my-model:latest --as-skill -o
 ```
 
 ### Options
 
 ```
-  -d, --dir string           The target directory to unpack components into. This directory will be created if it does not exist
-  -o, --overwrite            Overwrites existing files and directories in the target unpack directory without prompting
-  -i, --ignore-existing      Skip unpacking files if a file with that name already exists
-  -f, --filter stringArray   Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times
-      --include-remote       Include remote datasets in unpacked files
-      --kitfile              Unpack only Kitfile (deprecated: use --filter=kitfile)
-      --model                Unpack only model (deprecated: use --filter=model)
-      --code                 Unpack only code (deprecated: use --filter=code)
-      --datasets             Unpack only datasets (deprecated: use --filter=datasets)
-      --docs                 Unpack only docs (deprecated: use --filter=docs)
-      --plain-http           Use plain HTTP when connecting to remote registries
-      --tls-verify           Require TLS and verify certificates when connecting to remote registries (default true)
-      --tls-cert strings     Path to TLS cert to add to trust store (flag can be repeated)
-      --cert string          Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string           Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int      Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string         Proxy to use for connections (overrides proxy set by environment)
-  -h, --help                 help for unpack
+  -d, --dir string                 The target directory to unpack components into. This directory will be created if it does not exist
+  -o, --overwrite                  Overwrites existing files and directories in the target unpack directory without prompting
+  -i, --ignore-existing            Skip unpacking files if a file with that name already exists
+  -f, --filter stringArray         Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times
+      --include-remote             Include remote datasets in unpacked files
+      --kitfile                    Unpack only Kitfile (deprecated: use --filter=kitfile)
+      --model                      Unpack only model (deprecated: use --filter=model)
+      --code                       Unpack only code (deprecated: use --filter=code)
+      --datasets                   Unpack only datasets (deprecated: use --filter=datasets)
+      --docs                       Unpack only docs (deprecated: use --filter=docs)
+      --as-skill string[="auto"]   Install SKILL.md prompt layers as agent skills. Without a value, auto-discovers installed agents. With a value, specify agents as a comma-separated list (e.g. --as-skill=claude-code,cursor)
+      --plain-http                 Use plain HTTP when connecting to remote registries
+      --tls-verify                 Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings           Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string                Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string                 Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int            Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string               Proxy to use for connections (overrides proxy set by environment)
+  -h, --help                       help for unpack
 ```
 
 ### Options inherited from parent commands
