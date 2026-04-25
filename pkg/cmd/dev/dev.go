@@ -85,6 +85,28 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		return err
 	}
 
+	// Detect and collect lora-adapter parts
+	var loraPaths []string
+	for _, part := range kitfile.Model.Parts {
+		if strings.EqualFold(part.Type, "lora-adapter") {
+			if part.Path == "" {
+				continue
+			}
+			partAbsPath, _, err := filesystem.VerifySubpath(options.contextDir, part.Path)
+			if err != nil {
+				output.Debugf("Skipping lora-adapter: %v", err)
+				continue
+			}
+			loraPath, err := findLoraAdapterFile(partAbsPath)
+			if err != nil {
+				output.Debugf("Skipping lora-adapter: %v", err)
+				continue
+			}
+			output.Infof("Found lora-adapter: %s", loraPath)
+			loraPaths = append(loraPaths, loraPath)
+		}
+	}
+
 	llmHarness := &harness.LLMHarness{}
 	llmHarness.Host = options.host
 	llmHarness.Port = options.port
@@ -93,7 +115,7 @@ func runDev(ctx context.Context, options *DevStartOptions) error {
 		return err
 	}
 
-	if err := llmHarness.Start(modelPath); err != nil {
+	if err := llmHarness.Start(modelPath, loraPaths); err != nil {
 		return err
 	}
 
@@ -168,6 +190,26 @@ func findModelFile(absPath string) (string, error) {
 	}
 	output.Debugf("Found model path in directory %s at %s", absPath, modelPath)
 	return modelPath, nil
+}
+
+// findLoraAdapterFile validates a lora adapter path.
+// The path must point to a regular file.
+func findLoraAdapterFile(absPath string) (string, error) {
+	stat, err := os.Lstat(absPath)
+	if err != nil {
+		return "", err
+	}
+
+	if !stat.Mode().IsRegular() {
+		return "", fmt.Errorf("lora adapter path must be a regular .gguf file: %s", absPath)
+	}
+
+	if !strings.HasSuffix(strings.ToLower(absPath), ".gguf") {
+		return "", fmt.Errorf("lora adapter file must be a .gguf file: %s", absPath)
+	}
+
+	output.Debugf("Found lora adapter path at %s", absPath)
+	return absPath, nil
 }
 
 // extractModelKitToCache extracts a ModelKit reference to a cache directory

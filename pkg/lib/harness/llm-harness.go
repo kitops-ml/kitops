@@ -63,7 +63,7 @@ func (harness *LLMHarness) Init() error {
 	return nil
 }
 
-func (harness *LLMHarness) Start(modelPath string) (err error) {
+func (harness *LLMHarness) Start(modelPath string, loraPaths []string) (err error) {
 
 	harnessPath := constants.HarnessPath(harness.ConfigHome)
 	pidFile := filepath.Join(harnessPath, constants.HarnessProcessFile)
@@ -85,24 +85,31 @@ func (harness *LLMHarness) Start(modelPath string) (err error) {
 
 	uiHome := filepath.Join(harnessPath, "ui")
 	output.Debugf("model path is %s", modelPath)
+	for _, loraPath := range loraPaths {
+		output.Debugf("lora adapter path is %s", loraPath)
+	}
 	var cmd *exec.Cmd
+	args := []string{
+		"--server",
+		"--model", modelPath,
+		"--host", harness.Host,
+		"--port", fmt.Sprintf("%d", harness.Port),
+		"--path", uiHome,
+		"--gpu", "AUTO",
+		"--nobrowser",
+		"--unsecure",
+	}
+	for _, loraPath := range loraPaths {
+		args = append(args, "--lora", loraPath)
+	}
+
 	if runtime.GOOS == "windows" {
-		cmd = exec.Command(
-			"./llamafile.exe",
-			"--server",
-			"--model", modelPath,
-			"--host", harness.Host,
-			"--port", fmt.Sprintf("%d", harness.Port),
-			"--path", uiHome,
-			"--gpu", "AUTO",
-			"--nobrowser",
-			"--unsecure",
-		)
+		cmd = exec.Command("./llamafile.exe", args...)
 	} else {
-		cmd = exec.Command("sh", "-c",
-			fmt.Sprintf("./llamafile --server --model %s --host %s --port %d --path %s --gpu AUTO --nobrowser --unsecure",
-				modelPath, harness.Host, harness.Port, uiHome),
-		)
+		// Run through sh -c for APE compatibility, while passing all user-controlled
+		// values as positional args to avoid shell interpolation and injection.
+		shellArgs := append([]string{"-c", "exec ./llamafile \"$@\"", "llamafile"}, args...)
+		cmd = exec.Command("sh", shellArgs...)
 	}
 
 	cmd.Dir = harnessPath
