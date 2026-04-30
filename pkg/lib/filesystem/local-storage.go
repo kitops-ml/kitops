@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -54,12 +55,12 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 		return nil, err
 	}
 
-	configDesc, err := saveConfig(ctx, localRepo, kitfile, diffIDs, opts.ModelFormat)
+	configDesc, createdAtAnnotation, err := saveConfig(ctx, localRepo, kitfile, diffIDs, opts.ModelFormat)
 	if err != nil {
 		return nil, err
 	}
 
-	manifest, err := createManifest(configDesc, layerDescs, opts.ModelFormat)
+	manifest, err := createManifest(configDesc, layerDescs, opts.ModelFormat, createdAtAnnotation)
 	if err != nil {
 		return nil, fmt.Errorf("error creating manifest: %w", err)
 	}
@@ -88,27 +89,31 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 	return manifestDesc, nil
 }
 
-func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, diffIDs []digest.Digest, modelFormat mediatype.ModelFormat) (ocispec.Descriptor, error) {
+func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, diffIDs []digest.Digest, modelFormat mediatype.ModelFormat) (ocispec.Descriptor, string, error) {
 	var configBytes []byte
 	var configMediaType string
+	var createdAtAnnotation string
 	switch modelFormat {
 	case mediatype.KitFormat:
 		configMediaType = mediatype.KitConfigMediaType.String()
 		bytes, err := kitfile.MarshalToJSON()
 		if err != nil {
-			return ocispec.DescriptorEmptyJSON, err
+			return ocispec.DescriptorEmptyJSON, "", err
 		}
 		configBytes = bytes
 	case mediatype.ModelPackFormat:
 		configMediaType = mediatype.ModelPackConfigMediaType.String()
 		modelpackConfig := kitfile.ToModelPackConfig(diffIDs)
+		if modelpackConfig.Descriptor.CreatedAt != nil {
+			createdAtAnnotation = modelpackConfig.Descriptor.CreatedAt.UTC().Format(time.RFC3339)
+		}
 		bytes, err := json.Marshal(modelpackConfig)
 		if err != nil {
-			return ocispec.DescriptorEmptyJSON, err
+			return ocispec.DescriptorEmptyJSON, "", err
 		}
 		configBytes = bytes
 	default:
-		return ocispec.DescriptorEmptyJSON, fmt.Errorf("unrecognized model format")
+		return ocispec.DescriptorEmptyJSON, "", fmt.Errorf("unrecognized model format")
 	}
 
 	desc := ocispec.Descriptor{
@@ -119,20 +124,20 @@ func saveConfig(ctx context.Context, localRepo local.LocalRepo, kitfile *artifac
 
 	exists, err := localRepo.Exists(ctx, desc)
 	if err != nil {
-		return ocispec.DescriptorEmptyJSON, err
+		return ocispec.DescriptorEmptyJSON, "", err
 	}
 	if !exists {
 		// Does not exist in storage, need to push
 		err = localRepo.Push(ctx, desc, bytes.NewReader(configBytes))
 		if err != nil {
-			return ocispec.DescriptorEmptyJSON, err
+			return ocispec.DescriptorEmptyJSON, "", err
 		}
 		output.Infof("Saved configuration: %s", desc.Digest)
 	} else {
 		output.Infof("Configuration already exists in storage: %s", desc.Digest)
 	}
 
-	return desc, nil
+	return desc, createdAtAnnotation, nil
 }
 
 func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (layers []ocispec.Descriptor, diffIDs []digest.Digest, err error) {
@@ -319,7 +324,7 @@ func saveModelManifest(ctx context.Context, store oras.Target, manifest ocispec.
 	return &desc, nil
 }
 
-func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descriptor, modelFormat mediatype.ModelFormat) (ocispec.Manifest, error) {
+func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descriptor, modelFormat mediatype.ModelFormat, createdAtAnnotation string) (ocispec.Manifest, error) {
 	var manifest ocispec.Manifest
 	switch modelFormat {
 	case mediatype.KitFormat:
@@ -345,6 +350,9 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 		manifest.Annotations = map[string]string{}
 	}
 	manifest.Annotations[constants.CliVersionAnnotation] = constants.Version
+	if modelFormat == mediatype.ModelPackFormat && createdAtAnnotation != "" {
+		manifest.Annotations[constants.OciImageCreatedAnnotation] = createdAtAnnotation
+	}
 
 	return manifest, nil
 }
