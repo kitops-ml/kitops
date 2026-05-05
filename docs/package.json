@@ -18,7 +18,7 @@
     "docs:preview": "vitepress preview"
   },
   "dependencies": {
-    "@vueuse/core": "^14.2.1",
+    "@vueuse/core": "^14.3.0",
     "cheerio": "1.2.0",
     "vue3-marquee": "^4.2.2"
   },
