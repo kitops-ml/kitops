@@ -27,23 +27,26 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/external/hf"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
-	repoutil "github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
-func importUsingHF(ctx context.Context, opts *importOptions) error {
+func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, error) {
+	var prov *ProvenanceData
+	if opts.attestationOutput != "" {
+		prov = newProvenanceData()
+	}
+
 	// Handle full HF URLs by extracting repository name from URL
 	repo, repoType, err := hf.ParseHuggingFaceRepo(opts.repo)
 	if err != nil {
-		return fmt.Errorf("could not process repository %s: %w", opts.repo, err)
+		return nil, fmt.Errorf("could not process repository %s: %w", opts.repo, err)
 	}
 
 	tmpDir, cleanupTmp, err := cache.MkCacheDir("import", "")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary directory: %w", err)
+		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 	doCleanup := true
 	defer func() {
@@ -52,27 +55,40 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 		}
 	}()
 
-	dirListing, err := hf.ListFiles(ctx, repo, opts.repoRef, opts.token, repoType)
+	// Resolve the user-supplied ref to an immutable commit SHA up front.
+	// HF accepts commit SHAs anywhere a ref is expected, so threading this
+	// SHA through ListFiles and DownloadFiles binds the entire import to one
+	// snapshot — even if the branch moves between calls.
+	commitSHA, err := hf.PinCommit(ctx, repo, opts.repoRef, opts.token, repoType)
 	if err != nil {
-		return fmt.Errorf("failed to list files from HuggingFace API: %w", err)
+		return nil, fmt.Errorf("failed to pin commit for %s@%s: %w", repo, opts.repoRef, err)
+	}
+
+	dirListing, err := hf.ListFiles(ctx, repo, commitSHA, opts.token, repoType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files from HuggingFace API: %w", err)
+	}
+	if prov != nil {
+		prov.SourceURI = hfSourceURI(repo, repoType)
+		prov.SourceCommitSHA = commitSHA
 	}
 
 	var kitfile *artifact.KitFile
 	if opts.kitfilePath == "-" {
 		kitfile = &artifact.KitFile{}
 		if err := kitfile.LoadModel(os.Stdin); err != nil {
-			return fmt.Errorf("failed to read Kitfile from input: %w", err)
+			return nil, fmt.Errorf("failed to read Kitfile from input: %w", err)
 		}
 	} else if opts.kitfilePath != "" {
 		kf, err := readExistingKitfile(opts.kitfilePath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		kitfile = kf
 	} else {
 		kf, err := generateKitfile(dirListing, repo, tmpDir)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		kitfile = kf
 
@@ -90,9 +106,9 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 					output.Logf(output.LogLevelWarn, "and run command")
 					output.Logf(output.LogLevelWarn, "    kit import %s -t %s -f %s", opts.repo, opts.tag, kfPath)
 					output.Logf(output.LogLevelWarn, "to complete process")
-					return err
+					return nil, err
 				}
-				return err
+				return nil, err
 			}
 			kitfile = newKitfile
 		}
@@ -100,44 +116,46 @@ func importUsingHF(ctx context.Context, opts *importOptions) error {
 
 	toDownload, err := filterListingForKitfile(dirListing, kitfile)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := hf.DownloadFiles(ctx, repo, opts.repoRef, tmpDir, toDownload, opts.token, opts.concurrency, repoType); err != nil {
-		return fmt.Errorf("error downloading repository: %w", err)
+	if err := hf.DownloadFiles(ctx, repo, commitSHA, tmpDir, toDownload, opts.token, opts.concurrency, repoType); err != nil {
+		return nil, fmt.Errorf("error downloading repository: %w", err)
 	}
 
 	output.Infof("Packing model to %s", opts.tag)
-	if err := packDirectory(ctx, opts.configHome, tmpDir, kitfile, opts.modelKitRef); err != nil {
-		return fmt.Errorf("failed to pack ModelKit: %w", err)
+	manifestDesc, err := packDirectory(ctx, opts.configHome, tmpDir, kitfile, opts.modelKitRef)
+	if err != nil {
+		return nil, fmt.Errorf("failed to pack ModelKit: %w", err)
 	}
 	output.Infof("Model is packed as %s", opts.tag)
+	if prov != nil {
+		if err := prov.finalize(manifestDesc, kitfile); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := cache.CleanCacheDir(cache.CacheImportSubdir); err != nil {
 		output.Logf(output.LogLevelWarn, "Failed to clean cache directory: %s", err)
 	}
 
-	return nil
+	return prov, nil
 }
 
+// filterListingForKitfile walks the directory listing and returns the subset
+// of files that the Kitfile would pack, so HF only downloads what will end up
+// in the ModelKit. Layer assignment is decided by kitfilePathFilter, which
+// mirrors pack's own ignore-aware layer routing.
 func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact.KitFile) ([]kfgen.FileListing, error) {
-	// Repurpose the ignore implementation to find which files we need to download and which ones we can skip.
-	// This works because ignore is designed to _also_ ignore paths that are packed as part of another layer
-	// instead of the current one.
-	ignore, err := ignore.New(nil, kitfile)
+	filter, err := newKitfilePathFilter(kitfile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process Kitfile to get file list: %w", err)
+		return nil, err
 	}
 
-	hasCatchall := kitfileHasCatchallLayer(kitfile)
 	var pathsToDownload []kfgen.FileListing
 	var processDir func(dir *kfgen.DirectoryListing) error
 	processDir = func(dir *kfgen.DirectoryListing) error {
 		for _, file := range dir.Files {
-			if hasCatchall {
-				pathsToDownload = append(pathsToDownload, file)
-				continue
-			}
-			matches, err := ignore.Matches(file.Path, "")
+			matches, err := filter.Matches(file.Path)
 			if err != nil {
 				return fmt.Errorf("failed to process path %s: %w", file.Path, err)
 			}
@@ -159,12 +177,12 @@ func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact
 	return pathsToDownload, nil
 }
 
-func kitfileHasCatchallLayer(kitfile *artifact.KitFile) bool {
-	layerPaths := repoutil.LayerPathsFromKitfile(kitfile)
-	for _, path := range layerPaths {
-		if path == "." {
-			return true
-		}
+// hfSourceURI builds the SourceURI for a HF import. Datasets get a "datasets/"
+// segment so a verifier can distinguish them from models — both kinds of repo
+// share the org/name shape but live at different URLs on huggingface.co.
+func hfSourceURI(repo string, repoType hf.RepositoryType) string {
+	if repoType == hf.RepoTypeDataset {
+		return "hf://datasets/" + repo
 	}
-	return false
+	return "hf://" + repo
 }

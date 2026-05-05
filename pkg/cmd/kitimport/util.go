@@ -37,6 +37,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -81,15 +82,15 @@ func readExistingKitfile(kfPath string) (*artifact.KitFile, error) {
 	return kitfile, nil
 }
 
-func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *artifact.KitFile, ref *registry.Reference) error {
+func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *artifact.KitFile, ref *registry.Reference) (*ocispec.Descriptor, error) {
 	// Packing requires the working dir to be the context dir so that relative paths are correct in the tarball
 	// On Windows, we need to switch back to the current directory or removing the temporary directory will fail
 	curDir, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("failed to get current directory: %w", err)
+		return nil, fmt.Errorf("failed to get current directory: %w", err)
 	}
 	if err := os.Chdir(contextDir); err != nil {
-		return fmt.Errorf("failed to use context path %s: %w", contextDir, err)
+		return nil, fmt.Errorf("failed to use context path %s: %w", contextDir, err)
 	}
 	defer func() {
 		if err := os.Chdir(curDir); err != nil {
@@ -99,11 +100,11 @@ func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *
 
 	localRepo, err := local.NewLocalRepo(constants.StoragePath(configHome), ref)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	ignore, err := ignore.NewFromContext(contextDir, kitfile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, &filesystem.SaveModelOptions{
 		ModelFormat: mediatype.KitFormat,
@@ -111,12 +112,13 @@ func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *
 		LayerFormat: mediatype.TarFormat,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := localRepo.Tag(ctx, *manifestDesc, ref.Reference); err != nil {
-		return fmt.Errorf("failed to tag manifest: %w", err)
+		return nil, fmt.Errorf("failed to tag manifest: %w", err)
 	}
-	return nil
+
+	return manifestDesc, nil
 }
 
 func promptToEditKitfile(contextDir string, currentKitfile *artifact.KitFile) (*artifact.KitFile, error) {

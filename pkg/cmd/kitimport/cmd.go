@@ -18,6 +18,7 @@ package kitimport
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"slices"
@@ -71,15 +72,16 @@ kit import myorg/myrepo --file ./path/to/Kitfile`
 )
 
 type importOptions struct {
-	configHome   string
-	repo         string
-	repoRef      string
-	tag          string
-	token        string
-	kitfilePath  string
-	downloadTool string
-	concurrency  int
-	modelKitRef  *registry.Reference
+	configHome        string
+	repo              string
+	repoRef           string
+	tag               string
+	token             string
+	kitfilePath       string
+	downloadTool      string
+	concurrency       int
+	attestationOutput string
+	modelKitRef       *registry.Reference
 }
 
 func ImportCommand() *cobra.Command {
@@ -100,6 +102,8 @@ func ImportCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.kitfilePath, "file", "f", "", "Path to Kitfile to use for packing (use '-' to read from standard input)")
 	cmd.Flags().StringVar(&opts.downloadTool, "tool", "", "Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)")
 	cmd.Flags().IntVar(&opts.concurrency, "concurrency", 5, "Maximum number of simultaneous downloads (for huggingface)")
+	cmd.Flags().StringVar(&opts.attestationOutput, "attestation-output", "",
+		"Write SLSA Provenance v1 predicate to <path> ('-' for stdout)")
 	cmd.Flags().SortFlags = false
 	return cmd
 }
@@ -114,8 +118,44 @@ func runCommand(opts *importOptions) func(*cobra.Command, []string) error {
 		if err != nil {
 			return output.Fatalln(err)
 		}
-		if err := importer(cmd.Context(), opts); err != nil {
+
+		var sink output.DataSink
+		if opts.attestationOutput != "" {
+			s, err := output.OpenDataSink(opts.attestationOutput)
+			if err != nil {
+				return output.Fatalln(fmt.Errorf("failed to open attestation output %s: %w", opts.attestationOutput, err))
+			}
+			sink = s
+			// Close cleans up the temp file when Commit wasn't reached
+			// (e.g. importer failure), preserving any pre-existing target.
+			defer func() {
+				if err := sink.Close(); err != nil {
+					output.Logf(output.LogLevelWarn, "failed to close attestation output: %s", err)
+				}
+			}()
+		}
+
+		prov, err := importer(cmd.Context(), opts)
+		if err != nil {
 			return output.Fatalln(err)
+		}
+
+		if prov != nil {
+			if err := prov.validate(); err != nil {
+				return output.Fatalln(err)
+			}
+			pred := BuildPredicate(prov)
+			b, err := json.MarshalIndent(pred, "", "  ")
+			if err != nil {
+				return output.Fatalln(fmt.Errorf("failed to marshal provenance predicate: %w", err))
+			}
+			if _, err := sink.Write(append(b, '\n')); err != nil {
+				return output.Fatalln(fmt.Errorf("failed to write provenance predicate: %w", err))
+			}
+			if err := sink.Commit(); err != nil {
+				return output.Fatalln(fmt.Errorf("failed to finalize attestation output: %w", err))
+			}
+			output.Infof("ModelKit manifest digest: %s", prov.ManifestDigest)
 		}
 
 		return nil
@@ -168,7 +208,7 @@ func (opts *importOptions) complete(ctx context.Context, args []string) error {
 	return nil
 }
 
-func getImporter(opts *importOptions) (func(context.Context, *importOptions) error, error) {
+func getImporter(opts *importOptions) (func(context.Context, *importOptions) (*ProvenanceData, error), error) {
 	switch opts.downloadTool {
 	case "hf":
 		return importUsingHF, nil
