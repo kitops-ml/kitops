@@ -44,6 +44,6 @@ expectedKitfile:
   code:
     - path: build/
     - path: lib/
+    - path: mixed-contents/
     - path: pkg/
     - path: src/
-    - path: mixed-contents/
