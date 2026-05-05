@@ -95,7 +95,7 @@ func importUsingGit(ctx context.Context, opts *importOptions) (*ProvenanceData, 
 		if err != nil {
 			return nil, fmt.Errorf("error processing directory: %w", err)
 		}
-		kf, err := generateKitfile(dirContents, opts.repo, tmpDir)
+		kf, err := generateKitfile(dirContents, opts.repo, tmpDir, opts.depth)
 		if err != nil {
 			return nil, err
 		}
