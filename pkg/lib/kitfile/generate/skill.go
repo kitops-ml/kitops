@@ -49,7 +49,7 @@ func dirContainsSkillMD(dir DirectoryListing) (bool, string) {
 
 func buildPromptFromSkill(dir DirectoryListing) (artifact.Prompt, *skill.SkillFrontmatter) {
 	prompt := artifact.Prompt{
-		Path: dir.Path,
+		Path: withTrailingSlash(dir.Path),
 	}
 
 	found, skillPath := dirContainsSkillMD(dir)

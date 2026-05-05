@@ -43,7 +43,7 @@ import (
 
 var ErrNoEditorFound = errors.New("no editor found")
 
-func generateKitfile(dirContents *kfgen.DirectoryListing, repo string, outDir string) (*artifact.KitFile, error) {
+func generateKitfile(dirContents *kfgen.DirectoryListing, repo string, outDir string, depth int) (*artifact.KitFile, error) {
 	// Fill fields in package so that they're not empty in `kit list` later.
 	sections := strings.Split(repo, "/")
 	var modelPackage *artifact.Package
@@ -53,7 +53,7 @@ func generateKitfile(dirContents *kfgen.DirectoryListing, repo string, outDir st
 			Authors: []string{sections[len(sections)-2]},
 		}
 	}
-	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage)
+	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage, depth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate Kitfile: %w", err)
 	}

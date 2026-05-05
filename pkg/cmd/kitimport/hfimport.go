@@ -86,7 +86,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 		}
 		kitfile = kf
 	} else {
-		kf, err := generateKitfile(dirListing, repo, tmpDir)
+		kf, err := generateKitfile(dirListing, repo, tmpDir, opts.depth)
 		if err != nil {
 			return nil, err
 		}

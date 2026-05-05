@@ -80,6 +80,7 @@ type importOptions struct {
 	kitfilePath       string
 	downloadTool      string
 	concurrency       int
+	depth             int
 	attestationOutput string
 	modelKitRef       *registry.Reference
 }
@@ -102,6 +103,7 @@ func ImportCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.kitfilePath, "file", "f", "", "Path to Kitfile to use for packing (use '-' to read from standard input)")
 	cmd.Flags().StringVar(&opts.downloadTool, "tool", "", "Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)")
 	cmd.Flags().IntVar(&opts.concurrency, "concurrency", 5, "Maximum number of simultaneous downloads (for huggingface)")
+	cmd.Flags().IntVar(&opts.depth, "depth", 0, "Maximum directory depth to process when generating a Kitfile. Setting to -1 processes all files individually")
 	cmd.Flags().StringVar(&opts.attestationOutput, "attestation-output", "",
 		"Write SLSA Provenance v1 predicate to <path> ('-' for stdout)")
 	cmd.Flags().SortFlags = false

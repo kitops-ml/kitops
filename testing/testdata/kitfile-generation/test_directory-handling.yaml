@@ -37,13 +37,13 @@ expectedKitfile:
       - path: model-contents/my-model2.gguf
       - path: model-contents/z-metadata.json
   datasets:
-    - path: dataset-contents
+    - path: dataset-contents/
   docs:
-    - path: docs
-    - path: my-files
+    - path: docs/
+    - path: my-files/
   code:
-    - path: build
-    - path: lib
-    - path: pkg
-    - path: src
-    - path: mixed-contents
+    - path: build/
+    - path: lib/
+    - path: pkg/
+    - path: src/
+    - path: mixed-contents/

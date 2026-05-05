@@ -80,6 +80,7 @@ type initOptions struct {
 	repoRef             string
 	token               string
 	outputPath          string
+	depth               int
 	// Computed fields (remote only)
 	repo     string
 	repoType hf.RepositoryType
@@ -105,6 +106,7 @@ func InitCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.repoRef, "ref", "main", "Branch or tag for remote repository (requires --remote)")
 	cmd.Flags().StringVar(&opts.token, "token", "", "Auth token for remote repository (requires --remote)")
 	cmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)")
+	cmd.Flags().IntVar(&opts.depth, "depth", 0, "Maximum directory depth to process when generating a Kitfile. Setting to a negative number processes all files individually")
 	cmd.Flags().SortFlags = false
 	return cmd
 }
@@ -146,7 +148,7 @@ func runCommand(opts *initOptions) func(*cobra.Command, []string) error {
 func runInit(dirContents *kfgen.DirectoryListing, opts *initOptions) error {
 	modelPackage := buildPackageFromRepo(opts.repo, opts.modelkitName, opts.modelkitDescription, opts.modelkitAuthor)
 
-	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage)
+	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage, opts.depth)
 	if err != nil {
 		return output.Fatalf("Error generating Kitfile: %s", err)
 	}
