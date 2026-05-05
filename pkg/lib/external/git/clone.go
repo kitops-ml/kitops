@@ -20,8 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 )
@@ -64,9 +66,9 @@ func CloneRepository(repo, repoRef, dest, token string) error {
 	cloneCmd.Env = cloneEnv
 	cloneCmd.Env = append(cloneCmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	cloneCmd.Stderr = os.Stderr
-	cloneCmd.Stdout = os.Stdout
+	cloneCmd.Stdout = output.InfoWriter()
 
-	output.Infof("Cloning repository %s", repo)
+	output.Infof("Cloning repository %s", SanitizeURL(repo))
 	if err := cloneCmd.Run(); err != nil {
 		return fmt.Errorf("error cloning repository: %w", err)
 	}
@@ -75,7 +77,7 @@ func CloneRepository(repo, repoRef, dest, token string) error {
 	lfsCmd := exec.Command("git", "lfs", "pull")
 	lfsCmd.Dir = dest
 	lfsCmd.Env = cloneEnv
-	lfsCmd.Stdout = os.Stdout
+	lfsCmd.Stdout = output.InfoWriter()
 	lfsCmd.Stderr = os.Stderr
 	output.Infof("Pulling large files")
 	if err := lfsCmd.Run(); err != nil {
@@ -83,7 +85,7 @@ func CloneRepository(repo, repoRef, dest, token string) error {
 	}
 	// LFS pull prints progress by overwriting a line repeatedly; once it's done
 	// we need to print a newline to avoid overwriting the last line
-	fmt.Printf("\n")
+	fmt.Fprintln(output.InfoWriter())
 
 	return nil
 }
@@ -122,4 +124,28 @@ func checkDestination(path string) error {
 		return fmt.Errorf("cannot clone to a non-empty directory")
 	}
 	return nil
+}
+
+// SanitizeURL strips any userinfo (user:password) from a URL so that
+// credentials embedded in clone URLs do not leak into logs or provenance
+// output. Inputs without userinfo — including ones that fail to parse, since
+// those cannot legally contain RFC 3986 userinfo — are returned unchanged.
+func SanitizeURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.User == nil {
+		return rawURL
+	}
+	u.User = nil
+	return u.String()
+}
+
+// ResolveHead returns the commit SHA at HEAD of the repo at repoDir.
+func ResolveHead(repoDir string) (string, error) {
+	cmd := exec.Command("git", "rev-parse", "HEAD")
+	cmd.Dir = repoDir
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve HEAD: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
 }

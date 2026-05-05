@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -39,6 +40,9 @@ const (
 	datasetResolveURLFmt = "https://huggingface.co/datasets/%s/resolve/%s/%s"
 )
 
+// DownloadFiles fetches each entry of files into destDir. The caller is
+// expected to pass an immutable commit SHA as repoRef (via PinCommit) so the
+// snapshot is consistent across all downloads.
 func DownloadFiles(
 	ctx context.Context,
 	modelRepo, repoRef, destDir string,
@@ -47,15 +51,19 @@ func DownloadFiles(
 	maxConcurrency int,
 	repoType RepositoryType) error {
 
-	client := &http.Client{
-		Timeout: 1 * time.Hour,
+	if len(files) == 0 {
+		return nil
 	}
 
-	sem := semaphore.NewWeighted(int64(maxConcurrency))
-	errs, errCtx := errgroup.WithContext(ctx)
-	var semErr error
-
-	progress, plog := output.NewDownloadProgress()
+	// Reject any path that would escape destDir before doing any network or
+	// filesystem work. HF tree responses are not authoritative; a malicious
+	// or compromised repo could embed "../" segments to write files outside
+	// the import temp directory.
+	for _, f := range files {
+		if _, _, err := filesystem.VerifySubpath(destDir, f.Path); err != nil {
+			return fmt.Errorf("rejecting unsafe path %q from HuggingFace API: %w", f.Path, err)
+		}
+	}
 
 	var resolveURLFmt string
 	if repoType == RepoTypeDataset {
@@ -63,6 +71,15 @@ func DownloadFiles(
 	} else {
 		resolveURLFmt = modelResolveURLFmt
 	}
+
+	client := &http.Client{
+		Timeout: 1 * time.Hour,
+	}
+	sem := semaphore.NewWeighted(int64(maxConcurrency))
+	errs, errCtx := errgroup.WithContext(ctx)
+	var semErr error
+
+	progress, plog := output.NewDownloadProgress()
 
 	for _, f := range files {
 		if err := sem.Acquire(errCtx, 1); err != nil {
