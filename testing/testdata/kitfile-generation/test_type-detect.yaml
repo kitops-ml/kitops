@@ -17,6 +17,10 @@ files:
   # Generic code files that should be caught in a catch-all section
   - test.sh
   - bootstrap.sh
+  - main.sh
+  - common.sh
+  - utility.sh
+  - shared.sh
 
 modelName: test-model-detect
 expectedKitfile:
