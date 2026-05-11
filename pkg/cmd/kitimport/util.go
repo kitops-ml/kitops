@@ -182,3 +182,26 @@ func extractRepoFromURL(rawUrl string) (string, error) {
 
 	return path, nil
 }
+
+// extractTagFromMLFlowURI derives a short, filesystem-safe tag name from an
+// mlflow:// URI.  The run ID is used as the model name component.
+//
+// Examples:
+//
+//	mlflow://runs/abc123                   → mlflow-abc123
+//	mlflow://experiments/42/runs/abc123    → mlflow-abc123
+//	mlflow://host/experiments/42/runs/abc123 → mlflow-abc123
+func extractTagFromMLFlowURI(rawURI string) string {
+	// Find the last occurrence of "runs/" and use the segment that follows it.
+	const marker = "runs/"
+	idx := strings.LastIndex(rawURI, marker)
+	if idx >= 0 {
+		runID := strings.TrimRight(rawURI[idx+len(marker):], "/")
+		if runID != "" {
+			return "mlflow-" + runID
+		}
+	}
+	// Fallback: use a sanitised form of the whole URI
+	safe := strings.NewReplacer("mlflow://", "", "/", "-", ":", "-").Replace(rawURI)
+	return safe
+}
