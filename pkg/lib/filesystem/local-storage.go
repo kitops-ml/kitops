@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -345,6 +346,7 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 		manifest.Annotations = map[string]string{}
 	}
 	manifest.Annotations[constants.CliVersionAnnotation] = constants.Version
+	manifest.Annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	return manifest, nil
 }
