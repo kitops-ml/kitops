@@ -59,6 +59,48 @@ kit unpack myrepo/my-model:latest
 
 Get more information on unpack and filtering in the [CLI reference docs](../cli/cli-reference/#kit-unpack).
 
+### Installing Agent Skills
+
+ModelKits can include agent skill files — prompt layers that contain a `SKILL.md` file. The `--as-skill` flag installs these skills directly into supported coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot, and [40+ more](../cli/cli-reference/#kit-unpack)).
+
+**Auto-discover installed agents:**
+
+```sh
+kit unpack myrepo/my-agent-kit:latest --as-skill
+```
+
+Kit checks the global config directories for each supported agent and installs the skill for any agents it detects on your machine.
+
+**Install for specific agents:**
+
+```sh
+kit unpack myrepo/my-agent-kit:latest --as-skill=claude-code,cursor,windsurf
+```
+
+Use `=` followed by a comma-separated list of agent names. Run `kit unpack --help` to see all supported agent names.
+
+**Install globally (default) vs. project-scoped:**
+
+```sh
+# Install globally (user-scoped, default):
+kit unpack myrepo/my-agent-kit:latest --as-skill
+
+# Install into a specific project directory:
+kit unpack myrepo/my-agent-kit:latest --as-skill -d /path/to/project
+```
+
+Without `-d`, skills are installed into each agent's global config directory (e.g. `~/.claude/skills/` for Claude Code). With `-d`, skills are installed into the agent's project-relative subdirectory (e.g. `.claude/skills/`) inside the specified directory.
+
+**Overwrite existing skills:**
+
+```sh
+kit unpack myrepo/my-agent-kit:latest --as-skill -o
+```
+
+:::tip What makes a prompt layer a skill?
+A prompt layer is installed as a skill only when it contains a `SKILL.md` file. Prompt layers without `SKILL.md` are skipped. The skill name is taken from the `name` field in the `SKILL.md` frontmatter, falling back to the Kitfile prompt name, directory name, or repository name.
+:::
+
 ## Signing your ModelKit
 
 Because ModelKits are OCI 1.1 artifacts, they can be signed like any other OCI artifact (you may already sign your containers, for example).
@@ -356,3 +398,5 @@ You can learn more about all the Kit CLI commands from our [command reference do
 To learn about how to run an LLM locally using Kit, see our [Kit Dev](../deploy/#running-llms-locally) documentation.
 
 Thanks for taking some time to play with Kit. We'd love to hear what you think. Feel free to drop us an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy).
+
+<!-- AGENT_MODIFIED: Human review required before merge -->

@@ -96,7 +96,7 @@ KitOps solves this by packaging prompts, skill files, and agent configurations i
 1. Write a Kitfile that references them (skills and prompts go in the `prompts` section; MCP server configs go in the `code` section)
 1. Run `kit pack` to create a versioned ModelKit
 1. Push to your OCI registry with a meaningful tag (e.g., `:staging`, `:prod-2026-03-15`)
-1. In your deployment pipeline, `kit pull` the exact version you need
+1. In your deployment pipeline, `kit pull` the exact version you need — or use `kit unpack --as-skill` to install skill files directly into your agents' config directories
 1. When something breaks, diff the current version against the last known-good version
 
 This works whether your agents use Claude, GPT, Llama, or any other model. The agent framework handles orchestration; KitOps handles the packaging and versioning of everything that defines agent behavior.
@@ -128,3 +128,5 @@ For teams running self-hosted models inside agentic systems, KitOps can package 
 
 **Have feedback or questions?**
 Open an [issue on GitHub](https://github.com/kitops-ml/kitops/issues) or [join us on Discord](https://discord.gg/Tapeh8agYy).
+
+<!-- AGENT_MODIFIED: Human review required before merge -->
