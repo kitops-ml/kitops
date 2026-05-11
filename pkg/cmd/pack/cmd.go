@@ -19,19 +19,12 @@ package pack
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
-
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 const (
@@ -56,15 +49,9 @@ kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1`
 )
 
 type packOptions struct {
-	modelFile    string
-	contextDir   string
-	configHome   string
-	storageHome  string
-	fullTagRef   string
-	compression  string
-	modelRef     *registry.Reference
-	extraRefs    []string
-	useModelPack bool
+	kit.PackOptions
+	modelFile  string
+	fullTagRef string
 }
 
 func PackCommand() *cobra.Command {
@@ -79,8 +66,8 @@ func PackCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&opts.modelFile, "file", "f", "", "Specifies the path to the Kitfile explicitly (use \"-\" to read from standard input)")
 	cmd.Flags().StringVarP(&opts.fullTagRef, "tag", "t", "", "Assigns one or more tags to the built modelkit. Example: -t registry/repository:tag1,tag2")
-	cmd.Flags().StringVar(&opts.compression, "compression", "none", "Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest'")
-	cmd.Flags().BoolVar(&opts.useModelPack, "use-model-pack", false, "Pack model in ModelPack format instead of ModelKit")
+	cmd.Flags().StringVar(&opts.Compression, "compression", "none", "Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest'")
+	cmd.Flags().BoolVar(&opts.UseModelPack, "use-model-pack", false, "Pack model in ModelPack format instead of ModelKit")
 	cmd.Flags().SortFlags = false
 	cmd.Args = cobra.ExactArgs(1)
 	cmd.CompletionOptions.SetDefaultShellCompDirective(cobra.ShellCompDirectiveDefault)
@@ -94,75 +81,28 @@ func runCommand(opts *packOptions) func(cmd *cobra.Command, args []string) error
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		// Change working directory to context path to make sure relative paths within
-		// tarballs are correct. This is the equivalent of using the -C parameter for tar
-		if err := os.Chdir(opts.contextDir); err != nil {
-			return output.Fatalf("Failed to use context path %s: %s", opts.contextDir, err)
-		}
-
-		err = runPack(cmd.Context(), opts)
+		result, err := kit.Pack(cmd.Context(), &opts.PackOptions)
 		if err != nil {
 			return output.Fatalf("Failed to pack model kit: %s", err)
 		}
+		output.Infof("Model saved: %s", result.Descriptor.Digest)
 		return nil
 	}
 }
 
 func (opts *packOptions) complete(ctx context.Context, args []string) error {
-	contextDir, err := filepath.Abs(args[0])
-	if err != nil {
-		return fmt.Errorf("failed to get context dir %s: %w", args[0], err)
-	}
-	opts.contextDir = contextDir
-
-	if opts.modelFile == "" {
-		foundModel, err := filesystem.FindKitfileInPath(opts.contextDir)
-		if err != nil {
-			return err
-		}
-		opts.modelFile = foundModel
-	}
+	opts.ContextDir = args[0]
 
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
-	opts.storageHome = constants.StoragePath(opts.configHome)
+	opts.ConfigHome = configHome
 
-	if opts.fullTagRef != "" {
-		modelRef, extraRefs, err := artifact.ParseReference(opts.fullTagRef)
-		if err != nil {
-			return fmt.Errorf("failed to parse reference: %w", err)
-		}
-		if modelRef.Reference == "" {
-			output.Infof("No tag or digest specified with --tag flag. Using 'latest' as default ('%s:latest')", opts.fullTagRef)
-			modelRef.Reference = "latest"
-		}
-		opts.modelRef = modelRef
-		opts.extraRefs = extraRefs
-	} else {
-		opts.modelRef = artifact.DefaultReference()
+	if opts.modelFile != "" {
+		opts.KitfilePath = opts.modelFile
 	}
+	opts.TagRef = opts.fullTagRef
 
-	if err := mediatype.IsValidCompression(opts.compression); err != nil {
-		return err
-	}
-
-	printConfig(opts)
 	return nil
-}
-
-func printConfig(opts *packOptions) {
-	output.Debugf("Using storage path: %s", opts.storageHome)
-	output.Debugf("Context dir: %s", opts.contextDir)
-	output.Debugf("Model file: %s", opts.modelFile)
-	if opts.modelRef != nil {
-		output.Debugf("Packing %s", opts.modelRef.String())
-	} else {
-		output.Debugln("No tag or reference specified")
-	}
-	if len(opts.extraRefs) > 0 {
-		output.Debugf("Additional tags: %s", strings.Join(opts.extraRefs, ", "))
-	}
 }

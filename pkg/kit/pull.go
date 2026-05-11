@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package pull
+package kit
 
 import (
 	"context"
@@ -25,29 +25,45 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry"
 )
 
-func runPull(ctx context.Context, opts *pullOptions) (ocispec.Descriptor, error) {
-	storageHome := constants.StoragePath(opts.configHome)
-	localRepo, err := local.NewLocalRepo(storageHome, opts.modelRef)
-	if err != nil {
-		return ocispec.DescriptorEmptyJSON, err
-	}
-	return runPullRecursive(ctx, localRepo, opts, []string{})
+type PullOptions struct {
+	options.NetworkOptions
+	ConfigHome string
+	ModelRef   *registry.Reference
 }
 
-func runPullRecursive(ctx context.Context, localRepo local.LocalRepo, opts *pullOptions, pulledRefs []string) (ocispec.Descriptor, error) {
-	refStr := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
+type PullResult struct {
+	Descriptor ocispec.Descriptor
+}
+
+func Pull(ctx context.Context, opts *PullOptions) (*PullResult, error) {
+	pullOpts := *opts
+	applyNetworkDefaults(&pullOpts.NetworkOptions, pullOpts.ConfigHome)
+	storageHome := constants.StoragePath(pullOpts.ConfigHome)
+	localRepo, err := local.NewLocalRepo(storageHome, pullOpts.ModelRef)
+	if err != nil {
+		return nil, err
+	}
+	desc, err := runPullRecursive(ctx, localRepo, &pullOpts, []string{})
+	if err != nil {
+		return nil, err
+	}
+	return &PullResult{Descriptor: desc}, nil
+}
+
+func runPullRecursive(ctx context.Context, localRepo local.LocalRepo, opts *PullOptions, pulledRefs []string) (ocispec.Descriptor, error) {
+	refStr := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 	if idx := getIndex(pulledRefs, refStr); idx != -1 {
 		cycleStr := fmt.Sprintf("[%s=>%s]", strings.Join(pulledRefs[idx:], "=>"), refStr)
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("found cycle in modelkit references: %s", cycleStr)
@@ -69,11 +85,10 @@ func runPullRecursive(ctx context.Context, localRepo local.LocalRepo, opts *pull
 	return desc, nil
 }
 
-func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.Descriptor, optsIn *pullOptions, pulledRefs []string) error {
+func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.Descriptor, optsIn *PullOptions, pulledRefs []string) error {
 	_, config, err := util.GetManifestAndKitfile(ctx, localRepo, desc)
 	if err != nil {
 		if errors.Is(err, util.ErrNoKitfile) {
-			// If there's no Kitfile but it's otherwise a support artifact type, skip pulling parents as there aren't any
 			return nil
 		}
 		return err
@@ -87,21 +102,21 @@ func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.De
 		return err
 	}
 	opts := *optsIn
-	opts.modelRef = parentRef
+	opts.ModelRef = parentRef
 	_, err = runPullRecursive(ctx, localRepo, &opts, pulledRefs)
 	return err
 }
 
-func pullModel(ctx context.Context, localRepo local.LocalRepo, opts *pullOptions) (ocispec.Descriptor, error) {
-	repo, err := remote.NewRepository(ctx, opts.modelRef.Registry, opts.modelRef.Repository, &opts.NetworkOptions)
+func pullModel(ctx context.Context, localRepo local.LocalRepo, opts *PullOptions) (ocispec.Descriptor, error) {
+	repo, err := remote.NewRepository(ctx, opts.ModelRef.Registry, opts.ModelRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to read repository: %w", err)
 	}
-	if err := referenceIsModel(ctx, opts.modelRef, repo); err != nil {
+	if err := referenceIsModel(ctx, opts.ModelRef, repo); err != nil {
 		return ocispec.DescriptorEmptyJSON, err
 	}
 
-	desc, err := localRepo.PullModel(ctx, repo, *opts.modelRef, &opts.NetworkOptions)
+	desc, err := localRepo.PullModel(ctx, repo, *opts.ModelRef, &opts.NetworkOptions)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to pull: %w", err)
 	}

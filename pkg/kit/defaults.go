@@ -14,30 +14,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package list
+package kit
 
 import (
-	"fmt"
-
-	"github.com/kitops-ml/kitops/pkg/kit"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 )
 
-const (
-	listTableHeader = "REPOSITORY\tTAG\tMAINTAINER\tNAME\tSIZE\tDIGEST"
-	listTableFmt    = "%s\t%s\t%s\t%s\t%s\t%s"
-)
-
-type modelInfo = kit.ModelInfo
-
-func formatModelInfo(m *modelInfo) []string {
-	if len(m.Tags) == 0 {
-		line := fmt.Sprintf(listTableFmt, m.Repo, "<none>", m.Author, m.ModelName, m.Size, m.Digest)
-		return []string{line}
+// applyNetworkDefaults sets safe defaults for NetworkOptions when callers leave
+// them at zero values. This ensures library consumers get TLS verification
+// enabled and credentials resolved without explicit configuration.
+func applyNetworkDefaults(opts *options.NetworkOptions, configHome string) {
+	if opts.Concurrency < 1 {
+		opts.Concurrency = 5
 	}
-	var lines []string
-	for _, tag := range m.Tags {
-		line := fmt.Sprintf(listTableFmt, m.Repo, tag, m.Author, m.ModelName, m.Size, m.Digest)
-		lines = append(lines, line)
+	if opts.CredentialsPath == "" {
+		opts.CredentialsPath = constants.CredentialsPath(configHome)
+		if !opts.PlainHTTP && !opts.TLSVerify {
+			opts.TLSVerify = true
+		}
 	}
-	return lines
 }

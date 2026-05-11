@@ -14,46 +14,56 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package info
+package kit
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
+
+	"oras.land/oras-go/v2/registry"
 )
 
-func getInfo(ctx context.Context, opts *infoOptions) (*artifact.KitFile, error) {
-	if opts.checkRemote {
-		return getRemoteConfig(ctx, opts)
-	} else {
-		return getLocalConfig(ctx, opts)
-	}
+type InfoOptions struct {
+	options.NetworkOptions
+	ConfigHome  string
+	CheckRemote bool
+	ModelRef    *registry.Reference
 }
 
-func getLocalConfig(ctx context.Context, opts *infoOptions) (*artifact.KitFile, error) {
-	storageRoot := constants.StoragePath(opts.configHome)
-	localRepo, err := local.NewLocalRepo(storageRoot, opts.modelRef)
+func Info(ctx context.Context, opts *InfoOptions) (*artifact.KitFile, error) {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
+	if opts.CheckRemote {
+		return getRemoteConfig(ctx, opts)
+	}
+	return getLocalConfig(ctx, opts)
+}
+
+func getLocalConfig(ctx context.Context, opts *InfoOptions) (*artifact.KitFile, error) {
+	storageRoot := constants.StoragePath(opts.ConfigHome)
+	localRepo, err := local.NewLocalRepo(storageRoot, opts.ModelRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read local storage: %w", err)
 	}
-	_, _, config, err := util.ResolveManifestAndConfig(ctx, localRepo, opts.modelRef.Reference)
+	_, _, config, err := util.ResolveManifestAndConfig(ctx, localRepo, opts.ModelRef.Reference)
 	if err != nil {
 		return nil, err
 	}
 	return config, nil
 }
 
-func getRemoteConfig(ctx context.Context, opts *infoOptions) (*artifact.KitFile, error) {
-	repository, err := remote.NewRepository(ctx, opts.modelRef.Registry, opts.modelRef.Repository, &opts.NetworkOptions)
+func getRemoteConfig(ctx context.Context, opts *InfoOptions) (*artifact.KitFile, error) {
+	repository, err := remote.NewRepository(ctx, opts.ModelRef.Registry, opts.ModelRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return nil, err
 	}
-	_, _, config, err := util.ResolveManifestAndConfig(ctx, repository, opts.modelRef.Reference)
+	_, _, config, err := util.ResolveManifestAndConfig(ctx, repository, opts.ModelRef.Reference)
 	if err != nil {
 		return nil, err
 	}

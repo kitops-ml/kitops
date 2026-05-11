@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -34,7 +34,6 @@ import (
 	"github.com/spf13/cobra"
 	"go.yaml.in/yaml/v3"
 	"oras.land/oras-go/v2/errdef"
-	"oras.land/oras-go/v2/registry"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -61,11 +60,8 @@ kit info --remote registry.example.com/my-model:1.0.0`
 var validFilterRegexp = regexp.MustCompile(`^\.?[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$`)
 
 type infoOptions struct {
-	options.NetworkOptions
-	configHome  string
-	checkRemote bool
-	modelRef    *registry.Reference
-	filter      string
+	kit.InfoOptions
+	filter string
 }
 
 func InfoCommand() *cobra.Command {
@@ -90,7 +86,7 @@ func InfoCommand() *cobra.Command {
 	}
 
 	opts.AddNetworkFlags(cmd)
-	cmd.Flags().BoolVarP(&opts.checkRemote, "remote", "r", false, "Check remote registry instead of local storage")
+	cmd.Flags().BoolVarP(&opts.CheckRemote, "remote", "r", false, "Check remote registry instead of local storage")
 	cmd.Flags().StringVarP(&opts.filter, "filter", "f", "", "filter with node selectors")
 	cmd.Flags().SortFlags = false
 
@@ -102,10 +98,10 @@ func runCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		config, err := getInfo(cmd.Context(), opts)
+		config, err := kit.Info(cmd.Context(), &opts.InfoOptions)
 		if err != nil {
 			if errors.Is(err, errdef.ErrNotFound) {
-				return output.Fatalf("Could not find modelkit %s", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
+				return output.Fatalf("Could not find modelkit %s", artifact.FormatRepositoryForDisplay(opts.ModelRef.String()))
 			}
 			return output.Fatalf("Error resolving modelkit: %s", err)
 		}
@@ -115,13 +111,13 @@ func runCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 			if err != nil {
 				return output.Fatalln(err)
 			}
-			fmt.Print(string(filteredOutput))
+			fmt.Fprint(cmd.OutOrStdout(), string(filteredOutput))
 		} else {
 			yamlBytes, err := config.MarshalToYAML()
 			if err != nil {
 				return output.Fatalf("Error formatting manifest: %w", err)
 			}
-			fmt.Print(string(yamlBytes))
+			fmt.Fprint(cmd.OutOrStdout(), string(yamlBytes))
 		}
 
 		return nil
@@ -133,7 +129,7 @@ func (opts *infoOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 
 	ref, extraTags, err := artifact.ParseReference(args[0])
 	if err != nil {
@@ -145,10 +141,10 @@ func (opts *infoOptions) complete(ctx context.Context, args []string) error {
 	if ref.Reference == "" {
 		return fmt.Errorf("missing tag or digest from ModelKit reference '%s'", args[0])
 	}
-	opts.modelRef = ref
+	opts.ModelRef = ref
 
-	if opts.modelRef.Registry == artifact.DefaultRegistry && opts.checkRemote {
-		return fmt.Errorf("can not check remote: %s does not contain registry", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
+	if opts.ModelRef.Registry == artifact.DefaultRegistry && opts.CheckRemote {
+		return fmt.Errorf("can not check remote: %s does not contain registry", artifact.FormatRepositoryForDisplay(opts.ModelRef.String()))
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {

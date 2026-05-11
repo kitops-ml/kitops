@@ -22,13 +22,12 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 const (
@@ -75,13 +74,7 @@ kit remove --remote --force my-registry.com/my-org/my-repo:my-tag`
 )
 
 type removeOptions struct {
-	options.NetworkOptions
-	configHome  string
-	forceDelete bool
-	removeAll   bool
-	remote      bool
-	modelRef    *registry.Reference
-	extraTags   []string
+	kit.RemoveOptions
 }
 
 func (opts *removeOptions) complete(ctx context.Context, args []string) error {
@@ -89,7 +82,7 @@ func (opts *removeOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 
 	if len(args) > 0 {
 		modelRef, extraTags, err := artifact.ParseReference(args[0])
@@ -99,11 +92,11 @@ func (opts *removeOptions) complete(ctx context.Context, args []string) error {
 		if modelRef.Reference == "" {
 			return fmt.Errorf("tag or digest is required when removing (%s:<tag>)", args[0])
 		}
-		opts.modelRef = modelRef
-		opts.extraTags = extraTags
+		opts.ModelRef = modelRef
+		opts.ExtraTags = extraTags
 	}
 
-	if opts.remote && opts.removeAll {
+	if opts.Remote && opts.RemoveAll {
 		return fmt.Errorf("cannot use --all with --remote")
 	}
 
@@ -133,21 +126,21 @@ func RemoveCommand() *cobra.Command {
 			return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 		},
 	}
-	cmd.Flags().BoolVarP(&opts.forceDelete, "force", "f", false, "remove modelkit and all other tags that refer to it")
-	cmd.Flags().BoolVarP(&opts.removeAll, "all", "a", false, "remove all untagged modelkits")
-	cmd.Flags().BoolVarP(&opts.remote, "remote", "r", false, "remove modelkit from remote registry")
+	cmd.Flags().BoolVarP(&opts.ForceDelete, "force", "f", false, "remove modelkit and all other tags that refer to it")
+	cmd.Flags().BoolVarP(&opts.RemoveAll, "all", "a", false, "remove all untagged modelkits")
+	cmd.Flags().BoolVarP(&opts.Remote, "remote", "r", false, "remove modelkit from remote registry")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
 	cmd.Args = func(cmd *cobra.Command, args []string) error {
 		switch len(args) {
 		case 0:
-			if opts.removeAll {
+			if opts.RemoveAll {
 				return nil
 			}
 			return fmt.Errorf("modelkit is required for remove unless --all is specified")
 		case 1:
-			if opts.removeAll {
+			if opts.RemoveAll {
 				return fmt.Errorf("modelkit should not be specified when --all flag is used")
 			}
 			return nil
@@ -164,20 +157,7 @@ func runCommand(opts *removeOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-
-		var err error
-		switch {
-		case opts.modelRef != nil:
-			if opts.remote {
-				err = removeRemoteModel(cmd.Context(), opts)
-			} else {
-				err = removeModel(cmd.Context(), opts)
-			}
-		case opts.removeAll && !opts.forceDelete:
-			err = removeUntaggedModels(cmd.Context(), opts)
-		case opts.removeAll && opts.forceDelete:
-			err = removeAllModels(cmd.Context(), opts)
-		}
+		err := kit.Remove(cmd.Context(), &opts.RemoveOptions)
 		if err != nil {
 			return output.Fatalf(err.Error())
 		}
@@ -186,12 +166,12 @@ func runCommand(opts *removeOptions) func(*cobra.Command, []string) error {
 }
 
 func printConfig(opts *removeOptions) {
-	if opts.modelRef != nil {
-		displayRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
-		output.Debugf("Removing %s and additional tags: [%s]", displayRef, strings.Join(opts.extraTags, ", "))
+	if opts.ModelRef != nil {
+		displayRef := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
+		output.Debugf("Removing %s and additional tags: [%s]", displayRef, strings.Join(opts.ExtraTags, ", "))
 	}
-	if opts.removeAll {
-		if opts.forceDelete {
+	if opts.RemoveAll {
+		if opts.ForceDelete {
 			output.Debugf("Removing all locally-stored modelkits")
 		} else {
 			output.Debugf("Removing all untagged modelkits")

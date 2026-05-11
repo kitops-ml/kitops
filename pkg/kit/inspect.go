@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package inspect
+package kit
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
@@ -30,42 +31,49 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/registry"
 )
 
-// Utility struct for formatting output of inspect
-type inspectInfo struct {
+type InspectOptions struct {
+	options.NetworkOptions
+	ConfigHome  string
+	CheckRemote bool
+	ModelRef    *registry.Reference
+}
+
+type InspectResult struct {
 	Digest     digest.Digest     `json:"digest,omitempty" yaml:"digest,omitempty"`
 	CLIVersion string            `json:"cliVersion,omitempty" yaml:"cliVersion,omitempty"`
 	Kitfile    *artifact.KitFile `json:"kitfile,omitempty" yaml:"kitfile,omitempty"`
 	Manifest   *ocispec.Manifest `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 }
 
-func inspectReference(ctx context.Context, opts *inspectOptions) (*inspectInfo, error) {
-	if opts.checkRemote {
+func Inspect(ctx context.Context, opts *InspectOptions) (*InspectResult, error) {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
+	if opts.CheckRemote {
 		return getRemoteInspect(ctx, opts)
-	} else {
-		return getLocalInspect(ctx, opts)
 	}
+	return getLocalInspect(ctx, opts)
 }
 
-func getLocalInspect(ctx context.Context, opts *inspectOptions) (*inspectInfo, error) {
-	storageRoot := constants.StoragePath(opts.configHome)
-	localRepo, err := local.NewLocalRepo(storageRoot, opts.modelRef)
+func getLocalInspect(ctx context.Context, opts *InspectOptions) (*InspectResult, error) {
+	storageRoot := constants.StoragePath(opts.ConfigHome)
+	localRepo, err := local.NewLocalRepo(storageRoot, opts.ModelRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read local storage: %w", err)
 	}
-	return getInspectInfo(ctx, localRepo, opts.modelRef.Reference)
+	return getInspectInfo(ctx, localRepo, opts.ModelRef.Reference)
 }
 
-func getRemoteInspect(ctx context.Context, opts *inspectOptions) (*inspectInfo, error) {
-	repository, err := remote.NewRepository(ctx, opts.modelRef.Registry, opts.modelRef.Repository, &opts.NetworkOptions)
+func getRemoteInspect(ctx context.Context, opts *InspectOptions) (*InspectResult, error) {
+	repository, err := remote.NewRepository(ctx, opts.ModelRef.Registry, opts.ModelRef.Repository, &opts.NetworkOptions)
 	if err != nil {
 		return nil, err
 	}
-	return getInspectInfo(ctx, repository, opts.modelRef.Reference)
+	return getInspectInfo(ctx, repository, opts.ModelRef.Reference)
 }
 
-func getInspectInfo(ctx context.Context, repository oras.Target, ref string) (*inspectInfo, error) {
+func getInspectInfo(ctx context.Context, repository oras.Target, ref string) (*InspectResult, error) {
 	desc, manifest, kitfile, err := util.ResolveManifestAndConfig(ctx, repository, ref)
 	if err != nil && !errors.Is(err, util.ErrNoKitfile) {
 		return nil, err
@@ -74,7 +82,7 @@ func getInspectInfo(ctx context.Context, repository oras.Target, ref string) (*i
 	if manifest.Annotations != nil && manifest.Annotations[constants.CliVersionAnnotation] != "" {
 		version = manifest.Annotations[constants.CliVersionAnnotation]
 	}
-	return &inspectInfo{
+	return &InspectResult{
 		Digest:     desc.Digest,
 		CLIVersion: version,
 		Kitfile:    kitfile,

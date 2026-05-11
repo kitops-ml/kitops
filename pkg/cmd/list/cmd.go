@@ -26,13 +26,12 @@ import (
 	gotemplate "text/template"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 const (
@@ -98,13 +97,10 @@ kit list -f prompts:pdf-processing`
 )
 
 type listOptions struct {
-	options.NetworkOptions
-	configHome  string
-	remoteRef   *registry.Reference
-	format      string
-	template    string
-	filters     []string
-	filterConfs []kitfile.FilterConf
+	kit.ListOptions
+	format   string
+	template string
+	filters  []string
 }
 
 func (opts *listOptions) complete(ctx context.Context, args []string) error {
@@ -112,7 +108,7 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
+	opts.ConfigHome = configHome
 	if len(args) > 0 {
 		remoteRef, extraTags, err := artifact.ParseReference(args[0])
 		if err != nil {
@@ -121,7 +117,7 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 		if len(extraTags) > 0 {
 			return fmt.Errorf("repository cannot reference multiple tags")
 		}
-		opts.remoteRef = remoteRef
+		opts.RemoteRef = remoteRef
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
@@ -144,7 +140,7 @@ func (opts *listOptions) complete(ctx context.Context, args []string) error {
 		if err != nil {
 			return fmt.Errorf("invalid filter %q: %w", filter, err)
 		}
-		opts.filterConfs = append(opts.filterConfs, *filterConf)
+		opts.FilterConfs = append(opts.FilterConfs, *filterConf)
 	}
 
 	printConfig(opts)
@@ -178,19 +174,9 @@ func runCommand(opts *listOptions) func(*cobra.Command, []string) error {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		var infos []modelInfo
-		if opts.remoteRef == nil {
-			lines, err := listLocalKits(cmd.Context(), opts)
-			if err != nil {
-				return output.Fatalln(err)
-			}
-			infos = lines
-		} else {
-			lines, err := listRemoteKits(cmd.Context(), opts)
-			if err != nil {
-				return output.Fatalln(err)
-			}
-			infos = lines
+		infos, err := kit.List(cmd.Context(), &opts.ListOptions)
+		if err != nil {
+			return output.Fatalln(err)
 		}
 		return formatAndPrint(cmd.OutOrStdout(), infos, opts)
 	}
@@ -232,7 +218,7 @@ func formatAndPrint(w io.Writer, infos []modelInfo, opts *listOptions) error {
 func printSummary(w io.Writer, infos []modelInfo) {
 	var lines []string
 	for _, info := range infos {
-		lines = append(lines, info.format()...)
+		lines = append(lines, formatModelInfo(&info)...)
 	}
 	tw := tabwriter.NewWriter(w, 0, 2, 3, ' ', 0)
 	fmt.Fprintln(tw, listTableHeader)
@@ -243,7 +229,7 @@ func printSummary(w io.Writer, infos []modelInfo) {
 }
 
 func printConfig(opts *listOptions) {
-	if opts.remoteRef != nil {
-		output.Debugf("Listing remote model kits in %s", opts.remoteRef.String())
+	if opts.RemoteRef != nil {
+		output.Debugf("Listing remote model kits in %s", opts.RemoteRef.String())
 	}
 }

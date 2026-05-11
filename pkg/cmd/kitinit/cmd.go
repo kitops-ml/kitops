@@ -18,17 +18,10 @@ package kitinit
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/kit"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
-	"github.com/kitops-ml/kitops/pkg/lib/external/hf"
-	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
 	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -70,19 +63,7 @@ kit init myorg/mymodel --remote --output ./Kitfile`
 )
 
 type initOptions struct {
-	path                string
-	configHome          string
-	modelkitName        string
-	modelkitDescription string
-	modelkitAuthor      string
-	overwrite           bool
-	remote              bool
-	repoRef             string
-	token               string
-	outputPath          string
-	// Computed fields (remote only)
-	repo     string
-	repoType hf.RepositoryType
+	kit.InitOptions
 }
 
 func InitCommand() *cobra.Command {
@@ -97,21 +78,21 @@ func InitCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 	}
 
-	cmd.Flags().StringVar(&opts.modelkitName, "name", "", "Name for the ModelKit")
-	cmd.Flags().StringVar(&opts.modelkitDescription, "desc", "", "Description for the ModelKit")
-	cmd.Flags().StringVar(&opts.modelkitAuthor, "author", "", "Author for the ModelKit")
-	cmd.Flags().BoolVarP(&opts.overwrite, "force", "f", false, "Overwrite existing Kitfile if present")
-	cmd.Flags().BoolVar(&opts.remote, "remote", false, "Generate Kitfile from a remote HuggingFace repository")
-	cmd.Flags().StringVar(&opts.repoRef, "ref", "main", "Branch or tag for remote repository (requires --remote)")
-	cmd.Flags().StringVar(&opts.token, "token", "", "Auth token for remote repository (requires --remote)")
-	cmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)")
+	cmd.Flags().StringVar(&opts.Name, "name", "", "Name for the ModelKit")
+	cmd.Flags().StringVar(&opts.Description, "desc", "", "Description for the ModelKit")
+	cmd.Flags().StringVar(&opts.Author, "author", "", "Author for the ModelKit")
+	cmd.Flags().BoolVarP(&opts.Overwrite, "force", "f", false, "Overwrite existing Kitfile if present")
+	cmd.Flags().BoolVar(&opts.Remote, "remote", false, "Generate Kitfile from a remote HuggingFace repository")
+	cmd.Flags().StringVar(&opts.RepoRef, "ref", "main", "Branch or tag for remote repository (requires --remote)")
+	cmd.Flags().StringVar(&opts.Token, "token", "", "Auth token for remote repository (requires --remote)")
+	cmd.Flags().StringVarP(&opts.OutputPath, "output", "o", "", "Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)")
 	cmd.Flags().SortFlags = false
 	return cmd
 }
 
 func runCommand(opts *initOptions) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		if !opts.remote {
+		if !opts.Remote {
 			if cmd.Flags().Changed("ref") {
 				return output.Fatalf("Invalid arguments: --ref requires --remote")
 			}
@@ -124,81 +105,19 @@ func runCommand(opts *initOptions) func(*cobra.Command, []string) error {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		var dirContents *kfgen.DirectoryListing
-		var listErr error
-		if opts.remote {
-			output.SystemInfof("Fetching file listing from remote repository %s (ref: %s)", opts.repo, opts.repoRef)
-			dirContents, listErr = hf.ListFiles(cmd.Context(), opts.repo, opts.repoRef, opts.token, opts.repoType)
-			if listErr != nil {
-				return output.Fatalf("Error fetching remote repository: %s", listErr)
-			}
-		} else {
-			dirContents, listErr = kfgen.DirectoryListingFromFS(opts.path)
-			if listErr != nil {
-				return output.Fatalf("Error processing directory: %s", listErr)
-			}
+		result, err := kit.Init(cmd.Context(), &opts.InitOptions)
+		if err != nil {
+			return output.Fatalf("%s", err)
 		}
 
-		return runInit(dirContents, opts)
-	}
-}
-
-func runInit(dirContents *kfgen.DirectoryListing, opts *initOptions) error {
-	modelPackage := buildPackageFromRepo(opts.repo, opts.modelkitName, opts.modelkitDescription, opts.modelkitAuthor)
-
-	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage)
-	if err != nil {
-		return output.Fatalf("Error generating Kitfile: %s", err)
-	}
-	bytes, err := kitfile.MarshalToYAML()
-	if err != nil {
-		return output.Fatalf("Error formatting Kitfile: %s", err)
-	}
-
-	if opts.outputPath == "-" {
-		fmt.Print(string(bytes))
+		if opts.OutputPath == "-" || opts.OutputPath == "" {
+			fmt.Print(string(result.KitfileBytes))
+		} else if result.WrittenPath != "" {
+			output.Infof("Generated Kitfile:\n\n%s", string(result.KitfileBytes))
+			output.Infof("Saved to path '%s'", result.WrittenPath)
+		}
 		return nil
 	}
-	return writeKitfile(bytes, opts)
-}
-
-func writeKitfile(bytes []byte, opts *initOptions) error {
-	if _, err := os.Stat(opts.outputPath); err == nil {
-		if !opts.overwrite {
-			return output.Fatalf("Kitfile already exists at %s. Use '--force' to overwrite", opts.outputPath)
-		}
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return output.Fatalf("Error checking for existing Kitfile: %s", err)
-	}
-	if err := os.WriteFile(opts.outputPath, bytes, 0644); err != nil {
-		return output.Fatalf("Failed to write Kitfile: %s", err)
-	}
-	output.Infof("Generated Kitfile:\n\n%s", string(bytes))
-	output.Infof("Saved to path '%s'", opts.outputPath)
-	return nil
-}
-
-func buildPackageFromRepo(repo, name, description, author string) *artifact.Package {
-	sections := strings.Split(repo, "/")
-	modelPackage := &artifact.Package{}
-
-	if name != "" {
-		modelPackage.Name = name
-	} else if len(sections) >= 2 {
-		modelPackage.Name = sections[len(sections)-1]
-	}
-
-	if description != "" {
-		modelPackage.Description = description
-	}
-
-	if author != "" {
-		modelPackage.Authors = append(modelPackage.Authors, author)
-	} else if len(sections) >= 2 {
-		modelPackage.Authors = append(modelPackage.Authors, sections[len(sections)-2])
-	}
-
-	return modelPackage
 }
 
 func (opts *initOptions) complete(ctx context.Context, args []string) error {
@@ -206,45 +125,31 @@ func (opts *initOptions) complete(ctx context.Context, args []string) error {
 	if !ok {
 		return fmt.Errorf("default config path not set on command context")
 	}
-	opts.configHome = configHome
-	opts.path = args[0]
+	opts.ConfigHome = configHome
+	opts.Path = args[0]
 
-	if opts.remote {
-		repo, repoType, err := hf.ParseHuggingFaceRepo(opts.path)
-		if err != nil {
-			return fmt.Errorf("invalid HuggingFace repository: %w", err)
-		}
-		opts.repo = repo
-		opts.repoType = repoType
-		if opts.outputPath == "" {
-			opts.outputPath = "-"
-		}
-	} else {
-		if opts.outputPath == "" {
-			opts.outputPath = filepath.Join(opts.path, constants.DefaultKitfileName)
-		}
-		if util.IsInteractiveSession() {
-			if opts.modelkitName == "" {
-				name, err := util.PromptForInput("Enter a name for the ModelKit: ", false)
-				if err != nil {
-					return err
-				}
-				opts.modelkitName = name
+	// Interactive prompts for local mode only (library callers provide these directly)
+	if !opts.Remote && util.IsInteractiveSession() {
+		if opts.Name == "" {
+			name, err := util.PromptForInput("Enter a name for the ModelKit: ", false)
+			if err != nil {
+				return err
 			}
-			if opts.modelkitDescription == "" {
-				desc, err := util.PromptForInput("Enter a short description for the ModelKit: ", false)
-				if err != nil {
-					return err
-				}
-				opts.modelkitDescription = desc
+			opts.Name = name
+		}
+		if opts.Description == "" {
+			desc, err := util.PromptForInput("Enter a short description for the ModelKit: ", false)
+			if err != nil {
+				return err
 			}
-			if opts.modelkitAuthor == "" {
-				author, err := util.PromptForInput("Enter an author for the ModelKit: ", false)
-				if err != nil {
-					return err
-				}
-				opts.modelkitAuthor = author
+			opts.Description = desc
+		}
+		if opts.Author == "" {
+			author, err := util.PromptForInput("Enter an author for the ModelKit: ", false)
+			if err != nil {
+				return err
 			}
+			opts.Author = author
 		}
 	}
 	return nil

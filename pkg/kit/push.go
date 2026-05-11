@@ -14,13 +14,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package push
+package kit
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -28,10 +31,46 @@ import (
 	"oras.land/oras-go/v2/registry"
 )
 
-func PushModel(ctx context.Context, localRepo local.LocalRepo, repo registry.Repository, opts *pushOptions) (ocispec.Descriptor, error) {
+type PushOptions struct {
+	options.NetworkOptions
+	ConfigHome   string
+	SrcModelRef  *registry.Reference
+	DestModelRef *registry.Reference
+}
+
+type PushResult struct {
+	Descriptor ocispec.Descriptor
+}
+
+func Push(ctx context.Context, opts *PushOptions) (*PushResult, error) {
+	applyNetworkDefaults(&opts.NetworkOptions, opts.ConfigHome)
+
+	remoteRepo, err := remote.NewRepository(
+		ctx,
+		opts.DestModelRef.Registry,
+		opts.DestModelRef.Repository,
+		&opts.NetworkOptions,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	localRepo, err := local.NewLocalRepo(constants.StoragePath(opts.ConfigHome), opts.SrcModelRef)
+	if err != nil {
+		return nil, err
+	}
+
+	desc, err := pushModel(ctx, localRepo, remoteRepo, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &PushResult{Descriptor: desc}, nil
+}
+
+func pushModel(ctx context.Context, localRepo local.LocalRepo, repo registry.Repository, opts *PushOptions) (ocispec.Descriptor, error) {
 	trackedRepo, logger := output.WrapTarget(repo)
-	srcTag := opts.srcModelRef.Reference
-	destTag := opts.destModelRef.Reference
+	srcTag := opts.SrcModelRef.Reference
+	destTag := opts.DestModelRef.Reference
 	copyOpts := oras.CopyOptions{}
 	copyOpts.Concurrency = opts.Concurrency
 	desc, err := oras.Copy(ctx, localRepo, srcTag, trackedRepo, destTag, copyOpts)
