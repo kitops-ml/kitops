@@ -37,3 +37,47 @@ func TestGetAgentConfig(t *testing.T) {
 		t.Error("expected error for unknown agent")
 	}
 }
+
+// nonDetectableAgents lists the agents that intentionally have no detection
+// probe (universal/placeholder entries). All other agents must define one.
+var nonDetectableAgents = map[string]bool{
+	"replit":    true,
+	"universal": true,
+}
+
+// TestAgentRegistryWellFormed iterates the full registry and verifies that
+// every entry has the fields required for skill installation and detection.
+// This is generic — adding new agents does not require updating this test.
+func TestAgentRegistryWellFormed(t *testing.T) {
+	for name, cfg := range agentRegistry {
+		t.Run(name, func(t *testing.T) {
+			if cfg.Name != name {
+				t.Errorf("registry key %q does not match cfg.Name %q", name, cfg.Name)
+			}
+			if cfg.DisplayName == "" {
+				t.Errorf("DisplayName is empty")
+			}
+			if cfg.SkillsDir == "" {
+				t.Errorf("SkillsDir is empty")
+			}
+			if cfg.GlobalSkillsDir == nil {
+				t.Fatalf("GlobalSkillsDir is nil")
+			}
+			if got := cfg.GlobalSkillsDir(); got == "" {
+				t.Errorf("GlobalSkillsDir() returned empty string")
+			}
+			if nonDetectableAgents[name] {
+				if cfg.GlobalDetectDirs != nil {
+					t.Errorf("expected GlobalDetectDirs to be nil for non-detectable agent")
+				}
+				return
+			}
+			if cfg.GlobalDetectDirs == nil {
+				t.Fatalf("GlobalDetectDirs is nil")
+			}
+			if dirs := cfg.GlobalDetectDirs(); len(dirs) == 0 {
+				t.Errorf("GlobalDetectDirs() returned no dirs")
+			}
+		})
+	}
+}
