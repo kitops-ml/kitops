@@ -129,4 +129,3 @@ For teams running self-hosted models inside agentic systems, KitOps can package 
 **Have feedback or questions?**
 Open an [issue on GitHub](https://github.com/kitops-ml/kitops/issues) or [join us on Discord](https://discord.gg/Tapeh8agYy).
 
-<!-- AGENT_MODIFIED: Human review required before merge -->
