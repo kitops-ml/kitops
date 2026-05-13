@@ -398,5 +398,3 @@ You can learn more about all the Kit CLI commands from our [command reference do
 To learn about how to run an LLM locally using Kit, see our [Kit Dev](../deploy/#running-llms-locally) documentation.
 
 Thanks for taking some time to play with Kit. We'd love to hear what you think. Feel free to drop us an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy).
-
-<!-- AGENT_MODIFIED: Human review required before merge -->
