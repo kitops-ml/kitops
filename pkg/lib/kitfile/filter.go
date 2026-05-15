@@ -25,18 +25,31 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 )
 
+// BaseType identifies one of the well-known Kitfile layer categories that
+// filters may target. Values are restricted to the constants declared below.
+type BaseType string
+
+const (
+	BaseTypeKitfile  BaseType = "kitfile"
+	BaseTypeModel    BaseType = "model"
+	BaseTypeDatasets BaseType = "datasets"
+	BaseTypeCode     BaseType = "code"
+	BaseTypePrompts  BaseType = "prompts"
+	BaseTypeDocs     BaseType = "docs"
+)
+
 var validFilterTypes = []string{"kitfile", "model", "datasets", "code", "prompts", "docs"}
 
 type FilterConf struct {
-	BaseTypes []string
+	BaseTypes []BaseType
 	Filters   []string
 }
 
-func (fc *FilterConf) Matches(baseType, field string) bool {
+func (fc *FilterConf) Matches(baseType BaseType, field string) bool {
 	return fc.MatchesBaseType(baseType) && fc.MatchesField(field)
 }
 
-func (fc *FilterConf) MatchesBaseType(baseType string) bool {
+func (fc *FilterConf) MatchesBaseType(baseType BaseType) bool {
 	return slices.Contains(fc.BaseTypes, baseType)
 }
 
@@ -61,7 +74,7 @@ func ParseFilter(filter string) (*FilterConf, error) {
 		if !slices.Contains(validFilterTypes, filterType) {
 			return nil, fmt.Errorf("invalid filter type %s (must be one of %s)", filterType, strings.Join(validFilterTypes, ", "))
 		}
-		conf.BaseTypes = append(conf.BaseTypes, filterType)
+		conf.BaseTypes = append(conf.BaseTypes, BaseType(filterType))
 	}
 
 	// Check for additional filtering based on name/path
@@ -89,31 +102,31 @@ func LayerMatchesAnyFilter(layer any, filters []FilterConf) bool {
 	switch l := layer.(type) {
 	case artifact.KitFile:
 		for _, filter := range filters {
-			if filter.MatchesBaseType("kitfile") {
+			if filter.MatchesBaseType(BaseTypeKitfile) {
 				return true
 			}
 		}
 		return false
 	case artifact.Model:
-		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
+		return matchesFilters(BaseTypeModel, l.Name, filters) || matchesFilters(BaseTypeModel, l.Path, filters)
 	case artifact.ModelPart:
-		return matchesFilters("model", l.Name, filters) || matchesFilters("model", l.Path, filters)
+		return matchesFilters(BaseTypeModel, l.Name, filters) || matchesFilters(BaseTypeModel, l.Path, filters)
 	case artifact.Docs:
 		// Docs does not have an ID/name field so we can only match on path
-		return matchesFilters("docs", l.Path, filters)
+		return matchesFilters(BaseTypeDocs, l.Path, filters)
 	case artifact.DataSet:
-		return matchesFilters("datasets", l.Name, filters) || matchesFilters("datasets", l.Path, filters)
+		return matchesFilters(BaseTypeDatasets, l.Name, filters) || matchesFilters(BaseTypeDatasets, l.Path, filters)
 	case artifact.Code:
 		// Code does not have a ID/name field so we can only match on path
-		return matchesFilters("code", l.Path, filters)
+		return matchesFilters(BaseTypeCode, l.Path, filters)
 	case artifact.Prompt:
-		return matchesFilters("prompts", l.Name, filters) || matchesFilters("prompts", l.Path, filters)
+		return matchesFilters(BaseTypePrompts, l.Name, filters) || matchesFilters(BaseTypePrompts, l.Path, filters)
 	default:
 		return false
 	}
 }
 
-func matchesFilters(baseType, field string, filterConfs []FilterConf) bool {
+func matchesFilters(baseType BaseType, field string, filterConfs []FilterConf) bool {
 	for _, filterConf := range filterConfs {
 		if filterConf.Matches(baseType, field) {
 			return true
@@ -180,19 +193,19 @@ func FiltersFromUnpackConf(unpackKitfile, unpackModels, unpackCode, unpackDatase
 	filter := FilterConf{}
 
 	if unpackKitfile {
-		filter.BaseTypes = append(filter.BaseTypes, "kitfile")
+		filter.BaseTypes = append(filter.BaseTypes, BaseTypeKitfile)
 	}
 	if unpackModels {
-		filter.BaseTypes = append(filter.BaseTypes, "model")
+		filter.BaseTypes = append(filter.BaseTypes, BaseTypeModel)
 	}
 	if unpackDocs {
-		filter.BaseTypes = append(filter.BaseTypes, "docs")
+		filter.BaseTypes = append(filter.BaseTypes, BaseTypeDocs)
 	}
 	if unpackDatasets {
-		filter.BaseTypes = append(filter.BaseTypes, "datasets")
+		filter.BaseTypes = append(filter.BaseTypes, BaseTypeDatasets)
 	}
 	if unpackCode {
-		filter.BaseTypes = append(filter.BaseTypes, "code")
+		filter.BaseTypes = append(filter.BaseTypes, BaseTypeCode)
 	}
 	return []FilterConf{filter}
 }

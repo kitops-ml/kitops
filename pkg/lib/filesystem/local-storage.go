@@ -173,6 +173,9 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	for idx, dataset := range kitfile.DataSets {
 		// First check if dataset is stored remotely
 		if dataset.RemotePath != "" {
+			if artifact.IsModelKitReference(dataset.RemotePath) {
+				continue
+			}
 			ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to parse S3 object reference for dataset %s: %w", dataset.Path, err)

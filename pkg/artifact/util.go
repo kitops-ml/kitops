@@ -21,7 +21,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	"github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -170,4 +173,41 @@ func FormatRepositoryForDisplay(repo string) string {
 	// Trim @ in case what's left is a bare digest
 	repo = strings.TrimPrefix(repo, "@")
 	return repo
+}
+
+// GenerateKitfileForModelPack generates a Kitfile for a manifest that otherwise does not contain one.
+// This is a minimal Kitfile suitable only for unpacking, containing a path for every layer. If a layer
+// does not use the 'org.cncf.model.filepath' annotation, an error is returned.
+func GenerateKitfileForModelPack(manifest *ocispec.Manifest) (*KitFile, error) {
+	if format, err := mediatype.ModelFormatForManifest(manifest); err != nil || format != mediatype.ModelPackFormat {
+		return nil, fmt.Errorf("not a modelpack artifact")
+	}
+	kf := &KitFile{
+		Model: &Model{},
+	}
+	for _, desc := range manifest.Layers {
+		if desc.Annotations == nil || desc.Annotations[modelspecv1.AnnotationFilepath] == "" {
+			return nil, fmt.Errorf("unknown file path for layer: no %s annotation", modelspecv1.AnnotationFilepath)
+		}
+		filepath := desc.Annotations[modelspecv1.AnnotationFilepath]
+		mt, err := mediatype.ParseMediaType(desc.MediaType)
+		if err != nil {
+			return nil, err
+		}
+		switch mt.Base() {
+		case mediatype.ModelBaseType:
+			kf.Model.Path = filepath
+		case mediatype.ModelPartBaseType:
+			kf.Model.Parts = append(kf.Model.Parts, ModelPart{Path: filepath})
+		case mediatype.CodeBaseType:
+			kf.Code = append(kf.Code, Code{Path: filepath})
+		case mediatype.DatasetBaseType:
+			kf.DataSets = append(kf.DataSets, DataSet{Path: filepath})
+		case mediatype.DocsBaseType:
+			kf.Docs = append(kf.Docs, Docs{Path: filepath})
+		default:
+			return nil, fmt.Errorf("unknown layer type: %s", mt)
+		}
+	}
+	return kf, nil
 }
