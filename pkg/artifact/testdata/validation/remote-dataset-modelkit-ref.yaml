@@ -1,0 +1,6 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  datasets:
+    - path: data/train
+      remotePath: docker.io/kit-org/kit-repo:latest
+errRegexp: ""

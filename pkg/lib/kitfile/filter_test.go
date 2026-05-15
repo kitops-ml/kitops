@@ -30,29 +30,29 @@ func TestParseFilter_EdgeCases(t *testing.T) {
 		filter          string
 		expectError     bool
 		errorContains   string
-		expectedTypes   []string
+		expectedTypes   []BaseType
 		expectedFilters []string
 	}{
 		{
 			name:          "simple model filter",
 			filter:        "model",
-			expectedTypes: []string{"model"},
+			expectedTypes: []BaseType{"model"},
 		},
 		{
 			name:            "model with specific filters",
 			filter:          "model:llama-7b,gpt-3",
-			expectedTypes:   []string{"model"},
+			expectedTypes:   []BaseType{"model"},
 			expectedFilters: []string{"llama-7b", "gpt-3"},
 		},
 		{
 			name:          "multiple types",
 			filter:        "model,datasets,code",
-			expectedTypes: []string{"model", "datasets", "code"},
+			expectedTypes: []BaseType{"model", "datasets", "code"},
 		},
 		{
 			name:            "multiple types with filters",
 			filter:          "datasets:training-data,validation",
-			expectedTypes:   []string{"datasets"},
+			expectedTypes:   []BaseType{"datasets"},
 			expectedFilters: []string{"training-data", "validation"},
 		},
 		{
@@ -170,20 +170,20 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 		unpackDatasets    bool
 		unpackDocs        bool
 		expectedTypeCount int
-		expectedTypes     []string
+		expectedTypes     []BaseType
 	}{
 		{
 			name:              "only models",
 			unpackModels:      true,
 			expectedTypeCount: 1,
-			expectedTypes:     []string{"model"},
+			expectedTypes:     []BaseType{"model"},
 		},
 		{
 			name:              "models and datasets",
 			unpackModels:      true,
 			unpackDatasets:    true,
 			expectedTypeCount: 2,
-			expectedTypes:     []string{"model", "datasets"},
+			expectedTypes:     []BaseType{"model", "datasets"},
 		},
 		{
 			name:              "all legacy types (no prompts)",
@@ -193,7 +193,7 @@ func TestFiltersFromUnpackConf(t *testing.T) {
 			unpackDatasets:    true,
 			unpackDocs:        true,
 			expectedTypeCount: 5,
-			expectedTypes:     []string{"kitfile", "model", "code", "datasets", "docs"},
+			expectedTypes:     []BaseType{"kitfile", "model", "code", "datasets", "docs"},
 		},
 		{
 			name:              "none selected",

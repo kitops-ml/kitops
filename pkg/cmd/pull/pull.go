@@ -78,18 +78,30 @@ func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.De
 		}
 		return err
 	}
-	if config.Model == nil || !artifact.IsModelKitReference(config.Model.Path) {
-		return nil
+
+	var parentRefs []string
+	if config.Model != nil && artifact.IsModelKitReference(config.Model.Path) {
+		parentRefs = append(parentRefs, config.Model.Path)
 	}
-	output.Infof("Pulling referenced image %s", config.Model.Path)
-	parentRef, _, err := artifact.ParseReference(config.Model.Path)
-	if err != nil {
-		return err
+	for _, dataset := range config.DataSets {
+		if artifact.IsModelKitReference(dataset.RemotePath) {
+			parentRefs = append(parentRefs, dataset.RemotePath)
+		}
 	}
-	opts := *optsIn
-	opts.modelRef = parentRef
-	_, err = runPullRecursive(ctx, localRepo, &opts, pulledRefs)
-	return err
+
+	for _, refStr := range parentRefs {
+		parentRef, _, err := artifact.ParseReference(refStr)
+		if err != nil {
+			return err
+		}
+		output.Infof("Pulling referenced image %s", refStr)
+		opts := *optsIn
+		opts.modelRef = parentRef
+		if _, err := runPullRecursive(ctx, localRepo, &opts, pulledRefs); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func pullModel(ctx context.Context, localRepo local.LocalRepo, opts *pullOptions) (ocispec.Descriptor, error) {

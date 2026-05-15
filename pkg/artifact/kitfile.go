@@ -246,11 +246,16 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 			if err != nil {
 				addErr("invalid remote path for dataset (%s): %s", dataset.RemotePath, err)
 			}
-			if remotePathType != S3PathType {
-				addErr("only S3 URLs are supported for remote dataset paths (%s)", dataset.RemotePath)
-			}
-			if dataset.RemoteHash == "" {
-				addErr("remoteHash is required when remote dataset paths are used (%s)", dataset.RemotePath)
+			switch remotePathType {
+			case S3PathType:
+				if dataset.RemoteHash == "" {
+					addErr("remoteHash is required when remote dataset paths are used (%s)", dataset.RemotePath)
+				}
+			case ModelReferencePathType:
+				// ModelKit references carry their own integrity (digest/tag in the OCI reference);
+				// any remoteHash field is ignored.
+			default:
+				addErr("only S3 URLs and ModelKit references are supported for remote dataset paths (%s)", dataset.RemotePath)
 			}
 		} else {
 			if dataset.RemoteHash != "" {
