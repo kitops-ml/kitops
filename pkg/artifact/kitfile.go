@@ -194,6 +194,10 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 		paths[path] = append(paths[path], source)
 	}
 
+	// List of paths used by datasets that include remote ModelKit references; to avoid confusion, no other
+	// layer can include files within a remote dataset's path
+	var remoteDatasetPaths []string
+
 	if kf.Model != nil {
 		addPath(kf.Model.Path, fmt.Sprintf("model %s", kf.Model.Name))
 		modelPathType, err := GetPathType(kf.Model.Path)
@@ -252,8 +256,11 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 					addErr("remoteHash is required when remote dataset paths are used (%s)", dataset.RemotePath)
 				}
 			case ModelReferencePathType:
-				// ModelKit references carry their own integrity (digest/tag in the OCI reference);
-				// any remoteHash field is ignored.
+				// ModelKit references carry their own integrity (digest/tag in the OCI reference)
+				if dataset.RemoteHash != "" {
+					warnings = append(warnings, fmt.Sprintf("remoteHash is ignored for ModelKit references in datasets (%s)", dataset.Path))
+				}
+				remoteDatasetPaths = append(remoteDatasetPaths, filepath.Clean(dataset.Path))
 			default:
 				addErr("only S3 URLs and ModelKit references are supported for remote dataset paths (%s)", dataset.RemotePath)
 			}
@@ -289,6 +296,21 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 		}
 		if path.IsAbs(layerPath) || filepath.IsAbs(layerPath) {
 			addErr("absolute paths are not supported in a Kitfile (path %s in %s)", layerPath, layerIds[0])
+		}
+		for _, remoteDatasetPath := range remoteDatasetPaths {
+			if remoteDatasetPath == layerPath {
+				// Skip the remote dataset layer's own path when checking whether other layers are nested within it.
+				// Duplicate-path validation is handled above.
+				continue
+			}
+			relPath, err := filepath.Rel(remoteDatasetPath, layerPath)
+			if err != nil {
+				addErr("error calculating relative path for remote dataset: %s", err)
+				continue
+			}
+			if relPath != ".." && !strings.HasPrefix(relPath, ".."+string(filepath.Separator)) {
+				addErr("%s uses a path (%s) that is within the path for a remote dataset", layerIds[0], layerPath)
+			}
 		}
 	}
 

@@ -1,0 +1,8 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  datasets:
+    - path: data/train
+      remotePath: docker.io/kit-org/kit-repo:latest
+  code:
+    - path: data/train/code
+errRegexp: "uses a path \\(data[\\\\/]train[\\\\/]code\\) that is within the path for a remote dataset"
