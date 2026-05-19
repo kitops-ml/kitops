@@ -1042,5 +1042,16 @@
     "author": "Jesse Williams",
     "published_time": "2026-02-24",
     "title": "Automated AI Compliance Gates: From Training Data to Production with Cryptographic Proof"
+  },
+  {
+    "url": "https://www.gorkem-ercan.com/p/what-we-lost-when-contributions-got",
+    "tags": [
+      "KitOps",
+      "Open Source",
+      "AI"
+    ],
+    "author": "Gorkem Ercan",
+    "published_time": "2026-05-19",
+    "title": "What We Lost When Contributions Got Cheap"
   }
 ]
