@@ -263,13 +263,13 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 	case "docs":
 		output.Logf(output.LogLevelTrace, "Directory %s interpreted as documentation", dir.Name)
 		kitfile.Docs = append(kitfile.Docs, artifact.Docs{
-			Path: withTrailingSlash(dir.Path),
+			Path: unixWithTrailingSlash(dir.Path),
 		})
 		return nil
 	case "src", "pkg", "lib", "build":
 		output.Logf(output.LogLevelTrace, "Directory %s interpreted as code", dir.Name)
 		kitfile.Code = append(kitfile.Code, artifact.Code{
-			Path: withTrailingSlash(dir.Path),
+			Path: unixWithTrailingSlash(dir.Path),
 		})
 		return nil
 	}
@@ -309,7 +309,7 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 	}
 	if directoryHasMixedContents {
 		output.Logf(output.LogLevelTrace, "Mixed contents in directory %s, adding as code layer", dir.Path)
-		kitfile.Code = append(kitfile.Code, artifact.Code{Path: withTrailingSlash(dir.Path)})
+		kitfile.Code = append(kitfile.Code, artifact.Code{Path: unixWithTrailingSlash(dir.Path)})
 		return modelFiles
 	}
 	switch overallFiletype {
@@ -319,19 +319,19 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 		modelFiles = append(modelFiles, metadataFiles...)
 	case fileTypeDataset:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as a dataset directory", dir.Path)
-		kitfile.DataSets = append(kitfile.DataSets, artifact.DataSet{Path: withTrailingSlash(dir.Path)})
+		kitfile.DataSets = append(kitfile.DataSets, artifact.DataSet{Path: unixWithTrailingSlash(dir.Path)})
 	case fileTypeDocs:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as a docs directory", dir.Path)
-		kitfile.Docs = append(kitfile.Docs, artifact.Docs{Path: withTrailingSlash(dir.Path)})
+		kitfile.Docs = append(kitfile.Docs, artifact.Docs{Path: unixWithTrailingSlash(dir.Path)})
 	case fileTypePrompt:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as a prompts directory", dir.Path)
-		kitfile.Prompts = append(kitfile.Prompts, artifact.Prompt{Path: withTrailingSlash(dir.Path)})
+		kitfile.Prompts = append(kitfile.Prompts, artifact.Prompt{Path: unixWithTrailingSlash(dir.Path)})
 	case fileTypeCode:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as code directory", dir.Path)
-		kitfile.Code = append(kitfile.Code, artifact.Code{Path: withTrailingSlash(dir.Path)})
+		kitfile.Code = append(kitfile.Code, artifact.Code{Path: unixWithTrailingSlash(dir.Path)})
 	default:
 		output.Logf(output.LogLevelTrace, "Could not determine type for directory %s. Adding as code layer", dir.Path)
-		kitfile.Code = append(kitfile.Code, artifact.Code{Path: withTrailingSlash(dir.Path)})
+		kitfile.Code = append(kitfile.Code, artifact.Code{Path: unixWithTrailingSlash(dir.Path)})
 	}
 
 	return modelFiles
@@ -459,7 +459,8 @@ func anyPattern(query string, patterns []string) bool {
 	return false
 }
 
-func withTrailingSlash(p string) string {
+func unixWithTrailingSlash(p string) string {
+	p = filepath.ToSlash(p)
 	if p == "." || strings.HasSuffix(p, "/") {
 		return p
 	}
