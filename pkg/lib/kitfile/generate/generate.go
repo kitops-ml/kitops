@@ -115,7 +115,17 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package, depth 
 		return kitfile, nil
 	}
 
-	modelFiles, metadataFiles, unknownFiles, detectedLicenseType := processSubdirFiles(kitfile, *dir, depth)
+	modelFiles, metadataFiles, unknownFiles, licensePath := classifyDirectoryRecursive(kitfile, *dir, depth)
+	detectedLicenseType := ""
+	if licensePath != "" {
+		licenseType, err := detectLicense(licensePath)
+		if err != nil {
+			output.Debugf("Error determining license type: %s", err)
+			output.Logf(output.LogLevelWarn, "Unable to determine license type")
+		}
+		detectedLicenseType = licenseType
+		output.Logf(output.LogLevelTrace, "Detected license %s for license file", detectedLicenseType)
+	}
 
 	if len(unknownFiles) > 5 {
 		output.Logf(output.LogLevelTrace, "Unrecognized files found in %s; adding catch-all code layer", dir.Path)
@@ -159,13 +169,13 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package, depth 
 	return kitfile, nil
 }
 
-// processSubdirFiles classifies each file in dir individually and adds typed layers to
+// classifyDirectoryRecursive classifies each file in dir individually and adds typed layers to
 // kitfile. depth controls how many additional subdirectory levels are processed
 // file-by-file before switching to addDirToKitfile (whole-directory analysis). Returns
 // model and metadata files for the caller to pair, any files whose type could not be
 // determined (so the caller can decide how to handle them), and any detected license
 // identifier. Unclassifiable directories are added directly to kitfile.Code.
-func processSubdirFiles(kitfile *artifact.KitFile, dir DirectoryListing, depth int) (modelFiles []FileListing, metadataFiles []FileListing, unknownFiles []FileListing, detectedLicenseType string) {
+func classifyDirectoryRecursive(kitfile *artifact.KitFile, dir DirectoryListing, depth int) (modelFiles []FileListing, metadataFiles []FileListing, unknownFiles []FileListing, licensePath string) {
 	if found, _ := dirContainsSkillMD(dir); found {
 		output.Logf(output.LogLevelTrace, "Directory %s contains SKILL.md; treating as skill", dir.Path)
 		prompt, _ := buildPromptFromSkill(dir)
@@ -196,13 +206,7 @@ func processSubdirFiles(kitfile *artifact.KitFile, dir DirectoryListing, depth i
 				Path:        file.Path,
 				Description: "License file",
 			})
-			licenseType, err := detectLicense(file.Path)
-			if err != nil {
-				output.Debugf("Error determining license type: %s", err)
-				output.Logf(output.LogLevelWarn, "Unable to determine license type")
-			}
-			detectedLicenseType = licenseType
-			output.Logf(output.LogLevelTrace, "Detected license %s for license file", detectedLicenseType)
+			licensePath = file.Path
 			continue
 		}
 
@@ -239,7 +243,7 @@ func processSubdirFiles(kitfile *artifact.KitFile, dir DirectoryListing, depth i
 	} else {
 		for _, subDir := range dir.Subdirs {
 			// Ignore licenses in subdirectories -- it's unclear where to assign them
-			subModelFiles, subMetaFiles, subUnknownFiles, _ := processSubdirFiles(kitfile, subDir, depth-1)
+			subModelFiles, subMetaFiles, subUnknownFiles, _ := classifyDirectoryRecursive(kitfile, subDir, depth-1)
 			modelFiles = append(modelFiles, subModelFiles...)
 			metadataFiles = append(metadataFiles, subMetaFiles...)
 			for _, f := range subUnknownFiles {
@@ -248,7 +252,7 @@ func processSubdirFiles(kitfile *artifact.KitFile, dir DirectoryListing, depth i
 			}
 		}
 	}
-	return modelFiles, metadataFiles, unknownFiles, detectedLicenseType
+	return modelFiles, metadataFiles, unknownFiles, licensePath
 }
 
 func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFiles []FileListing) {
