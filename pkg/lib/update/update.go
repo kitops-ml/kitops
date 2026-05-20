@@ -30,12 +30,19 @@ import (
 	"time"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"golang.org/x/mod/semver"
 )
 
 const versionCheckUrl = "https://kitops.org/version"
+const updateCheckInterval = 24 * time.Hour
+
+type updateCheckCache struct {
+	LastCheck     time.Time `json:"last_check"`
+	LatestVersion string    `json:"latest_version"`
+}
 
 // Regexp for a semver version -- taken from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 // We've added an optional 'v' to the start (e.g. v1.2.3) since using a 'v' prefix is common (and used, in our case)
@@ -63,8 +70,9 @@ func CheckForUpdate(configHome, command string) {
 	if !shouldShowNotification(configHome) {
 		return
 	}
+	isInteractive := util.IsInteractiveSession()
 
-	info, err := getLatestReleaseInfo(command)
+	info, err := getLatestReleaseInfo(command, isInteractive)
 	if err != nil {
 		output.Debugf("Error checking for CLI updates: %s", err)
 		return
@@ -77,12 +85,53 @@ func CheckForUpdate(configHome, command string) {
 	// The Go semver package requires versions start with a 'v' (contrary to the spec)
 	currentVersion := fmt.Sprintf("v%s", strings.TrimPrefix(constants.Version, "v"))
 	latestVersion := fmt.Sprintf("v%s", strings.TrimPrefix(info.TagName, "v"))
-	if semver.Compare(currentVersion, latestVersion) < 0 {
-		output.SystemInfof("Note: A new version of Kit is available! You are using Kit %s. The latest version is %s.", currentVersion, latestVersion)
-		output.SystemInfof("      To see a list of changes, visit %s", info.Url)
-		output.SystemInfof("      To disable this notification, use 'kit version --show-update-notifications=false'")
-		output.SystemInfof("") // Add a newline to not confuse it with regular output
+	if semver.Compare(currentVersion, latestVersion) >= 0 {
+		return
 	}
+
+	if !isInteractive {
+		// Don't need to show a notification if there is no user interacting
+		return
+	}
+
+	cache := loadUpdateCheckCache(configHome)
+	now := time.Now()
+	if cache != nil && now.Sub(cache.LastCheck) < updateCheckInterval && cache.LatestVersion == latestVersion {
+		return
+	}
+
+	output.SystemInfof("A new version of Kit (%s) is available! (current: %s) — %s", latestVersion, currentVersion, info.Url)
+	output.SystemInfof("") // Add a newline to not confuse it with regular output
+
+	if err := saveUpdateCheckCache(configHome, &updateCheckCache{LastCheck: now, LatestVersion: latestVersion}); err != nil {
+		output.Debugf("Error saving update check cache: %s", err)
+	}
+}
+
+func loadUpdateCheckCache(configHome string) *updateCheckCache {
+	path := filepath.Join(configHome, constants.UpdateCheckCacheFilename)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			output.Debugf("Error checking update check cache file: %s", err)
+		}
+		return nil
+	}
+	cache := &updateCheckCache{}
+	if err := json.Unmarshal(data, cache); err != nil {
+		output.Debugf("Error reading update check cache: %s", err)
+		return nil
+	}
+	return cache
+}
+
+func saveUpdateCheckCache(configHome string, cache *updateCheckCache) error {
+	path := filepath.Join(configHome, constants.UpdateCheckCacheFilename)
+	data, err := json.Marshal(cache)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
 }
 
 func SetShowNotifications(configHome string, shouldShow bool) error {
@@ -116,7 +165,7 @@ func shouldShowNotification(configHome string) bool {
 	return false
 }
 
-func getLatestReleaseInfo(command string) (*ghReleaseInfo, error) {
+func getLatestReleaseInfo(command string, isInteractive bool) (*ghReleaseInfo, error) {
 	client := &http.Client{
 		Timeout: 1 * time.Second,
 	}
@@ -124,7 +173,11 @@ func getLatestReleaseInfo(command string) (*ghReleaseInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error while generating HTTP request: %w", err)
 	}
-	req.Header.Set("User-Agent", "kitops-cli/"+constants.Version)
+	if isInteractive {
+		req.Header.Set("User-Agent", fmt.Sprintf("kitops-cli/%s", constants.Version))
+	} else {
+		req.Header.Set("User-Agent", fmt.Sprintf("kitops-cli/%s (noninteractive)", constants.Version))
+	}
 	req.Header.Set("X-Command", command)
 
 	resp, err := client.Do(req)
