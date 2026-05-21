@@ -359,13 +359,15 @@ kit import myorg/myrepo --file ./path/to/Kitfile
 ### Options
 
 ```
-      --ref string        Version (tag) of repository to import (default "main")
-      --token string      Token to use for authenticating with repository
-  -t, --tag string        Tag for the ModelKit (default is '[repository]:latest')
-  -f, --file string       Path to Kitfile to use for packing (use '-' to read from standard input)
-      --tool string       Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)
-      --concurrency int   Maximum number of simultaneous downloads (for huggingface) (default 5)
-  -h, --help              help for import
+      --ref string                  Version (tag) of repository to import (default "main")
+      --token string                Token to use for authenticating with repository
+  -t, --tag string                  Tag for the ModelKit (default is '[repository]:latest')
+  -f, --file string                 Path to Kitfile to use for packing (use '-' to read from standard input)
+      --tool string                 Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)
+      --concurrency int             Maximum number of simultaneous downloads (for huggingface) (default 5)
+      --depth int                   Maximum directory depth to process when generating a Kitfile. Setting to -1 processes all files individually
+      --attestation-output string   Write SLSA Provenance v1 predicate to <path> ('-' for stdout)
+  -h, --help                        help for import
 ```
 
 ### Options inherited from parent commands
@@ -486,6 +488,7 @@ kit init myorg/mymodel --remote --output ./Kitfile
       --ref string      Branch or tag for remote repository (requires --remote) (default "main")
       --token string    Auth token for remote repository (requires --remote)
   -o, --output string   Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)
+      --depth int       Maximum directory depth to process when generating a Kitfile. Setting to a negative number processes all files individually
   -h, --help            help for init
 ```
 
