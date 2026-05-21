@@ -191,17 +191,17 @@ func getConfigHome(opts *rootOptions) (string, error) {
 	envHome := os.Getenv(constants.KitopsHomeEnvVar)
 	if envHome != "" {
 		output.Debugf("Using config directory from environment variable: %s", envHome)
-		absHome, err := filepath.Abs(envHome)
+		configHome, err := constants.ConfigPath()
 		if err != nil {
-			return "", fmt.Errorf("failed to get absolute path for %s: %w", constants.KitopsHomeEnvVar, err)
+			return "", err
 		}
-		return absHome, nil
+		return configHome, nil
 	}
 
-	defaultHome, err := constants.DefaultConfigPath()
+	configHome, err := constants.ConfigPath()
 	if err != nil {
 		return "", err
 	}
-	output.Debugf("Using default config directory: %s", defaultHome)
-	return defaultHome, nil
+	output.Debugf("Using default config directory: %s", configHome)
+	return configHome, nil
 }
