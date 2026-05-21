@@ -8,10 +8,6 @@ import './assets/css/fonts.css'
 import './assets/css/tailwind.css'
 import './style.css'
 
-const isPlatformModalOpen = ref(false)
-
-const isProd = import.meta.env.PROD
-
 export default {
   extends: DefaultTheme,
   Layout: () => {
