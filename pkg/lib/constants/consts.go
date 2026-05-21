@@ -82,6 +82,21 @@ func IsDefaultKitfileName(filename string) bool {
 	return false
 }
 
+// ConfigPath returns the configured root storage directory. KITOPS_HOME takes
+// precedence over the platform-specific default path.
+func ConfigPath() (string, error) {
+	envHome := os.Getenv(KitopsHomeEnvVar)
+	if envHome != "" {
+		absHome, err := filepath.Abs(envHome)
+		if err != nil {
+			return "", fmt.Errorf("failed to get absolute path for %s: %w", KitopsHomeEnvVar, err)
+		}
+		return absHome, nil
+	}
+
+	return DefaultConfigPath()
+}
+
 // DefaultConfigPath returns the default configuration and cache directory for the CLI.
 // This is platform-dependent, using
 //   - $XDG_DATA_HOME/kitops on Linux, with fall back to $HOME/.local/share/kitops
