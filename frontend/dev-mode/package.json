@@ -2,6 +2,7 @@
   "name": "kitops-dev-mode",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
