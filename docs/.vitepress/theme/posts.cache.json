@@ -1,5 +1,5 @@
 {
-  "hash": "4bcd03c63b017d8c48b46dbb88da4ee13b5aea15",
+  "hash": "6e20f7659e21015824e8427591e2a1c160ff05e1",
   "posts": [
     {
       "url": "https://www.gorkem-ercan.com/p/do-data-scientists-really-like-git",
@@ -43,7 +43,7 @@
       "published_time": "2024-04-02",
       "site_name": "The New Stack",
       "image": "https://cdn.thenewstack.io/media/2024/03/d18d42b8-code-7522129_1280.png",
-      "icon": "https://thenewstack.io/favicon.ico"
+      "icon": "https://cdn.thenewstack.io/media/2026/03/b2fc1b22-cropped-89b6d319-download-32x32.png"
     },
     {
       "url": "https://open.spotify.com/episode/1BoMxaEYiZIrFTrT1N5UKa?si=zH9L868bRGyU0wc8oxz6vQ",
@@ -167,7 +167,7 @@
       "published_time": "2024-04-26",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/jRi3wmaHQBQ/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://jozu.com/blog/how-to-turn-a-jupyter-notebook-into-a-deployable-artifact/",
@@ -183,6 +183,18 @@
       "site_name": "Jozu - On-Prem AI Model Registry & Secure ML Deployment Platform",
       "image": "https://jozu.com/wp-content/uploads/2024/07/HMB-18-Jupyter-Notebook.png",
       "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
+    },
+    {
+      "url": "https://www.codeproject.com/Articles/5384392/A-Step-by-Step-Guide-to-Building-and-Distributing",
+      "tags": [
+        "KitOps",
+        "RAG",
+        "Tutorial"
+      ],
+      "author": "Gorkem Ercan",
+      "title": "A Step-by-Step Guide to Building and Distributing a Sleek RAG Pipeline",
+      "description": "In this article, we build a Retrieval-Augmented Generation (RAG) pipeline using KitOps, integrating tools like ChromaDB for embeddings, Llama 3 for language models, and SentenceTransformer for embedding models.",
+      "published_time": "2024-07-09"
     },
     {
       "url": "https://jozu.com/blog/25-open-source-ai-tools-to-cut-your-development-time-in-half/",
@@ -582,7 +594,7 @@
       "published_time": "2024-11-29",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/0JjVHSPmxp4/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://jozu.com/blog/how-to-use-kitops-with-mlflow/",
@@ -862,7 +874,7 @@
       "published_time": "2025-04-09",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/eExvPkSqTCQ/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGDogXyhyMA8=&rs=AOn4CLAou9wYrJZ3byJeec--9wP9tBXVxQ",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://www.youtube.com/watch?v=eExvPkSqTCQ",
@@ -877,7 +889,7 @@
       "published_time": "2025-04-09",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/eExvPkSqTCQ/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGDogXyhyMA8=&rs=AOn4CLAou9wYrJZ3byJeec--9wP9tBXVxQ",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://www.youtube.com/watch?v=fP_OssMlnWI",
@@ -892,7 +904,7 @@
       "published_time": "2025-04-17",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/fP_OssMlnWI/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://www.youtube.com/watch?v=BM9PcoK2Ik8",
@@ -907,7 +919,7 @@
       "published_time": "2025-04-23",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/BM9PcoK2Ik8/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://dev.to/arindam_1729/stop-vibe-coding-make-your-ai-saas-production-ready-with-these-7-tools-2pam",
@@ -937,7 +949,7 @@
       "published_time": "2025-05-09",
       "site_name": "YouTube",
       "image": "https://i.ytimg.com/vi/a4hJEFGv8uo/maxresdefault.jpg",
-      "icon": "https://www.youtube.com/s/desktop/9d595340/img/favicon_32x32.png"
+      "icon": "https://www.youtube.com/s/desktop/99aa90e5/img/favicon_32x32.png"
     },
     {
       "url": "https://www.upgrad.com/blog/open-source-projects-for-beginners/",
@@ -1004,7 +1016,7 @@
       "title": "MLFlow + KitOps: The Missing Link in ML Reproducibility",
       "description": "How to package your MLFlow experiments into tamper-proof, deployable artifacts MLFlow solves experiment tracking. KitOps solves artifact packaging. Together, they solve the real problem",
       "published_time": "2025-10-11",
-      "image": "https://substackcdn.com/image/fetch/$s_!K2i3!,f_auto,q_auto:best,fl_progressive:steep/https%3A%2F%2Finfraflowai.substack.com%2Ftwitter%2Fsubscribe-card.jpg%3Fv%3D-915901092%26version%3D9",
+      "image": "https://substackcdn.com/image/fetch/$s_!NGaf!,f_auto,q_auto:best,fl_progressive:steep/https%3A%2F%2Finfraflowai.substack.com%2Ftwitter%2Fsubscribe-card.jpg%3Fv%3D-1448317347%26version%3D9",
       "icon": "https://substackcdn.com/image/fetch/$s_!c7Of!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe610708a-fc91-4b0a-9eb9-2d277a25497e%2Ffavicon-16x16.png"
     },
     {
@@ -1121,7 +1133,7 @@
       "title": "Lab Notes: Intel AI Inference Platform MVP",
       "description": "With the cluster in place, I built the second layer of the stack.",
       "published_time": "2025-09-18",
-      "icon": "/images/favicon.svg"
+      "icon": "/favicon.svg"
     },
     {
       "url": "https://www.opensourceforu.com/2025/10/jozu-champions-open-standards-for-ai-with-cncf-supported-kitops-and-modelpack/",
@@ -1147,7 +1159,7 @@
         "Enterprise AI"
       ],
       "title": "Jozu Pioneers Secure AI Standard with ModelPack & KitOps",
-      "description": "Enterprise machine learning faces significant challenges in security, reproducibility, and portability between environments. Jozu is addressing these core issues by pioneering two key open-source proj...",
+      "description": "Jozu leads ModelPack & KitOps open-source projects to bring container-like security and portability to enterprise machine learning workflows.",
       "published_time": "2025-10-28",
       "site_name": "TechIntelPro",
       "image": "https://techintelpro.com/uploads/jozu.jpg",
@@ -1351,6 +1363,20 @@
       "site_name": "Jozu - On-Prem AI Model Registry & Secure ML Deployment Platform",
       "image": "https://jozu.com/wp-content/uploads/2026/02/Upload-Image-1600x1120-1.png",
       "icon": "https://i0.wp.com/jozu.com/wp-content/uploads/2025/07/favicon-dark-32x32-1.png?fit=32%2C32&ssl=1"
+    },
+    {
+      "url": "https://www.gorkem-ercan.com/p/what-we-lost-when-contributions-got",
+      "tags": [
+        "KitOps",
+        "Open Source",
+        "AI"
+      ],
+      "author": "Gorkem Ercan",
+      "title": "What We Lost When Contributions Got Cheap",
+      "description": "What the marker handshake in KitOps revealed about where AI contribution friction really lives.",
+      "published_time": "2026-05-19",
+      "image": "https://substackcdn.com/image/fetch/$s_!2aIb!,w_1200,h_675,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F89fb3e0e-9f40-4ae5-bd46-eb9eadd3f17c_2816x1536.png",
+      "icon": "https://substackcdn.com/icons/substack/icon.svg"
     }
   ]
 }

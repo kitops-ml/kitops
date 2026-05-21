@@ -2,17 +2,11 @@
 import { h, ref } from 'vue'
 import { type Theme, inBrowser } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
-import PlatformSelect from './components/PlatformSelect.vue'
-import PlatformSnippet from './components/PlatformSnippet.vue'
 import GithubStartButton from './components/GithubStartButton.vue'
 import DiscordBanner from './components/DiscordBanner.vue'
 import './assets/css/fonts.css'
 import './assets/css/tailwind.css'
 import './style.css'
-
-const isPlatformModalOpen = ref(false)
-
-const isProd = import.meta.env.PROD
 
 export default {
   extends: DefaultTheme,
@@ -31,7 +25,6 @@ export default {
 
     return h(DefaultTheme.Layout, null, {
       // https://vitepress.dev/guide/extending-default-theme#layout-slots
-      'sidebar-nav-after': () => h(PlatformSelect),
       'nav-bar-content-after': () => h(GithubStartButton, {
         class: 'ml-4 pt-2'
       }),
@@ -50,9 +43,7 @@ export default {
       ]),
     })
   },
-  enhanceApp({ app, router, siteData }) {
-    app.component('PlatformSnippet', PlatformSnippet)
-    app.provide('isPlatformModalOpen', isPlatformModalOpen)
+  enhanceApp({ app }) {
     app.component('DiscordBanner', DiscordBanner);
   }
 } satisfies Theme

@@ -4,12 +4,12 @@
     "vue": "^3.5"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "tailwindcss": "^4.2.2",
+    "@tailwindcss/vite": "^4.3.0",
+    "tailwindcss": "^4.3.0",
     "vite-svg-loader": "^5.1.1",
     "vitepress": "1.6.4",
-    "vitepress-plugin-llms": "^1.12.0",
-    "vue": "^3.5.31",
+    "vitepress-plugin-llms": "^1.12.2",
+    "vue": "^3.5.34",
     "vue-turnstile": "^1.0.11"
   },
   "scripts": {
@@ -18,7 +18,7 @@
     "docs:preview": "vitepress preview"
   },
   "dependencies": {
-    "@vueuse/core": "^14.2.1",
+    "@vueuse/core": "^14.3.0",
     "cheerio": "1.2.0",
     "vue3-marquee": "^4.2.2"
   },
