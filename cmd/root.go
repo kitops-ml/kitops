@@ -188,20 +188,19 @@ func getConfigHome(opts *rootOptions) (string, error) {
 		return absHome, nil
 	}
 
-	envHome := os.Getenv(constants.KitopsHomeEnvVar)
-	if envHome != "" {
-		output.Debugf("Using config directory from environment variable: %s", envHome)
-		configHome, err := constants.ConfigPath()
-		if err != nil {
-			return "", err
-		}
-		return configHome, nil
-	}
-
 	configHome, err := constants.ConfigPath()
 	if err != nil {
 		return "", err
 	}
+
+	envHome := os.Getenv(constants.KitopsHomeEnvVar)
+	if envHome != "" {
+		output.Debugf("Using config directory from environment variable: %s", configHome)
+		return configHome, nil
+	}
+
 	output.Debugf("Using default config directory: %s", configHome)
 	return configHome, nil
 }
+
+// AGENT_MODIFIED: Human review required before merge
