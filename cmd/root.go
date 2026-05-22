@@ -193,13 +193,7 @@ func getConfigHome(opts *rootOptions) (string, error) {
 		return "", err
 	}
 
-	envHome := os.Getenv(constants.KitopsHomeEnvVar)
-	if envHome != "" {
-		output.Debugf("Using config directory from environment variable: %s", configHome)
-		return configHome, nil
-	}
-
-	output.Debugf("Using default config directory: %s", configHome)
+	output.Debugf("Using config directory: %s", configHome)
 	return configHome, nil
 }
 
