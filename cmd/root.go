@@ -196,5 +196,3 @@ func getConfigHome(opts *rootOptions) (string, error) {
 	output.Debugf("Using config directory: %s", configHome)
 	return configHome, nil
 }
-
-// AGENT_MODIFIED: Human review required before merge
