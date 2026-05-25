@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -173,9 +174,7 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 	req.URL.RawQuery = q.Encode()
 
 	// Reuse credentials from POST request that initiated upload
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
-	}
+	r.copyAuth(req, authHeader)
 
 	output.SafeDebugf("[%s] Uploading blob as one chunk", expected.Digest.Encoded()[0:8])
 	// TODO: Handle warnings from remote
@@ -195,6 +194,7 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 	blobLocation, err := resp.Location()
 	if err != nil {
 		output.Errorf("Warning: remote registry did not return blob location (layer digest %s)", expected.Digest.Encoded()[0:8])
+		return "", nil
 	}
 
 	return blobLocation.String(), nil
@@ -222,9 +222,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, a
 		req.ContentLength = rangeEnd - rangeStart + 1
 		req.Header.Set("Content-Range", fmt.Sprintf("%d-%d", rangeStart, rangeEnd))
 		req.Header.Set("Content-Type", "application/octet-stream")
-		if authHeader != "" {
-			req.Header.Set("Authorization", authHeader)
-		}
+		r.copyAuth(req, authHeader)
 
 		// Submit the chunk as a PATCH
 		// TODO: Handle 416 response code (range not satisfiable)
@@ -278,10 +276,8 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, a
 	q := req.URL.Query()
 	q.Set("digest", expected.Digest.String())
 	req.URL.RawQuery = q.Encode()
-	// Reuse credentials from POST request that initiated upload
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
-	}
+	// Reuse credentials from POST request that initiated upload if same origin
+	r.copyAuth(req, authHeader)
 
 	output.SafeDebugf("[%s] Finalizing upload", expected.Digest.Encoded()[0:8])
 	resp, err := r.client().Do(req)
@@ -297,6 +293,7 @@ func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, a
 	blobLocation, err := resp.Location()
 	if err != nil {
 		output.Errorf("Warning: remote registry did not return blob location")
+		return "", nil
 	}
 
 	return blobLocation.String(), nil
@@ -340,7 +337,7 @@ func (r *Repository) uploadBlobChunkWithRetry(ctx context.Context, req *http.Req
 				output.SafeDebugf("[%s] Failed to fetch new token: %s", shortDigest, err)
 				return resp, respErr
 			}
-			req.Header.Set("Authorization", newAuth)
+			r.copyAuth(req, newAuth)
 			didReauth = true
 
 			if _, err := seekableContent.Seek(rangeStart, io.SeekStart); err != nil {
@@ -450,4 +447,48 @@ func buildRepositoryManifestsURL(plainHTTP bool, registryRef registry.Reference,
 		scheme = "http"
 	}
 	return fmt.Sprintf("%s://%s/v2/%s/manifests/%s", scheme, registryRef.Host(), registryRef.Repository, manifestRef)
+}
+
+// copyAuth attaches the provided authHeader to a request. If the request's URL doesn't match the origin for
+// the repository, copying is skipped and the request is not modified.
+func (r *Repository) copyAuth(req *http.Request, authHeader string) {
+	if authHeader == "" {
+		return
+	}
+
+	// Check scheme matches; registry reference does not include scheme so switch on PlainHTTP
+	registryScheme := "https"
+	if r.PlainHttp {
+		registryScheme = "http"
+	}
+	if req.URL.Scheme != registryScheme {
+		return
+	}
+
+	requestHost := req.URL.Hostname()
+	requestPort := req.URL.Port()
+	if requestPort == "" {
+		switch req.URL.Scheme {
+		case "http":
+			requestPort = "80"
+		case "https":
+			requestPort = "443"
+		default:
+			return
+		}
+	}
+
+	registryHost, registryPort, err := net.SplitHostPort(r.Reference.Host())
+	if err != nil {
+		registryHost = r.Reference.Host()
+		if r.PlainHttp {
+			registryPort = "80"
+		} else {
+			registryPort = "443"
+		}
+	}
+
+	if strings.EqualFold(requestHost, registryHost) && requestPort == registryPort {
+		req.Header.Set("Authorization", authHeader)
+	}
 }
