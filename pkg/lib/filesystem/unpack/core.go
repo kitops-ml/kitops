@@ -106,8 +106,11 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		}
 		output.Logf(output.LogLevelWarn, "Could not get Kitfile: %s", err)
 		output.Logf(output.LogLevelWarn, "Functionality may be impacted")
-		// TODO: we can probably _also_ handle getting the model-spec config and using it here
-		genconfig, err := artifact.GenerateKitfileForModelPack(manifest)
+		modelConfig, err := util.GetModelPackConfig(ctx, store, manifest.Config)
+		if err != nil {
+			return err
+		}
+		genconfig, err := artifact.GenerateKitfileForModelPack(manifest, modelConfig)
 		if err != nil {
 			return fmt.Errorf("could not process manifest: %w", err)
 		}

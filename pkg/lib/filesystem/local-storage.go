@@ -146,7 +146,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 				return nil, nil, err
 			}
 			layers = append(layers, layer)
-			diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+			diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 			kitfile.Model.LayerInfo = layerInfo
 		}
 		for idx, part := range kitfile.Model.Parts {
@@ -156,7 +156,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 				return nil, nil, err
 			}
 			layers = append(layers, layer)
-			diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+			diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 			kitfile.Model.Parts[idx].LayerInfo = layerInfo
 		}
 	}
@@ -167,7 +167,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 			return nil, nil, err
 		}
 		layers = append(layers, layer)
-		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 		kitfile.Code[idx].LayerInfo = layerInfo
 	}
 	for idx, dataset := range kitfile.DataSets {
@@ -191,7 +191,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 			return nil, nil, err
 		}
 		layers = append(layers, layer)
-		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 		kitfile.DataSets[idx].LayerInfo = layerInfo
 	}
 	for idx, docs := range kitfile.Docs {
@@ -201,7 +201,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 			return nil, nil, err
 		}
 		layers = append(layers, layer)
-		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 		kitfile.Docs[idx].LayerInfo = layerInfo
 	}
 	for idx, prompt := range kitfile.Prompts {
@@ -216,7 +216,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		}
 		layer.Annotations[constants.LayerSubtypeAnnotation] = constants.LayerSubtypePrompt
 		layers = append(layers, layer)
-		diffIDs = append(diffIDs, digest.FromString(layerInfo.DiffId))
+		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 		kitfile.Prompts[idx].LayerInfo = layerInfo
 	}
 

@@ -177,15 +177,38 @@ func FormatRepositoryForDisplay(repo string) string {
 
 // GenerateKitfileForModelPack generates a Kitfile for a manifest that otherwise does not contain one.
 // This is a minimal Kitfile suitable only for unpacking, containing a path for every layer. If a layer
-// does not use the 'org.cncf.model.filepath' annotation, an error is returned.
-func GenerateKitfileForModelPack(manifest *ocispec.Manifest) (*KitFile, error) {
+// does not use the 'org.cncf.model.filepath' annotation, an error is returned. If an optional modelpack
+// config is passed in, it will be used to fill DiffIDs within the generated Kitfile; otherwise the DiffID
+// fields in the generated Kitfile will be empty.
+//
+// Note: ModelPacks and ModelKits are not entirely equivalent specs; for the most part ModelKits support
+// a superset of ModelPack configurations, but ModelPacks do support multiple model weight layers whereas
+// ModelKits only support one (with the rest being modelparts). When generating a Kitfile for a ModelPack,
+// the first model weights layer is saved as the Kitfile's model, with additional weight layers being added
+// as modelparts, interspersed with the ModelPack's model config layers.
+func GenerateKitfileForModelPack(manifest *ocispec.Manifest, optionalConfig *modelspecv1.Model) (*KitFile, error) {
 	if format, err := mediatype.ModelFormatForManifest(manifest); err != nil || format != mediatype.ModelPackFormat {
 		return nil, fmt.Errorf("not a modelpack artifact")
 	}
-	kf := &KitFile{
-		Model: &Model{},
+	if optionalConfig != nil && len(manifest.Layers) != len(optionalConfig.ModelFS.DiffIDs) {
+		return nil, fmt.Errorf("invalid ModelPack config: number of layers does not match DiffIDs")
 	}
-	for _, desc := range manifest.Layers {
+
+	layerInfoForDescriptor := func(desc ocispec.Descriptor, layerIdx int) *LayerInfo {
+		info := &LayerInfo{
+			Digest: desc.Digest.String(),
+		}
+		if optionalConfig != nil {
+			info.DiffId = optionalConfig.ModelFS.DiffIDs[layerIdx].String()
+		}
+		return info
+	}
+
+	kf := &KitFile{
+		ManifestVersion: "1.0.0",
+		Model:           &Model{},
+	}
+	for layerIdx, desc := range manifest.Layers {
 		if desc.Annotations == nil || desc.Annotations[modelspecv1.AnnotationFilepath] == "" {
 			return nil, fmt.Errorf("unknown file path for layer: no %s annotation", modelspecv1.AnnotationFilepath)
 		}
@@ -194,20 +217,27 @@ func GenerateKitfileForModelPack(manifest *ocispec.Manifest) (*KitFile, error) {
 		if err != nil {
 			return nil, err
 		}
+		layerInfo := layerInfoForDescriptor(desc, layerIdx)
 		switch mt.Base() {
 		case mediatype.ModelBaseType:
-			kf.Model.Path = filepath
+			if kf.Model.Path == "" {
+				kf.Model.Path = filepath
+				kf.Model.LayerInfo = layerInfo
+			} else {
+				kf.Model.Parts = append(kf.Model.Parts, ModelPart{Path: filepath, LayerInfo: layerInfo})
+			}
 		case mediatype.ModelPartBaseType:
-			kf.Model.Parts = append(kf.Model.Parts, ModelPart{Path: filepath})
+			kf.Model.Parts = append(kf.Model.Parts, ModelPart{Path: filepath, LayerInfo: layerInfo})
 		case mediatype.CodeBaseType:
-			kf.Code = append(kf.Code, Code{Path: filepath})
+			kf.Code = append(kf.Code, Code{Path: filepath, LayerInfo: layerInfo})
 		case mediatype.DatasetBaseType:
-			kf.DataSets = append(kf.DataSets, DataSet{Path: filepath})
+			kf.DataSets = append(kf.DataSets, DataSet{Path: filepath, LayerInfo: layerInfo})
 		case mediatype.DocsBaseType:
-			kf.Docs = append(kf.Docs, Docs{Path: filepath})
+			kf.Docs = append(kf.Docs, Docs{Path: filepath, LayerInfo: layerInfo})
 		default:
 			return nil, fmt.Errorf("unknown layer type: %s", mt)
 		}
 	}
+
 	return kf, nil
 }
