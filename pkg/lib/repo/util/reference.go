@@ -26,6 +26,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
@@ -84,7 +85,6 @@ func GetKitfileForManifest(ctx context.Context, store oras.ReadOnlyTarget, manif
 	case mediatype.KitFormat:
 		return GetConfig(ctx, store, manifest.Config)
 	case mediatype.ModelPackFormat:
-		// TODO: can we (try to) generate a Kitfile from a ModelPack manifest?
 		if manifest.Annotations == nil || manifest.Annotations[constants.KitfileJsonAnnotation] == "" {
 			return nil, ErrNoKitfile
 		}
@@ -146,4 +146,22 @@ func ResolveManifestAndConfig(ctx context.Context, store oras.Target, reference 
 		return desc, manifest, nil, err
 	}
 	return desc, manifest, config, nil
+}
+
+func GetModelPackConfig(ctx context.Context, store oras.ReadOnlyTarget, configDesc ocispec.Descriptor) (*modelspecv1.Model, error) {
+	if configDesc.MediaType == "" || configDesc.MediaType == ocispec.MediaTypeEmptyJSON {
+		return nil, fmt.Errorf("manifest does not have a config section")
+	}
+	if configDesc.MediaType != mediatype.ModelPackConfigMediaType.String() {
+		return nil, fmt.Errorf("configuration descriptor does not describe a ModelPack config")
+	}
+	configBytes, err := content.FetchAll(ctx, store, configDesc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read modelpack config: %w", err)
+	}
+	config := &modelspecv1.Model{}
+	if err := json.Unmarshal(configBytes, config); err != nil {
+		return nil, fmt.Errorf("failed to parse modelpack config: %w", err)
+	}
+	return config, nil
 }
