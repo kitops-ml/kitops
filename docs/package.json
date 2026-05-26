@@ -8,7 +8,7 @@
     "tailwindcss": "^4.3.0",
     "vite-svg-loader": "^5.1.1",
     "vitepress": "1.6.4",
-    "vitepress-plugin-llms": "^1.12.2",
+    "vitepress-plugin-llms": "^1.13.0",
     "vue": "^3.5.34",
     "vue-turnstile": "^1.0.11"
   },
