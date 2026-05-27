@@ -176,3 +176,306 @@ func reference(reg, repo, ref string) *registry.Reference {
 		Reference:  ref,
 	}
 }
+
+func TestKitfileHasLayerInfo(t *testing.T) {
+	full := func() *LayerInfo { return &LayerInfo{Digest: "sha256:aaa", DiffId: "sha256:bbb"} }
+	digestOnly := func() *LayerInfo { return &LayerInfo{Digest: "sha256:aaa"} }
+	diffIDOnly := func() *LayerInfo { return &LayerInfo{DiffId: "sha256:bbb"} }
+	emptyInfo := func() *LayerInfo { return &LayerInfo{} }
+
+	tests := []struct {
+		name       string
+		kitfile    *KitFile
+		wantDigest bool
+		wantDiffID bool
+		wantErr    bool
+		errRegexp  string
+	}{
+		{
+			name:       "empty kitfile has no layers (vacuous true)",
+			kitfile:    &KitFile{},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			name: "model with nil LayerInfo",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin"},
+			},
+			wantDigest: false,
+			wantDiffID: false,
+		},
+		{
+			name: "model with empty LayerInfo struct",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: emptyInfo()},
+			},
+			wantDigest: false,
+			wantDiffID: false,
+		},
+		{
+			name: "model with full LayerInfo",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: full()},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			name: "model with digest only",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: digestOnly()},
+			},
+			wantDigest: true,
+			wantDiffID: false,
+		},
+		{
+			name: "model with diffID only",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: diffIDOnly()},
+			},
+			wantDigest: false,
+			wantDiffID: true,
+		},
+		{
+			name: "all layer types with full LayerInfo",
+			kitfile: &KitFile{
+				Model: &Model{
+					Path:      "model.bin",
+					LayerInfo: full(),
+					Parts: []ModelPart{
+						{Path: "part1.bin", LayerInfo: full()},
+						{Path: "part2.bin", LayerInfo: full()},
+					},
+				},
+				Code:     []Code{{Path: "code", LayerInfo: full()}},
+				DataSets: []DataSet{{Path: "data", LayerInfo: full()}},
+				Docs:     []Docs{{Path: "docs", LayerInfo: full()}},
+				Prompts:  []Prompt{{Path: "prompt", LayerInfo: full()}},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			name: "all layer types with digest only",
+			kitfile: &KitFile{
+				Model: &Model{
+					Path:      "model.bin",
+					LayerInfo: digestOnly(),
+					Parts:     []ModelPart{{Path: "part1.bin", LayerInfo: digestOnly()}},
+				},
+				Code:     []Code{{Path: "code", LayerInfo: digestOnly()}},
+				DataSets: []DataSet{{Path: "data", LayerInfo: digestOnly()}},
+				Docs:     []Docs{{Path: "docs", LayerInfo: digestOnly()}},
+				Prompts:  []Prompt{{Path: "prompt", LayerInfo: digestOnly()}},
+			},
+			wantDigest: true,
+			wantDiffID: false,
+		},
+		{
+			name: "all layer types with no LayerInfo",
+			kitfile: &KitFile{
+				Model: &Model{
+					Path:  "model.bin",
+					Parts: []ModelPart{{Path: "part1.bin"}},
+				},
+				Code:     []Code{{Path: "code"}},
+				DataSets: []DataSet{{Path: "data"}},
+				Docs:     []Docs{{Path: "docs"}},
+				Prompts:  []Prompt{{Path: "prompt"}},
+			},
+			wantDigest: false,
+			wantDiffID: false,
+		},
+		{
+			name: "model has digest but model part does not",
+			kitfile: &KitFile{
+				Model: &Model{
+					Path:      "model.bin",
+					LayerInfo: digestOnly(),
+					Parts:     []ModelPart{{Path: "part1.bin"}},
+				},
+			},
+			wantErr:   true,
+			errRegexp: "invalid digests",
+		},
+		{
+			name: "model has full info but a dataset has only diffID",
+			kitfile: &KitFile{
+				Model:    &Model{Path: "model.bin", LayerInfo: full()},
+				DataSets: []DataSet{{Path: "data", LayerInfo: diffIDOnly()}},
+			},
+			wantErr:   true,
+			errRegexp: "invalid digests",
+		},
+		{
+			name: "model has full info but a code layer has only digest",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: full()},
+				Code:  []Code{{Path: "code", LayerInfo: digestOnly()}},
+			},
+			wantErr:   true,
+			errRegexp: "invalid diffIDs",
+		},
+		{
+			name: "docs layer missing LayerInfo while others have it",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: full()},
+				Docs:  []Docs{{Path: "docs"}},
+			},
+			wantErr:   true,
+			errRegexp: "invalid digests",
+		},
+		{
+			name: "prompt layer missing LayerInfo while others have it",
+			kitfile: &KitFile{
+				Model:   &Model{Path: "model.bin", LayerInfo: full()},
+				Prompts: []Prompt{{Path: "prompt"}},
+			},
+			wantErr:   true,
+			errRegexp: "invalid digests",
+		},
+		{
+			name: "nil model with consistent other layers",
+			kitfile: &KitFile{
+				Code:     []Code{{Path: "code", LayerInfo: full()}},
+				DataSets: []DataSet{{Path: "data", LayerInfo: full()}},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			name: "model parts inconsistent with each other",
+			kitfile: &KitFile{
+				Model: &Model{
+					Path:      "model.bin",
+					LayerInfo: full(),
+					Parts: []ModelPart{
+						{Path: "part1.bin", LayerInfo: full()},
+						{Path: "part2.bin", LayerInfo: digestOnly()},
+					},
+				},
+			},
+			wantErr:   true,
+			errRegexp: "invalid diffIDs",
+		},
+		{
+			// Remote model references don't carry their own layer (they're resolved
+			// at unpack time) so the missing LayerInfo must not be treated as a gap.
+			name: "model is remote ModelKit reference with no LayerInfo",
+			kitfile: &KitFile{
+				Model: &Model{Path: "registry.io/myorg/model:v1"},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			name: "remote ModelKit model alongside local layers with full LayerInfo",
+			kitfile: &KitFile{
+				Model:    &Model{Path: "registry.io/myorg/model:v1"},
+				Code:     []Code{{Path: "code", LayerInfo: full()}},
+				DataSets: []DataSet{{Path: "data", LayerInfo: full()}},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			name: "remote ModelKit model with parts that have full LayerInfo",
+			kitfile: &KitFile{
+				Model: &Model{
+					Path: "registry.io/myorg/model:v1",
+					Parts: []ModelPart{
+						{Path: "part1.bin", LayerInfo: full()},
+					},
+				},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			// S3-backed datasets are downloaded at unpack time; the dataset entry
+			// itself has no layer in the manifest, so missing LayerInfo is expected.
+			name: "dataset with S3 RemotePath and no LayerInfo",
+			kitfile: &KitFile{
+				DataSets: []DataSet{
+					{Path: "data", RemotePath: "s3://bucket/key", RemoteHash: "sha256:abc"},
+				},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			// ModelKit-referenced datasets are resolved at unpack time, same as above.
+			name: "dataset with ModelKit RemotePath and no LayerInfo",
+			kitfile: &KitFile{
+				DataSets: []DataSet{
+					{Path: "data", RemotePath: "registry.io/myorg/dataset:v1"},
+				},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			// Local model with full LayerInfo coexists with remote datasets that
+			// (correctly) carry no LayerInfo — the remotes are skipped, so the
+			// consistency check sees only the model and succeeds.
+			name: "local model with remote S3 and ModelKit datasets",
+			kitfile: &KitFile{
+				Model: &Model{Path: "model.bin", LayerInfo: full()},
+				DataSets: []DataSet{
+					{Path: "s3data", RemotePath: "s3://bucket/key", RemoteHash: "sha256:abc"},
+					{Path: "refdata", RemotePath: "registry.io/myorg/dataset:v1"},
+				},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			// Mixed: one local dataset (with LayerInfo) plus a remote dataset (no
+			// LayerInfo). The remote one is skipped; the local one is consistent.
+			name: "local dataset with LayerInfo plus remote dataset without",
+			kitfile: &KitFile{
+				DataSets: []DataSet{
+					{Path: "local", LayerInfo: full()},
+					{Path: "remote", RemotePath: "s3://bucket/key", RemoteHash: "sha256:abc"},
+				},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+		{
+			// Fully remote Kitfile: model is a reference, all datasets remote, no
+			// other layers. Nothing is added to the consistency check, so the
+			// vacuous-true result is returned.
+			name: "fully remote Kitfile yields vacuous true",
+			kitfile: &KitFile{
+				Model: &Model{Path: "registry.io/myorg/model:v1"},
+				DataSets: []DataSet{
+					{Path: "data", RemotePath: "s3://bucket/key", RemoteHash: "sha256:abc"},
+				},
+			},
+			wantDigest: true,
+			wantDiffID: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotDigest, gotDiffID, err := KitfileHasLayerInfo(tt.kitfile)
+			if tt.wantErr {
+				if !assert.Error(t, err) {
+					return
+				}
+				assert.Regexp(t, tt.errRegexp, err.Error())
+				assert.False(t, gotDigest)
+				assert.False(t, gotDiffID)
+				return
+			}
+			if !assert.NoError(t, err) {
+				return
+			}
+			assert.Equal(t, tt.wantDigest, gotDigest, "hasDigest")
+			assert.Equal(t, tt.wantDiffID, gotDiffID, "hasDiffID")
+		})
+	}
+}

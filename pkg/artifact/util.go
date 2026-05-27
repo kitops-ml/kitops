@@ -19,6 +19,7 @@ package artifact
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
@@ -240,4 +241,61 @@ func GenerateKitfileForModelPack(manifest *ocispec.Manifest, optionalConfig *mod
 	}
 
 	return kf, nil
+}
+
+// KitfileHasLayerInfo checks if a given Kitfile contains LayerInfo for every layer. Older
+// Kitfiles do not contain LayerInfo fields, and must be handled differently. Returns an error
+// if LayerInfo is present but not on all fields.
+func KitfileHasLayerInfo(kitfile *KitFile) (hasDigest, hasDiffID bool, err error) {
+	// For each layer, store whether digest + diffID are present; these lists should either be
+	// all true or all false, otherwise the Kitfile is invalid
+	var validateDigest []bool
+	var validateDiffID []bool
+
+	checkLayerInfo := func(info *LayerInfo) {
+		if info == nil {
+			validateDigest = append(validateDigest, false)
+			validateDiffID = append(validateDiffID, false)
+		} else {
+			validateDigest = append(validateDigest, info.Digest != "")
+			validateDiffID = append(validateDiffID, info.DiffId != "")
+		}
+	}
+
+	if kitfile.Model != nil {
+		if kitfile.Model.Path != "" && !IsModelKitReference(kitfile.Model.Path) {
+			checkLayerInfo(kitfile.Model.LayerInfo)
+		}
+		for _, part := range kitfile.Model.Parts {
+			checkLayerInfo(part.LayerInfo)
+		}
+	}
+	for _, dataset := range kitfile.DataSets {
+		if dataset.RemotePath != "" {
+			continue
+		}
+		checkLayerInfo(dataset.LayerInfo)
+	}
+	for _, code := range kitfile.Code {
+		checkLayerInfo(code.LayerInfo)
+	}
+	for _, doc := range kitfile.Docs {
+		checkLayerInfo(doc.LayerInfo)
+	}
+	for _, prompt := range kitfile.Prompts {
+		checkLayerInfo(prompt.LayerInfo)
+	}
+
+	allDigests := !slices.Contains(validateDigest, false)
+	noDigests := !slices.Contains(validateDigest, true)
+	if !allDigests && !noDigests {
+		return false, false, fmt.Errorf("invalid digests in layerinfo in Kitfile")
+	}
+	allDiffIds := !slices.Contains(validateDiffID, false)
+	noDiffIds := !slices.Contains(validateDiffID, true)
+	if !allDiffIds && !noDiffIds {
+		return false, false, fmt.Errorf("invalid diffIDs in layerinfo in Kitfile")
+	}
+
+	return allDigests, allDiffIds, nil
 }

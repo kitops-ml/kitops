@@ -33,13 +33,12 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/external/s3api"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
-	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
+	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
-	"github.com/kitops-ml/kitops/pkg/lib/skill"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2/content"
+	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -86,26 +85,15 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 		return fmt.Errorf("failed to find reference %s: %s", ref, err)
 	}
-	manifestDesc, err := store.Resolve(ctx, ref.Reference)
-	if err != nil {
-		return fmt.Errorf("failed to resolve reference: %w", err)
+
+	_, manifest, kitfile, err := util.ResolveManifestAndConfig(ctx, store, ref.Reference)
+	// If error is ErrNoKitfile, the manifest has been retrieved
+	if err != nil && !errors.Is(err, util.ErrNoKitfile) {
+		return err
 	}
 
-	manifest, err := util.GetManifest(ctx, store, manifestDesc)
-	if err != nil {
-		return fmt.Errorf("failed to read manifest: %s", err)
-	}
-	config, err := util.GetKitfileForManifest(ctx, store, manifest)
-
-	// A flag to determine whether we should print a warning about remote datasets when opts.IncludeRemote is false
-	containsRemoteDatasets := false
-
-	if err != nil {
-		if !errors.Is(err, util.ErrNoKitfile) {
-			return err
-		}
-		output.Logf(output.LogLevelWarn, "Could not get Kitfile: %s", err)
-		output.Logf(output.LogLevelWarn, "Functionality may be impacted")
+	if kitfile == nil {
+		output.Logf(output.LogLevelWarn, "Artifact does not include Kitfile: functionality may be impacted")
 		modelConfig, err := util.GetModelPackConfig(ctx, store, manifest.Config)
 		if err != nil {
 			return err
@@ -114,201 +102,94 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		if err != nil {
 			return fmt.Errorf("could not process manifest: %w", err)
 		}
-		config = genconfig
+		kitfile = genconfig
 	} else {
-		// These steps only make sense if we have a legitimate Kitfile available
-		if config.Model != nil && artifact.IsModelKitReference(config.Model.Path) {
-			modelRef, _, err := artifact.ParseReference(config.Model.Path)
-			if err != nil {
-				return fmt.Errorf("failed to parse remote model reference %s: %w", config.Model.Path, err)
-			}
-			output.Infof("Unpacking referenced ModelKit %s", config.Model.Path)
-			if err := unpackRemote(ctx, modelRef, "", kitfile.BaseTypeModel, opts, visitedRefs); err != nil {
-				return err
-			}
-		}
-		for _, dataset := range config.DataSets {
-			if !artifact.IsModelKitReference(dataset.RemotePath) {
-				continue
-			}
-			if !kitfile.LayerMatchesAnyFilter(dataset, opts.FilterConfs) {
-				continue
-			}
-			// The docstring for the "include remote" option states that it is for remote datasets. This was originally
-			// for S3 remote datasets only but it applies to remote datasets referenced by a ModelKit reference too.
-			if opts.IncludeRemote {
-				datasetRef, _, err := artifact.ParseReference(dataset.RemotePath)
-				if err != nil {
-					return fmt.Errorf("failed to parse remote dataset reference %s: %w", dataset.RemotePath, err)
-				}
-				output.Infof("Unpacking referenced dataset ModelKit %s to %s", dataset.RemotePath, dataset.Path)
-
-				if err := unpackRemote(ctx, datasetRef, dataset.Path, kitfile.BaseTypeDatasets, opts, visitedRefs); err != nil {
-					return err
-				}
-			}
-			containsRemoteDatasets = true
-		}
-		if kitfile.LayerMatchesAnyFilter(config, opts.FilterConfs) {
-			if err := unpackConfig(config, opts.UnpackDir, opts.Overwrite); err != nil {
+		if kfutils.LayerMatchesAnyFilter(kitfile, opts.FilterConfs) {
+			if err := unpackConfig(kitfile, opts.UnpackDir, opts.Overwrite); err != nil {
 				return err
 			}
 		}
 	}
 
-	// Since there might be multiple datasets, etc. we need to synchronously iterate
-	// through the config's relevant field to get the correct path for unpacking
-	// We need to support older ModelKits (that were packed without diffIDs and digest
-	// in the config) for now, so we need to continue using the old structure.
-	var modelPartIdx, codeIdx, datasetIdx, docsIdx, promptIdx int
-	didUnpackModel := false
-	for _, layerDesc := range manifest.Layers {
-		// This variable supports older-format tar layers (that don't include the
-		// layer path). For current ModelKits, this will be empty
-		var relPath string
+	if err := handleRemoteData(ctx, kitfile, opts, visitedRefs); err != nil {
+		return err
+	}
 
-		mediaType, err := mediatype.ParseMediaType(layerDesc.MediaType)
-		if err != nil {
-			// We may encounter unknown media types while unpacking ModelPacks, e.g. we include Kitfiles
-			// which are not ModelPack mediatypes
-			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
-			continue
-		}
+	hasDigest, _, err := artifact.KitfileHasLayerInfo(kitfile)
+	if err != nil {
+		return err
+	}
+	if !hasDigest {
+		return legacyUnpackLayers(ctx, store, manifest, kitfile, opts)
+	}
 
-		// Grab path + layer info from the config object corresponding to this layer
-		var layerPath string
-		var layerInfo *artifact.LayerInfo
-
-		// Note: ModelPack artifacts may have multiple layers with the basetype for models (i.e. multiple model.weight layers),
-		// if they have been generated by other tooling (i.e. not by Kit). To support unpacking such artifacts, the generated
-		// Kitfile for that artifact will store model weight layers after the first as model parts (which normally correspond)
-		// to the model.config ModelPack mediatype). After the first model layer has been unpacked, we need to look at modelparts
-		// for additional layers.
-		switch mediaType.Base() {
-		case mediatype.ModelBaseType:
-			if !didUnpackModel {
-				entry := config.Model
-				didUnpackModel = true
-				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-					continue
-				}
-				layerInfo, layerPath = entry.LayerInfo, entry.Path
-				output.Infof("Unpacking model %s to %s", config.Model.Name, config.Model.Path)
-				break
-			}
-			// This is not the first ModelBaseType layer we've seen, need to fallthrough and find it in modelparts
-			fallthrough
-
-		case mediatype.ModelPartBaseType:
-			entry := config.Model.Parts[modelPartIdx]
-			modelPartIdx += 1
-			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-				continue
-			}
-			layerInfo, layerPath = entry.LayerInfo, entry.Path
-			output.Infof("Unpacking model part %s to %s", entry.Name, entry.Path)
-
-		case mediatype.CodeBaseType:
-			// Code-type layers may be either regular code or prompts
-			if layerDesc.Annotations[constants.LayerSubtypeAnnotation] == constants.LayerSubtypePrompt {
-				entry := config.Prompts[promptIdx]
-				promptIdx += 1
-				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-					continue
-				}
-				layerInfo, layerPath = entry.LayerInfo, entry.Path
-				output.Infof("Unpacking prompt to %s", entry.Path)
-			} else {
-				entry := config.Code[codeIdx]
-				codeIdx += 1
-				if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-					continue
-				}
-				layerInfo, layerPath = entry.LayerInfo, entry.Path
-				output.Infof("Unpacking code to %s", entry.Path)
-			}
-
-		case mediatype.DatasetBaseType:
-			// Since some datasets may be remote, we need to search the Kitfile for the next non-remote dataset
-			var entry *artifact.DataSet
-			for idx := datasetIdx; idx < len(config.DataSets); idx++ {
-				dataset := config.DataSets[idx]
-				if dataset.RemotePath != "" {
-					continue
-				}
-				entry = &dataset
-				datasetIdx = idx + 1
-				break
-			}
-			if entry == nil {
-				continue
-			}
-			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-				continue
-			}
-			layerInfo, layerPath = entry.LayerInfo, entry.Path
-			output.Infof("Unpacking dataset %s to %s", entry.Name, entry.Path)
-
-		case mediatype.DocsBaseType:
-			entry := config.Docs[docsIdx]
-			docsIdx += 1
-			if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-				continue
-			}
-			layerInfo, layerPath = entry.LayerInfo, entry.Path
-			output.Infof("Unpacking docs to %s", entry.Path)
-
-		case mediatype.ConfigBaseType:
-			// ModelPacks may contain a Kitfile in their layers, which is unpacked separately
-			continue
-
-		case mediatype.UnknownBaseType:
-			// Should never happen as we check earlier, but for completeness' sake:
-			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping unpack", layerDesc.MediaType)
-		}
-
-		if layerInfo != nil {
-			if layerInfo.Digest != layerDesc.Digest.String() {
-				return fmt.Errorf("digest in config and manifest do not match in %s", mediaType.UserString())
-			}
-			relPath = ""
-		} else {
-			_, relPath, err = filesystem.VerifySubpath(opts.UnpackDir, layerPath)
-			if err != nil {
-				return fmt.Errorf("error resolving %s path: %w", mediaType.UserString(), err)
-			}
-		}
-
-		// TODO: handle DiffIDs when unpacking layers
-		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression()); err != nil {
+	steps, err := generateUnpackPlan(manifest, kitfile, opts.FilterConfs)
+	if err != nil {
+		return fmt.Errorf("failed to plan unpack: %w", err)
+	}
+	for _, step := range steps {
+		output.Infoln(step.userMessage)
+		if err := unpackLayer(ctx, store, step.desc, "", opts.Overwrite, opts.IgnoreExisting, step.mediatype.Compression()); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
+	return nil
+}
 
-	// Handle remotely stored files: first build a list so we can show a warning if remote files are skipped
-	remoteFiles := map[string]s3api.S3ObjectReference{}
-	for _, dataset := range config.DataSets {
-		if dataset.RemotePath == "" || !kitfile.LayerMatchesAnyFilter(dataset, opts.FilterConfs) {
-			continue
-		}
-		// ModelKit references are handled separately (via unpackRemote rooted at dataset.Path).
-		if artifact.IsModelKitReference(dataset.RemotePath) {
-			continue
-		}
-		ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
+func handleRemoteData(ctx context.Context, config *artifact.KitFile, opts *UnpackOptions, visitedRefs []string) error {
+	if config.Model != nil && artifact.IsModelKitReference(config.Model.Path) {
+		modelRef, _, err := artifact.ParseReference(config.Model.Path)
 		if err != nil {
-			return fmt.Errorf("failed to parse S3 object reference for dataset %s: %w", dataset.Path, err)
+			return fmt.Errorf("failed to parse remote model reference %s: %w", config.Model.Path, err)
 		}
-		remoteFiles[dataset.Path] = *ref
-		containsRemoteDatasets = true
+		output.Infof("Unpacking referenced ModelKit %s", config.Model.Path)
+		if err := unpackRemote(ctx, modelRef, "", kfutils.BaseTypeModel, opts, visitedRefs); err != nil {
+			return err
+		}
 	}
 
-	if len(remoteFiles) > 0 && opts.IncludeRemote {
+	// Build lists of remote references first to allow is to print a warning if remotes are present but skipped in options.
+	remoteS3Datasets := map[string]s3api.S3ObjectReference{}
+	remoteModelKitDatasets := map[string]*registry.Reference{}
+	for _, dataset := range config.DataSets {
+		if dataset.RemotePath == "" || !kfutils.LayerMatchesAnyFilter(dataset, opts.FilterConfs) {
+			continue
+		}
+		if artifact.IsModelKitReference(dataset.RemotePath) {
+			datasetRef, _, err := artifact.ParseReference(dataset.RemotePath)
+			if err != nil {
+				return fmt.Errorf("failed to parse remote dataset reference %s: %w", dataset.RemotePath, err)
+			}
+			remoteModelKitDatasets[dataset.Path] = datasetRef
+		} else {
+			ref, err := s3api.ParseS3ObjectReference(dataset.RemotePath, dataset.RemoteHash)
+			if err != nil {
+				return fmt.Errorf("failed to parse S3 object reference for dataset %s: %w", dataset.Path, err)
+			}
+			remoteS3Datasets[dataset.Path] = *ref
+		}
+	}
+
+	// The docstring for the "include remote" option states that it is for remote datasets. This was originally
+	// for S3 remote datasets only but it applies to remote datasets referenced by a ModelKit reference too.
+	if !opts.IncludeRemote && (len(remoteModelKitDatasets) > 0 || len(remoteS3Datasets) > 0) {
+		output.Logf(output.LogLevelWarn, "ModelKit contains remote datasets. To unpack, specify the --include-remote flag")
+		return nil
+	}
+
+	for path, remoteRef := range remoteModelKitDatasets {
+		output.Infof("Unpacking referenced dataset ModelKit %s to %s", remoteRef, path)
+		if err := unpackRemote(ctx, remoteRef, path, kfutils.BaseTypeDatasets, opts, visitedRefs); err != nil {
+			return err
+		}
+	}
+
+	if len(remoteS3Datasets) > 0 {
 		client, err := s3api.SetUpClient(ctx)
 		if err != nil {
 			return err
 		}
-		for path, s3Ref := range remoteFiles {
+		for path, s3Ref := range remoteS3Datasets {
 			_, relPath, err := filesystem.VerifySubpath(opts.UnpackDir, path)
 			if err != nil {
 				return fmt.Errorf("error verifying path %s for remote reference: %w", path, err)
@@ -339,102 +220,6 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 		}
 	}
 
-	output.Debugf("Unpacked %d model part layers", modelPartIdx)
-	output.Debugf("Unpacked %d code layers", codeIdx)
-	output.Debugf("Unpacked %d dataset layers", datasetIdx)
-	output.Debugf("Unpacked %d docs layers", docsIdx)
-	output.Debugf("Unpacked %d prompt layers", promptIdx)
-
-	if containsRemoteDatasets && !opts.IncludeRemote {
-		output.Logf(output.LogLevelWarn, "ModelKit contains remote datasets. To unpack, specify the --include-remote flag")
-	}
-
-	return nil
-}
-
-// unpackSkill handles the --as-skill flow: prompt layers containing SKILL.md
-// are installed as agent skills and all other layer types are ignored.
-// Unlike unpackRecursive, it does not unpack the Kitfile, traverse parent
-// modelkits, or touch the filesystem outside the resolved skills directories.
-func unpackSkill(ctx context.Context, opts *UnpackOptions) error {
-	ref := opts.ModelRef
-	store, err := getStoreForRef(ctx, opts)
-	if err != nil {
-		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
-		return fmt.Errorf("failed to find reference %s: %s", ref, err)
-	}
-	manifestDesc, err := store.Resolve(ctx, ref.Reference)
-	if err != nil {
-		return fmt.Errorf("failed to resolve reference: %w", err)
-	}
-	manifest, err := util.GetManifest(ctx, store, manifestDesc)
-	if err != nil {
-		return fmt.Errorf("failed to read manifest: %s", err)
-	}
-	config, err := util.GetKitfileForManifest(ctx, store, manifest)
-	if err != nil {
-		if errors.Is(err, util.ErrNoKitfile) {
-			output.Infof("No Kitfile found in modelkit; no prompt layers to install as skills")
-			return nil
-		}
-		return err
-	}
-
-	var promptsFiltered, skillsFound, skillErrorCount, promptIdx int
-
-	for _, layerDesc := range manifest.Layers {
-		mediaType, err := mediatype.ParseMediaType(layerDesc.MediaType)
-		if err != nil {
-			output.Logf(output.LogLevelWarn, "Unknown media type %s: skipping", layerDesc.MediaType)
-			continue
-		}
-		if mediaType.Base() != mediatype.CodeBaseType {
-			continue
-		}
-		if layerDesc.Annotations[constants.LayerSubtypeAnnotation] != constants.LayerSubtypePrompt {
-			continue
-		}
-
-		entry := config.Prompts[promptIdx]
-		promptIdx++
-		if !kitfile.LayerMatchesAnyFilter(entry, opts.FilterConfs) {
-			continue
-		}
-
-		promptsFiltered++
-		result, sErr := installPromptAsSkill(ctx, store, layerDesc, entry, mediaType.Compression(), opts)
-		if sErr != nil {
-			output.Logf(output.LogLevelWarn, "Error reading prompt %q: %s", entry.Path, sErr)
-			skillErrorCount++
-			continue
-		}
-		if result == nil {
-			continue
-		}
-		skillsFound++
-		for _, ar := range result.Agents {
-			if ar.Err != nil {
-				output.Infof("Failed to install skill '%s' for %s: %s", result.SkillName, ar.Agent, ar.Err)
-				skillErrorCount++
-			} else if ar.Skipped {
-				output.Infof("Skipped skill '%s' for %s: already exists (use -o to overwrite)", result.SkillName, ar.Agent)
-			} else {
-				output.Infof("Installed skill '%s' for %s → %s", result.SkillName, ar.Agent, ar.Path)
-			}
-		}
-	}
-
-	if promptsFiltered == 0 {
-		output.Infof("No prompt layers matched the specified filters")
-		return nil
-	}
-	if skillsFound == 0 && skillErrorCount == 0 {
-		output.Infof("No agent skills found in modelkit. Prompt layers must contain a SKILL.md file to be installed as skills.")
-		return nil
-	}
-	if skillErrorCount > 0 {
-		return fmt.Errorf("failed to install %d skill(s)", skillErrorCount)
-	}
 	return nil
 }
 
@@ -442,7 +227,7 @@ func unpackSkill(ctx context.Context, opts *UnpackOptions) error {
 // single base type (e.g. "model" or "datasets"). If basePath is non-empty, the remote ModelKit
 // is unpacked into that subdirectory of the current unpack dir so the referenced ModelKit's
 // layer paths land beneath it
-func unpackRemote(ctx context.Context, ref *registry.Reference, basePath string, baseType kitfile.BaseType, optsIn *UnpackOptions, visitedRefs []string) error {
+func unpackRemote(ctx context.Context, ref *registry.Reference, basePath string, baseType kfutils.BaseType, optsIn *UnpackOptions, visitedRefs []string) error {
 	if idx := getIndex(visitedRefs, ref.String()); idx != -1 {
 		cycleStr := fmt.Sprintf("[%s=>%s]", strings.Join(visitedRefs[idx:], "=>"), ref)
 		return fmt.Errorf("found cycle in modelkit references: %s", cycleStr)
@@ -452,16 +237,16 @@ func unpackRemote(ctx context.Context, ref *registry.Reference, basePath string,
 	opts.ModelRef = ref
 	// Restrict unpack to the requested base type from the referenced ModelKit.
 	if len(opts.FilterConfs) == 0 {
-		filter := kitfile.FilterConf{
-			BaseTypes: []kitfile.BaseType{baseType},
+		filter := kfutils.FilterConf{
+			BaseTypes: []kfutils.BaseType{baseType},
 		}
-		opts.FilterConfs = []kitfile.FilterConf{filter}
+		opts.FilterConfs = []kfutils.FilterConf{filter}
 	} else {
-		var filterConfs []kitfile.FilterConf
+		var filterConfs []kfutils.FilterConf
 		for _, conf := range opts.FilterConfs {
 			if conf.MatchesBaseType(baseType) {
 				// Drop any other base types from this filter
-				conf.BaseTypes = []kitfile.BaseType{baseType}
+				conf.BaseTypes = []kfutils.BaseType{baseType}
 				filterConfs = append(filterConfs, conf)
 			}
 		}
@@ -534,7 +319,7 @@ func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) er
 	return nil
 }
 
-func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, compression mediatype.CompressionType) error {
+func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, compression mediatype.CompressionType) error {
 	rc, err := store.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed get layer %s: %w", desc.Digest, err)
@@ -570,54 +355,6 @@ func unpackLayer(ctx context.Context, store content.Storage, desc ocispec.Descri
 
 	logger.Wait()
 	return nil
-}
-
-// installPromptAsSkill fetches a prompt layer, reads it via ReadSkillLayer,
-// and installs it as a skill if it contains a SKILL.md.
-// Returns nil result (and nil error) if the layer is not a skill.
-// Returns nil result with an error if ReadSkillLayer fails.
-// Returns a result (and nil error) if installation was attempted.
-func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocispec.Descriptor, entry artifact.Prompt, compression mediatype.CompressionType, opts *UnpackOptions) (*skill.InstallResult, error) {
-	// Fast reject: the OCI descriptor carries the compressed layer size.
-	// If it already exceeds the limit, skip the download entirely.
-	if desc.Size > skill.MaxSkillLayerSize {
-		return nil, fmt.Errorf("prompt layer %q compressed size (%d bytes) exceeds maximum (%d bytes)", entry.Path, desc.Size, skill.MaxSkillLayerSize)
-	}
-
-	rc, err := store.Fetch(ctx, desc)
-	if err != nil {
-		return nil, fmt.Errorf("fetching layer: %w", err)
-	}
-	defer func() { _ = rc.Close() }()
-
-	var cr io.ReadCloser
-	switch compression {
-	case mediatype.GzipCompression, mediatype.GzipFastestCompression:
-		cr, err = gzip.NewReader(rc)
-		if err != nil {
-			return nil, fmt.Errorf("decompressing layer: %w", err)
-		}
-	case mediatype.NoneCompression:
-		cr = rc
-	default:
-		return nil, fmt.Errorf("unsupported compression type %q for prompt layer %q", compression, entry.Path)
-	}
-	defer func() { _ = cr.Close() }()
-
-	tr := tar.NewReader(cr)
-	entries, isSkill, frontmatterName, err := skill.ReadSkillLayer(tr)
-	if err != nil {
-		return nil, err
-	}
-
-	if !isSkill {
-		output.Infof("Skipping prompt %q: not a SKILL.md, cannot install as skill", entry.Path)
-		return nil, nil
-	}
-
-	skillName := skill.DeriveSkillName(frontmatterName, entry, opts.ModelRef)
-	result := skill.InstallSkill(entries, skillName, entry, opts.SkillOptions)
-	return &result, nil
 }
 
 func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
@@ -686,13 +423,4 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 		}
 	}
 	return nil
-}
-
-func getIndex(list []string, s string) int {
-	for idx, item := range list {
-		if s == item {
-			return idx
-		}
-	}
-	return -1
 }
