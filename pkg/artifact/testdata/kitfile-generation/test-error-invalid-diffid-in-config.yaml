@@ -1,0 +1,34 @@
+description: "Error returned when config has invalid DiffIDs"
+manifestJson: |
+  {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "artifactType": "application/vnd.cncf.model.manifest.v1+json",
+    "config": {
+      "mediaType": "application/vnd.cncf.model.config.v1+json",
+      "size": 300,
+      "digest": "sha256:123"
+    },
+    "layers": [
+      {
+        "mediaType": "application/vnd.cncf.model.weight.v1.raw",
+        "size": 100,
+        "digest": "sha256:aaa",
+        "annotations": {
+          "org.cncf.model.filepath": "test-file.safetensors"
+        }
+      }
+    ]
+  }
+configJson: |
+  {
+    "modelfs": {
+      "type": "layers",
+      "diffIds": [
+        "sha256:aaa1",
+        "sha256:bbb1",
+        "sha256:ccc1"
+      ]
+    }
+  }
+errRegexp: "invalid ModelPack config"

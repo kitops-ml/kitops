@@ -1,0 +1,98 @@
+description: "Additional model weight layers are handled as model parts"
+manifestJson: |
+  {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "artifactType": "application/vnd.cncf.model.manifest.v1+json",
+    "config": {
+      "mediaType": "application/vnd.cncf.model.config.v1+json",
+      "size": 300,
+      "digest": "sha256:123"
+    },
+    "layers": [
+      {
+        "mediaType": "application/vnd.cncf.model.weight.v1.raw",
+        "size": 100,
+        "digest": "sha256:aaa",
+        "annotations": {
+          "org.cncf.model.filepath": "test-file-01.safetensors"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.weight.config.v1.tar",
+        "size": 100,
+        "digest": "sha256:bbb",
+        "annotations": {
+          "org.cncf.model.filepath": "test-config.json"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.weight.config.v1.tar",
+        "size": 100,
+        "digest": "sha256:ccc",
+        "annotations": {
+          "org.cncf.model.filepath": "test-config-2.json"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.weight.v1.raw",
+        "size": 100,
+        "digest": "sha256:ddd",
+        "annotations": {
+          "org.cncf.model.filepath": "test-file-02.safetensors"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.weight.v1.raw",
+        "size": 100,
+        "digest": "sha256:eee",
+        "annotations": {
+          "org.cncf.model.filepath": "test-file-03.safetensors"
+        }
+      }
+    ]
+  }
+configJson: |
+  {
+    "modelfs": {
+      "type": "layers",
+      "diffIds": [
+        "sha256:aaa1",
+        "sha256:bbb1",
+        "sha256:ccc1",
+        "sha256:ddd1",
+        "sha256:eee1"
+      ]
+    }
+  }
+kitfileJson: |
+  {
+    "manifestVersion": "1.0.0",
+    "model": {
+      "path": "test-file-01.safetensors",
+      "digest": "sha256:aaa",
+      "diffId": "sha256:aaa1",
+      "parts": [
+        {
+          "path": "test-config.json",
+          "digest": "sha256:bbb",
+          "diffId": "sha256:bbb1"
+        },
+        {
+          "path": "test-config-2.json",
+          "digest": "sha256:ccc",
+          "diffId": "sha256:ccc1"
+        },
+        {
+          "path": "test-file-02.safetensors",
+          "digest": "sha256:ddd",
+          "diffId": "sha256:ddd1"
+        },
+        {
+          "path": "test-file-03.safetensors",
+          "digest": "sha256:eee",
+          "diffId": "sha256:eee1"
+        }
+      ]
+    }
+  }

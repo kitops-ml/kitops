@@ -1,0 +1,110 @@
+description: "Test generating a Kitfile from ModelPack manifest without a config"
+manifestJson: |
+  {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "artifactType": "application/vnd.cncf.model.manifest.v1+json",
+    "config": {
+      "mediaType": "application/vnd.cncf.model.config.v1+json",
+      "size": 300,
+      "digest": "sha256:123"
+    },
+    "layers": [
+      {
+        "mediaType": "application/vnd.cncf.model.weight.v1.raw",
+        "size": 100,
+        "digest": "sha256:aaa",
+        "annotations": {
+          "org.cncf.model.filepath": "test-file.safetensors"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.weight.config.v1.tar",
+        "size": 100,
+        "digest": "sha256:bbb",
+        "annotations": {
+          "org.cncf.model.filepath": "test-config.json"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.weight.config.v1.tar",
+        "size": 100,
+        "digest": "sha256:ccc",
+        "annotations": {
+          "org.cncf.model.filepath": "test-config-2.json"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.doc.v1.tar",
+        "size": 100,
+        "digest": "sha256:ddd",
+        "annotations": {
+          "org.cncf.model.filepath": "README.md"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.doc.v1.tar",
+        "size": 100,
+        "digest": "sha256:eee",
+        "annotations": {
+          "org.cncf.model.filepath": "LICENSE"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.dataset.v1.tar",
+        "size": 100,
+        "digest": "sha256:fff",
+        "annotations": {
+          "org.cncf.model.filepath": "datasets/dataset.parquet"
+        }
+      },
+      {
+        "mediaType": "application/vnd.cncf.model.code.v1.tar",
+        "size": 100,
+        "digest": "sha256:999",
+        "annotations": {
+          "org.cncf.model.filepath": "src/test.sh"
+        }
+      }
+    ]
+  }
+kitfileJson: |
+  {
+    "manifestVersion": "1.0.0",
+    "model": {
+      "path": "test-file.safetensors",
+      "digest": "sha256:aaa",
+      "parts": [
+        {
+          "path": "test-config.json",
+          "digest": "sha256:bbb"
+        },
+        {
+          "path": "test-config-2.json",
+          "digest": "sha256:ccc"
+        }
+      ]
+    },
+    "docs": [
+      {
+        "path": "README.md",
+        "digest": "sha256:ddd"
+      },
+      {
+        "path": "LICENSE",
+        "digest": "sha256:eee"
+      }
+    ],
+    "code": [
+      {
+        "path": "src/test.sh",
+        "digest": "sha256:999"
+      }
+    ],
+    "datasets": [
+      {
+        "path": "datasets/dataset.parquet",
+        "digest": "sha256:fff"
+      }
+    ]
+  }
