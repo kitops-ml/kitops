@@ -17,11 +17,66 @@
 package artifact
 
 import (
+	"encoding/json"
+	"fmt"
+	"path/filepath"
 	"testing"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
 	"oras.land/oras-go/v2/registry"
 )
+
+type kitfileGenerateTestCase struct {
+	Name        string
+	Description string  `yaml:"description"`
+	Manifest    string  `yaml:"manifestJson"`
+	Config      string  `yaml:"configJson"`
+	Kitfile     string  `yaml:"kitfileJson"`
+	ErrRegexp   *string `yaml:"errRegexp"`
+}
+
+func (tc kitfileGenerateTestCase) withName(name string) kitfileGenerateTestCase {
+	tc.Name = name
+	return tc
+}
+
+func TestGenerateKitfileForModelPack(t *testing.T) {
+	tests := loadAllTestCasesOrPanic[kitfileGenerateTestCase](t, filepath.Join("testdata", "kitfile-generation"))
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s (%s)", tt.Name, tt.Description), func(t *testing.T) {
+			manifest := &ocispec.Manifest{}
+			if err := json.Unmarshal([]byte(tt.Manifest), manifest); err != nil {
+				t.Fatalf("Error unmarshaling test manifest: %s", err)
+			}
+			var config *modelspecv1.Model
+			if tt.Config != "" {
+				config = &modelspecv1.Model{}
+				if err := json.Unmarshal([]byte(tt.Config), config); err != nil {
+					t.Fatalf("Error unmarshaling test config: %s", err)
+				}
+			}
+
+			actualKitfile, err := GenerateKitfileForModelPack(manifest, config)
+			if tt.ErrRegexp == nil {
+				if !assert.NoError(t, err) {
+					return
+				}
+				expectedKitfile := &KitFile{}
+				if err := json.Unmarshal([]byte(tt.Kitfile), expectedKitfile); err != nil {
+					t.Fatalf("Error unmarshalling test Kitfile: %s", err)
+				}
+				assert.Equal(t, expectedKitfile, actualKitfile)
+			} else {
+				if !assert.Error(t, err) {
+					return
+				}
+				assert.Regexp(t, *tt.ErrRegexp, err.Error())
+			}
+		})
+	}
+}
 
 func TestParseReference(t *testing.T) {
 	tests := []struct {

@@ -1,0 +1,23 @@
+description: "Error returned on unrecognized mediatype in layers"
+manifestJson: |
+  {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "artifactType": "application/vnd.cncf.model.manifest.v1+json",
+    "config": {
+      "mediaType": "application/vnd.cncf.model.config.v1+json",
+      "size": 300,
+      "digest": "sha256:123"
+    },
+    "layers": [
+      {
+        "mediaType": "application/vnd.cncf.model.unrecognized.v1.raw",
+        "size": 100,
+        "digest": "sha256:aaa",
+        "annotations": {
+          "org.cncf.model.filepath": "test-file.safetensors"
+        }
+      }
+    ]
+  }
+errRegexp: "failed to parse media type"

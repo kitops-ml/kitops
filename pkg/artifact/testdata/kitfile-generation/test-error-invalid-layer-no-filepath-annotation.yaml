@@ -1,0 +1,23 @@
+description: "Error returned for layers without filepath annotations"
+manifestJson: |
+  {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "artifactType": "application/vnd.cncf.model.manifest.v1+json",
+    "config": {
+      "mediaType": "application/vnd.cncf.model.config.v1+json",
+      "size": 300,
+      "digest": "sha256:123"
+    },
+    "layers": [
+      {
+        "mediaType": "application/vnd.cncf.model.weight.v1.raw",
+        "size": 100,
+        "digest": "sha256:aaa",
+        "annotations": {
+          "org.cncf.model.unrecognized": "test-file.safetensors"
+        }
+      }
+    ]
+  }
+errRegexp: "unknown file path for layer"
