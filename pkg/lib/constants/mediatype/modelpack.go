@@ -37,7 +37,7 @@ func (mt *modelpackMediatype) Compression() CompressionType {
 }
 
 func (mt *modelpackMediatype) Format() Format {
-	return Format(mt.format)
+	return mt.format
 }
 
 func (mt *modelpackMediatype) String() string {

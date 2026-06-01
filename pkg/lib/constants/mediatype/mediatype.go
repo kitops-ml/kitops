@@ -23,8 +23,8 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-var kitopsMediaTypeRegexp = regexp.MustCompile(`^application/vnd\.kitops\.modelkit\.(\w+)\.v1\.tar(?:\+(\w+))?$`)
-var modelPackMediaTypeRegexp = regexp.MustCompile(`^application/vnd\.cncf\.model\.(\w+(?:\.\w+)?)\.v1\.(\w+)(?:\+?(\w+))?$`)
+var kitopsMediaTypeRegexp = regexp.MustCompile(`^application/vnd\.kitops\.modelkit\.(\w+)\.v1\.(\w+)(?:\+(\w+))?$`)
+var modelPackMediaTypeRegexp = regexp.MustCompile(`^application/vnd\.cncf\.model\.(\w+(?:\.\w+)?)\.v1\.(\w+)(?:\+(\w+))?$`)
 
 type ModelFormat int
 
@@ -93,7 +93,7 @@ func ParseMediaType(s string) (MediaType, error) {
 
 	if kitopsMediaTypeRegexp.MatchString(s) {
 		match := kitopsMediaTypeRegexp.FindStringSubmatch(s)
-		base, compression := match[1], match[2]
+		base, format, compression := match[1], match[2], match[3]
 		baseType, err := ParseKitBaseType(base)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
@@ -102,9 +102,14 @@ func ParseMediaType(s string) (MediaType, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
 		}
+		formatType, err := ParseFormat(format)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse media type: %w", err)
+		}
 		return &kitopsMediaType{
 			baseType:        baseType,
 			compressionType: compressionType,
+			format:          formatType,
 		}, nil
 	} else if modelPackMediaTypeRegexp.MatchString(s) {
 		match := modelPackMediaTypeRegexp.FindStringSubmatch(s)
@@ -186,6 +191,17 @@ func ParseFormat(f string) (Format, error) {
 		return TarFormat, nil
 	}
 	return UnknownFormat, fmt.Errorf("invalid format %s", f)
+}
+
+func (f Format) String() string {
+	switch f {
+	case TarFormat:
+		return "tar"
+	case RawFormat:
+		return "raw"
+	default:
+		return "unknown"
+	}
 }
 
 func IsValidCompression(c string) error {

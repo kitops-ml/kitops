@@ -26,16 +26,36 @@ import (
 func TestParseKitopsMediaType(t *testing.T) {
 	mediaTypes := []string{
 		"application/vnd.kitops.modelkit.config.v1+json",
+		"application/vnd.kitops.modelkit.model.v1.raw",
+		"application/vnd.kitops.modelkit.model.v1.raw+gzip",
+		"application/vnd.kitops.modelkit.model.v1.raw+zstd",
 		"application/vnd.kitops.modelkit.model.v1.tar",
 		"application/vnd.kitops.modelkit.model.v1.tar+gzip",
+		"application/vnd.kitops.modelkit.model.v1.tar+zstd",
+		"application/vnd.kitops.modelkit.modelpart.v1.raw",
+		"application/vnd.kitops.modelkit.modelpart.v1.raw+gzip",
+		"application/vnd.kitops.modelkit.modelpart.v1.raw+zstd",
 		"application/vnd.kitops.modelkit.modelpart.v1.tar",
 		"application/vnd.kitops.modelkit.modelpart.v1.tar+gzip",
+		"application/vnd.kitops.modelkit.modelpart.v1.tar+zstd",
+		"application/vnd.kitops.modelkit.dataset.v1.raw",
+		"application/vnd.kitops.modelkit.dataset.v1.raw+gzip",
+		"application/vnd.kitops.modelkit.dataset.v1.raw+zstd",
 		"application/vnd.kitops.modelkit.dataset.v1.tar",
 		"application/vnd.kitops.modelkit.dataset.v1.tar+gzip",
+		"application/vnd.kitops.modelkit.dataset.v1.tar+zstd",
+		"application/vnd.kitops.modelkit.code.v1.raw",
+		"application/vnd.kitops.modelkit.code.v1.raw+gzip",
+		"application/vnd.kitops.modelkit.code.v1.raw+zstd",
 		"application/vnd.kitops.modelkit.code.v1.tar",
 		"application/vnd.kitops.modelkit.code.v1.tar+gzip",
+		"application/vnd.kitops.modelkit.code.v1.tar+zstd",
+		"application/vnd.kitops.modelkit.docs.v1.raw",
+		"application/vnd.kitops.modelkit.docs.v1.raw+gzip",
+		"application/vnd.kitops.modelkit.docs.v1.raw+zstd",
 		"application/vnd.kitops.modelkit.docs.v1.tar",
 		"application/vnd.kitops.modelkit.docs.v1.tar+gzip",
+		"application/vnd.kitops.modelkit.docs.v1.tar+zstd",
 	}
 
 	for _, mediaType := range mediaTypes {
@@ -56,7 +76,7 @@ func TestParseKitopsInvalidType(t *testing.T) {
 	}{
 		{mediaType: "application/vnd.kitops.modelkit.badbase.v1.tar", errRegexp: "invalid base type"},
 		{mediaType: "application/vnd.kitops.modelkit.model.v1.tar+badCompression", errRegexp: "invalid compression"},
-		{mediaType: "application/vnd.kitops.modelkit.model.v1.badFormat", errRegexp: "unrecognized media type"},
+		{mediaType: "application/vnd.kitops.modelkit.model.v1.badFormat", errRegexp: "invalid format"},
 	}
 
 	for _, tt := range tests {
