@@ -102,7 +102,7 @@ func ParseMediaType(s string) (MediaType, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
 		}
-		formatType, err := ParseFormat(format)
+		formatType, err := ParseLayerFormat(format)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
 		}
@@ -122,7 +122,7 @@ func ParseMediaType(s string) (MediaType, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
 		}
-		formatType, err := ParseFormat(format)
+		formatType, err := ParseLayerFormat(format)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
 		}
@@ -183,7 +183,7 @@ func (c CompressionType) String() string {
 	}
 }
 
-func ParseFormat(f string) (Format, error) {
+func ParseLayerFormat(f string) (Format, error) {
 	switch f {
 	case "raw":
 		return RawFormat, nil
@@ -205,12 +205,20 @@ func (f Format) String() string {
 }
 
 func IsValidCompression(c string) error {
-	// Not supporting zstd for now; no stable implementation available
 	switch c {
-	case "none", "gzip", "gzip-fastest":
+	case "none", "gzip", "gzip-fastest", "zstd":
 		return nil
 	default:
-		return fmt.Errorf("invalid compression type: must be one of 'none', 'gzip', or 'gzip-fastest'")
+		return fmt.Errorf("invalid compression type: must be one of 'none', 'gzip', 'gzip-fastest', or 'zstd'")
+	}
+}
+
+func IsValidLayerFormat(f string) error {
+	switch f {
+	case "tar", "raw":
+		return nil
+	default:
+		return fmt.Errorf("invalid layer format: must be either 'tar' or 'raw'")
 	}
 }
 

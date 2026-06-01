@@ -138,31 +138,6 @@ func WrapTarget(wrap oras.Target) (oras.Target, *ProgressLogger) {
 	}, &ProgressLogger{p}
 }
 
-func WrapUnpackReadCloser(size int64, rc io.ReadCloser) (io.ReadCloser, *ProgressLogger) {
-	if !progressEnabled {
-		return rc, &ProgressLogger{stdout}
-	}
-
-	p := mpb.New(
-		mpb.WithWidth(60),
-		mpb.WithRefreshRate(150*time.Millisecond),
-	)
-	bar := p.New(size,
-		barStyle(),
-		mpb.PrependDecorators(
-			decor.Name("Unpacking"),
-		),
-		mpb.AppendDecorators(
-			decor.Counters(decor.SizeB1024(0), "% .1f / % .1f"),
-			decor.Name(" | "),
-			decor.AverageSpeed(decor.SizeB1024(0), "% .2f"),
-		),
-		mpb.BarRemoveOnComplete(),
-	)
-
-	return bar.ProxyReader(rc), &ProgressLogger{p}
-}
-
 type ProgressTar struct {
 	tw  *tar.Writer
 	pw  io.WriteCloser
@@ -304,4 +279,34 @@ func (pb *DownloadProgressBar) Done() {
 	if pb.progress != nil {
 		pb.progress.Wait()
 	}
+}
+
+// WrapReadCloser wraps a io.ReadCloser so that a progress bar is printed when it is read from.
+// The wrapped io.ReadCloser calls the underlying Close() method on close, so only the returned
+// ReadCloser should be closed. If progress bars are disabled, the io.ReadCloser is returned unchanged.
+func WrapReadCloser(prependText string, size int64, rc io.ReadCloser) (io.ReadCloser, *ProgressLogger) {
+	if !progressEnabled {
+		return rc, &ProgressLogger{stdout}
+	}
+
+	p := mpb.New(
+		mpb.WithWidth(60),
+		mpb.WithRefreshRate(150*time.Millisecond),
+	)
+	bar := p.New(size,
+		barStyle(),
+		mpb.PrependDecorators(
+			decor.Name(prependText),
+		),
+		mpb.AppendDecorators(
+			decor.Counters(decor.SizeB1024(0), "% .1f / % .1f"),
+			decor.Name(" | "),
+			decor.AverageSpeed(decor.SizeB1024(0), "% .2f"),
+		),
+		mpb.BarRemoveOnComplete(),
+	)
+
+	// note: bar.ProxyReader takes an io.Reader only, but the underlying implementation
+	// will check if that Reader is a ReadCloser and call its Close method on close.
+	return bar.ProxyReader(rc), &ProgressLogger{p}
 }

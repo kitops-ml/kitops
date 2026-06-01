@@ -20,9 +20,11 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -37,6 +39,8 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	"github.com/klauspost/compress/zstd"
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
@@ -129,7 +133,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	}
 	for _, step := range steps {
 		output.Infoln(step.userMessage)
-		if err := unpackLayer(ctx, store, step.desc, "", opts.Overwrite, opts.IgnoreExisting, step.mediatype.Compression()); err != nil {
+		if err := unpackLayer(ctx, store, step.desc, "", opts.Overwrite, opts.IgnoreExisting, step.mediatype); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
@@ -319,38 +323,59 @@ func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) er
 	return nil
 }
 
-func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, compression mediatype.CompressionType) error {
+func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, mt mediatype.MediaType) error {
 	rc, err := store.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed get layer %s: %w", desc.Digest, err)
 	}
 	var logger *output.ProgressLogger
-	rc, logger = output.WrapUnpackReadCloser(desc.Size, rc)
+	rc, logger = output.WrapReadCloser("Unpacking", desc.Size, rc)
 	defer rc.Close()
 
-	var cr io.ReadCloser
-	var cErr error
-	switch compression {
+	var cr io.Reader
+	switch mt.Compression() {
 	case mediatype.GzipCompression, mediatype.GzipFastestCompression:
-		cr, cErr = gzip.NewReader(rc)
+		gzipReader, err := gzip.NewReader(rc)
+		if err != nil {
+			return fmt.Errorf("error setting up decompression: %w", err)
+		}
+		defer gzipReader.Close()
+		cr = gzipReader
+	case mediatype.ZstdCompression:
+		// Note zstd.NewReader is not an io.ReadCloser by default; the Close() method does not return an error.
+		zstdReader, err := zstd.NewReader(rc)
+		if err != nil {
+			return fmt.Errorf("error setting up decompression: %w", err)
+		}
+		defer zstdReader.Close()
+		cr = zstdReader
 	case mediatype.NoneCompression:
 		cr = rc
+	default:
+		return fmt.Errorf("unrecognized compression format in '%s'", mt.Format())
 	}
-	if cErr != nil {
-		return fmt.Errorf("error setting up decompress: %w", cErr)
-	}
-	defer cr.Close()
-	tr := tar.NewReader(cr)
 
-	if unpackPath != "" {
-		unpackPath = filepath.Dir(unpackPath)
-		if err := os.MkdirAll(unpackPath, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", unpackPath, err)
+	switch mt.Format() {
+	case mediatype.TarFormat:
+		// Legacy behaviour for ModelKits created prior to Kit v0.5.0 -- tar layers might not include
+		// all parent directories and so these need to be created. For newer ModelKits, unpackPath is empty.
+		if unpackPath != "" {
+			unpackPath = filepath.Dir(unpackPath)
+			if err := os.MkdirAll(unpackPath, 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", unpackPath, err)
+			}
 		}
-	}
 
-	if err := extractTar(tr, unpackPath, overwrite, ignoreExisting, logger); err != nil {
-		return err
+		tr := tar.NewReader(cr)
+		if err := extractTar(tr, unpackPath, overwrite, ignoreExisting, logger); err != nil {
+			return err
+		}
+	case mediatype.RawFormat:
+		if err := extractRawLayer(cr, desc, overwrite, ignoreExisting, logger); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("Unrecognized layer format in '%s'", mt.Format())
 	}
 
 	logger.Wait()
@@ -403,7 +428,7 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 				}
 			}
 			logger.Debugf("Unpacking file %s", outPath)
-			file, err := os.OpenFile(outPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, header.FileInfo().Mode())
+			file, err := os.OpenFile(outPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, header.FileInfo().Mode()&fs.ModePerm)
 			if err != nil {
 				return fmt.Errorf("failed to create file %s: %w", outPath, err)
 			}
@@ -422,5 +447,71 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 			return fmt.Errorf("unrecognized type in archive: %s", header.Name)
 		}
 	}
+	return nil
+}
+
+func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
+	targetPath := desc.Annotations[modelspecv1.AnnotationFilepath]
+	if targetPath == "" {
+		return fmt.Errorf("failed to unpack raw layer: no %s annotation", modelspecv1.AnnotationFilepath)
+	}
+	targetPath = filepath.Clean(targetPath)
+
+	if _, _, err := filesystem.VerifySubpath("", targetPath); err != nil {
+		return fmt.Errorf("illegal file path: %s: %w", targetPath, err)
+	}
+
+	var fileMeta *modelspecv1.FileMetadata
+	if fileMetaJson := desc.Annotations[modelspecv1.AnnotationFileMetadata]; fileMetaJson != "" {
+		fileMeta = &modelspecv1.FileMetadata{}
+		err := json.Unmarshal([]byte(fileMetaJson), fileMeta)
+		if err != nil {
+			return fmt.Errorf("error reading %s annotation on manifest: %w", modelspecv1.AnnotationFileMetadata, err)
+		}
+	} else {
+		output.Debugf("no %s annotation on manifest, using defaults", modelspecv1.AnnotationFileMetadata)
+	}
+
+	if fi, exists := filesystem.PathExists(targetPath); exists {
+		if ignoreExisting {
+			output.Debugf("File %s already exists; skipping", targetPath)
+			return
+		}
+		if !overwrite {
+			return fmt.Errorf("path '%s' already exists", targetPath)
+		}
+		if !fi.Mode().IsRegular() {
+			return fmt.Errorf("path '%s' already exists and is not a regular file", targetPath)
+		}
+	}
+
+	dir := filepath.Dir(targetPath)
+	if dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directories for raw layer: %w", err)
+		}
+	}
+
+	var fileMode fs.FileMode = 0644 // default: rw-r--r--
+	if fileMeta != nil {
+		fileMode = fs.FileMode(fileMeta.Mode) & fs.ModePerm
+	}
+	logger.Debugf("Unpacking file %s", targetPath)
+	file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, fileMode)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %w", targetPath, err)
+	}
+	defer func() {
+		err = errors.Join(err, file.Close())
+	}()
+
+	written, err := io.Copy(file, r)
+	if err != nil {
+		return fmt.Errorf("failed to write file %s: %w", targetPath, err)
+	}
+	if fileMeta != nil && written != fileMeta.Size {
+		return fmt.Errorf("unpacked size of file %s does not match metadata annotation", targetPath)
+	}
+
 	return nil
 }

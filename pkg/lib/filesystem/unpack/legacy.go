@@ -158,8 +158,7 @@ func legacyUnpackLayers(ctx context.Context, store oras.ReadOnlyTarget, manifest
 			}
 		}
 
-		// TODO: handle DiffIDs when unpacking layers
-		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType.Compression()); err != nil {
+		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
