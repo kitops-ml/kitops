@@ -17,9 +17,11 @@
 package filesystem
 
 import (
+	"archive/tar"
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"path/filepath"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
@@ -34,23 +36,28 @@ func callAndPrintError(f func() error, msg string) {
 	}
 }
 
-func fillDescAnnotations(desc *ocispec.Descriptor, path string, filemeta fs.FileInfo) error {
+func fillDescAnnotations(desc *ocispec.Descriptor, targetPath string, fi fs.FileInfo) error {
 	if desc.Annotations == nil {
 		desc.Annotations = map[string]string{}
 	}
-	desc.Annotations[modelspecv1.AnnotationFilepath] = path
-	if filemeta != nil {
+
+	desc.Annotations[modelspecv1.AnnotationFilepath] = filepath.ToSlash(targetPath)
+	if fi != nil {
+		tarHeader, err := tar.FileInfoHeader(fi, "")
+		if err != nil {
+			return fmt.Errorf("error processing file metadata: %w", err)
+		}
 		// This requires an idiosyncratic handling for mode bits -- Mode is _just_ the permission bits in an int32
-		// while TypeFlag is _just_ the type byte from the mode
+		// while TypeFlag is _just_ a "type" byte
 		meta := modelspecv1.FileMetadata{
-			Name:    filemeta.Name(),
-			Mode:    uint32(filemeta.Mode().Perm()),
+			Name:    fi.Name(),
+			Mode:    uint32(fi.Mode().Perm()),
 			Uid:     0,
 			Gid:     0,
-			Size:    filemeta.Size(),
-			ModTime: filemeta.ModTime(),
-			// TODO: This doesn't handle endianess; handling that raises more questions than we're ready to handle anyways.
-			Typeflag: byte(filemeta.Mode().Type() >> 24 & 0xFF),
+			Size:    fi.Size(),
+			ModTime: fi.ModTime(),
+			// It's not currently specified what this byte should be; for now use the typeflag from tar headers
+			Typeflag: tarHeader.Typeflag,
 		}
 		metabytes, err := json.Marshal(meta)
 		if err != nil {

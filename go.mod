@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.16
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.101.0
 	github.com/google/licensecheck v0.3.1
+	github.com/klauspost/compress v1.18.6
 	github.com/moby/patternmatcher v0.6.1
 	github.com/modelpack/model-spec v0.0.8-0.20251029035601-816c546bfd6b
 	github.com/opencontainers/go-digest v1.0.0

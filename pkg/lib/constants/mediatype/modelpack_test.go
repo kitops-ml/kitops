@@ -67,6 +67,9 @@ func TestParseModelPackInvalidType(t *testing.T) {
 		{mediaType: "application/vnd.cncf.model.badbase.v1.tar", errRegexp: "invalid base type"},
 		{mediaType: "application/vnd.cncf.model.weight.v1.tar+badCompression", errRegexp: "invalid compression"},
 		{mediaType: "application/vnd.cncf.model.weight.v1.badFormat", errRegexp: "invalid format"},
+		{mediaType: "application/vnd.cncf.model.weight.v1.raw+gzip", errRegexp: "model-spec does not support compression for raw layers"},
+		{mediaType: "application/vnd.cncf.model.weight.v1.raw+zstd", errRegexp: "model-spec does not support compression for raw layers"},
+		{mediaType: "application/vnd.cncf.model.dataset.v1.raw+gzip", errRegexp: "model-spec does not support compression for raw layers"},
 	}
 
 	for _, tt := range tests {
@@ -78,5 +81,4 @@ func TestParseModelPackInvalidType(t *testing.T) {
 			assert.Regexp(t, tt.errRegexp, err.Error(), "Should return error for invalid media type")
 		})
 	}
-
 }

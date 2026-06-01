@@ -45,12 +45,13 @@ func (mt *kitopsMediaType) String() string {
 		return "application/vnd.kitops.modelkit.config.v1+json"
 	}
 
-	// Don't handle non-tar formats for KitOps; we don't want to support them (yet?)
 	switch mt.compressionType {
 	case NoneCompression:
-		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.tar", mt.baseTypeString())
+		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.%s", mt.baseTypeString(), mt.format.String())
 	case GzipCompression, GzipFastestCompression:
-		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.tar+gzip", mt.baseTypeString())
+		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.%s+gzip", mt.baseTypeString(), mt.format.String())
+	case ZstdCompression:
+		return fmt.Sprintf("application/vnd.kitops.modelkit.%s.v1.%s+zstd", mt.baseTypeString(), mt.format.String())
 	}
 	// Should never happen since parsing should only result in valid values
 	return "invalid mediatype"
