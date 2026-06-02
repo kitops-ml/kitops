@@ -44,10 +44,23 @@ type SaveModelOptions struct {
 	LayerFormat mediatype.Format
 }
 
+// Validate checks that the provided set of options is valid (i.e. supported by KitOps and the relevant specs)
+func (o *SaveModelOptions) Validate() error {
+	// Model-spec does not support compression on raw layers
+	if o.ModelFormat == mediatype.ModelPackFormat && o.LayerFormat == mediatype.RawFormat && o.Compression != mediatype.NoneCompression {
+		return fmt.Errorf("compression for raw layers is not supported for ModelPack")
+	}
+	return nil
+}
+
 // SaveModel saves an *artifact.Model to the provided oras.Target, compressing layers. It attempts to block
 // modelkits that include paths that leave the base context directory, allowing only subdirectories of the root
 // context to be included in the modelkit.
 func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (*ocispec.Descriptor, error) {
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
+
 	layerDescs, diffIDs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, opts)
 	if err != nil {
 		return nil, err

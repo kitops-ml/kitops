@@ -126,6 +126,9 @@ func ParseMediaType(s string) (MediaType, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse media type: %w", err)
 		}
+		if formatType == RawFormat && compressionType != NoneCompression {
+			return nil, fmt.Errorf("invalid mediatype: model-spec does not support compression for raw layers")
+		}
 		return &modelpackMediatype{
 			baseType:        baseType,
 			compressionType: compressionType,
