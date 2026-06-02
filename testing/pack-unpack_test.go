@@ -144,6 +144,58 @@ func TestPackUnpackRaw(t *testing.T) {
 	}
 }
 
+func TestPackRawPreservesDiffID(t *testing.T) {
+	testPreflight(t)
+
+	tests := loadAllTestCasesOrPanic[packUnpackTestcase](t, filepath.Join("testdata", "pack-unpack"))
+	packArgCases := [][]string{
+		{},                                // raw, no compression
+		{"--compression", "gzip"},         // raw + gzip
+		{"--compression", "gzip-fastest"}, // raw + gzip (fastest)
+		{"--compression", "zstd"},         // raw + zstd
+	}
+
+	for _, args := range packArgCases {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(fmt.Sprintf("%s (%s)", tt.Name, tt.Description), func(t *testing.T) {
+					if slices.Contains(tt.Files, "./code/SKILL.md") {
+						// Workaround: this test depends on kit init, which handles skills separately and always stores
+						// them as directories, which is incompatible with raw layers
+						t.Skip("Skipping raw handling for skills; only tar should be used here")
+					}
+
+					// Set up temporary directory for work
+					tmpDir := setupTempDir(t)
+
+					// Set up paths to use for test
+					modelKitPath, _, contextPath := setupTestDirs(t, tmpDir)
+					t.Setenv(constants.KitopsHomeEnvVar, contextPath)
+
+					// Create files for test case
+					setupFiles(t, modelKitPath, append(tt.Files, tt.IgnoredFiles...))
+					// Generate a kitfile that lists every file individually
+					runCommand(t, expectNoError, "init", "--depth", "-1", modelKitPath)
+
+					packArgs := []string{"pack", modelKitPath, "-t", modelKitTag, "--layer-format", "raw"}
+					packArgs = append(packArgs, args...)
+					runCommand(t, expectNoError, packArgs...)
+					inspectOut := runCommand(t, expectNoError, "inspect", modelKitTag)
+
+					for _, f := range append(tt.Files, tt.IgnoredFiles...) {
+						fileDigest := getFileDigest(t, modelKitPath, f)
+						assert.Contains(t, inspectOut, fmt.Sprintf(`"diffId": "%s"`, fileDigest), "diffId in Kitfile should match file digest for raw format")
+						if len(args) == 0 {
+							// No compression case: digests should also match the file digest
+							assert.Contains(t, inspectOut, fmt.Sprintf(`"digest": "%s"`, fileDigest), "digest in Kitfile should match file digest for raw format when no compression")
+						}
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestPackReproducibility(t *testing.T) {
 	packArgCases := [][]string{
 		{},                        // default case; tar format, no compression
