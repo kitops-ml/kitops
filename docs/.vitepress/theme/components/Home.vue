@@ -57,9 +57,9 @@ onUnmounted(() => {
 <div class="mt-32 md:mt-40 px-6 md:px-12 text-center content-container">
   <div class="relative">
     <div class="bg-radial from-[--alpha(var(--color-gold)/30%)] via-[--alpha(#996931/5%)] to-transparent from-0% to-60% absolute size-full lg:size-160 top-1/2 left-1/2 -translate-1/2"></div>
-    <h1 class="z-0 relative mt-4! font-medium!">The Enterprise Registry for <br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">Models, Agents, and MCP Servers</span></h1>
-    <h2 class="z-0 relative font-bold! font-sans! text-3xl! my-6!">Secure. Portable. No Lock‑In.</h2>
-    <p class="z-0 relative h4 font-normal! text-off-white!">The only AI registry that packages and governs models, agent skills, and MCP servers as OCI artifacts — from public cloud to the most locked‑down air-gapped environments.</p>
+    <h1 class="z-0 relative mt-4! font-medium! text-[32px]! leading-[1.12]! md:text-[50px]! xl:text-[64px]!">Secure, Portable, Versioned Packages for<br><span class="bg-gradient-to-b from-gold to-[#996931] text-transparent bg-clip-text">MCPs, Skills, Agents, and Models</span></h1>
+    <h2 class="z-0 relative font-bold! font-sans! text-3xl! my-6!">No lock‑in. Works with the registry you already run.</h2>
+    <p class="z-0 relative h4 font-normal! text-off-white!">KitOps gives your whole agentic stack the same rigor you already apply to containers: one signed, versioned OCI artifact that runs anywhere, from public cloud to fully air‑gapped.</p>
   </div>
 
   <div class="flex flex-col lg:flex-row justify-center items-center gap-10 mt-10 md:mt-14 xl:mt-22">
@@ -141,7 +141,7 @@ onUnmounted(() => {
   <div class="p1 space-y-8! mt-8 max-w-4xl mx-auto">
     <p>Enterprise AI is no longer just models. Teams are deploying agents, MCP servers, skills, and policies — all of which need the same versioning, security, and governance as container images. KitOps packages them all as standard OCI artifacts in the registries you already run.</p>
     <p>From proprietary repos that trap your AI artifacts in closed ecosystems to fragile ad‑hoc approaches that bypass your security toolchain — KitOps brings models, agent skills, MCP servers, datasets, and configuration under one governed workflow.</p>
-    <p>With 100,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on <strong>security, compliance, or uptime</strong>.</p>
+    <p>With 260,000+ downloads and 18+ months in production, KitOps is trusted by organizations that can’t compromise on <strong>security, compliance, or uptime</strong>.</p>
   </div>
 
   <iframe width="1050" class="border-16 border-[--alpha(#2c2c2c/20%)] rounded-xl max-w-full aspect-video mt-22 mx-auto" src="https://www.youtube.com/embed/iK9mnU0prRU?si=ommsLD32Kjj4RUMu&amp;autoplay=0" title="YouTube video player" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -174,8 +174,8 @@ onUnmounted(() => {
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Supply Chain Security, Built In</div>
-      <p class="p2">Sign with Cosign. Scan before promotion. Generate SBOMs. Every component is SHA‑256 hashed and tamper‑evident — the same security posture you apply to container images, now applied to your agents and MCP servers.</p>
+      <div class="p2 text-gold! xs:mt-12">AI Supply Chain Security, Built In</div>
+      <p class="p2">Sign with Cosign and generate SBOM‑ready evidence. Every component is SHA‑256 hashed and tamper‑evident, the same security posture you apply to container images, now applied to your agents and MCP servers. Add scanning across AI‑specific vulnerability classes and policy‑gated promotion by connecting to Jozu Hub.</p>
     </div>
 
     <div>
@@ -283,26 +283,22 @@ onUnmounted(() => {
   <div class="text-center mb-6">
     <div class="inline-block p-2.5 rounded-lg border-2 border-gold text-gold bg-[--alpha(var(--color-gold)/40%)] uppercase font-bold">THE ENGINEERS CHOICE</div>
   </div>
-  <h2 class="text-center font-heading!">Built for Engineers Who Demand Trust</h2>
+  <h2 class="text-center font-heading!">Built for the Way You Already Work</h2>
 
-  <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-3 gap-3">
+  <div class="mt-10 md:mt-14 xl:mt-22 grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12">
     <div>
-      <div class="p2 text-gold!">Immutable Packages</div>
-      <p class="p2">Every model, agent skill, and MCP server is a versioned, immutable OCI artifact. What you deployed is exactly what was tested.</p>
+      <div class="p1 text-gold! font-bold! mb-3">A CLI that feels like Docker</div>
+      <p class="p2">If you know Docker, you already know <a href="/docs/cli/cli-reference/" class="text-gold! hocus:underline">Kit</a>. <span class="font-mono text-off-white!">kit pack</span>, <span class="font-mono text-off-white!">push</span>, <span class="font-mono text-off-white!">pull</span>, and <span class="font-mono text-off-white!">tag</span> mirror the commands you run every day, so there is no new mental model and no retraining.</p>
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Content-Addressable Storage</div>
-      <p class="p2">SHA-256 digests for every component. Tamper detection works the same way it does for your container images — because it is the same infrastructure.</p>
+      <div class="p1 text-gold! font-bold! mb-3">A Python SDK for your stack</div>
+      <p class="p2"><a href="/docs/pykitops/" class="text-gold! hocus:underline">PyKitOps</a> lets you build and manage ModelKits right from Python, so KitOps drops into the pipelines and tools you already run, like <a href="/docs/integrations/mlflow/" class="text-gold! hocus:underline">MLflow</a>, without rewriting them.</p>
     </div>
 
     <div>
-      <div class="p2 text-gold! xs:mt-12">Designed for Air Gap</div>
-      <ul class="p2 list-disc! list-inside! leading-tight!">
-        <li class="pl-3 text-[#B8B8B8]!">Designed for air-gapped environments</li>
-        <li class="pl-3 text-[#B8B8B8]!">Security by default</li>
-        <li class="pl-3 text-[#B8B8B8]!">Native to your stack</li>
-      </ul>
+      <div class="p1 text-gold! font-bold! mb-3">CI/CD that plugs right in</div>
+      <p class="p2">Automate packaging with the <a href="https://github.com/marketplace/actions/setup-kit-cli" target="_blank" class="text-gold! hocus:underline">KitOps GitHub Action</a> or any major <a href="/docs/integrations/cicd/" class="text-gold! hocus:underline">CI/CD tool</a>. Build a ModelKit on every commit, push it to your registry, and gate what gets promoted.</p>
     </div>
   </div>
 </div>
