@@ -28,6 +28,7 @@ import (
 
 	"github.com/kitops-ml/kitops/cmd"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/opencontainers/go-digest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -185,6 +186,15 @@ func checkFilesExistWithContent(t *testing.T, tmpDir string, files []string) {
 			assert.Equal(t, "testing: "+file, string(fileContents), "File contents should not be changed")
 		}
 	}
+}
+
+func getFileDigest(t *testing.T, tmpDir string, file string) digest.Digest {
+	fileContents, err := os.ReadFile(filepath.Join(tmpDir, file))
+	require.NoError(t, err)
+	d := digest.Canonical.Digester()
+	_, err = io.Copy(d.Hash(), bytes.NewBuffer(fileContents))
+	require.NoError(t, err)
+	return d.Digest()
 }
 
 // checkFilesDoNotExist checks that none of the paths listed in files exist within tmpDir.
