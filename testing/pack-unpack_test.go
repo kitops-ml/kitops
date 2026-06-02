@@ -57,6 +57,7 @@ func TestPackUnpack(t *testing.T) {
 		{"--compression", "gzip"},         // tar + gzip
 		{"--compression", "gzip-fastest"}, // tar + gzip (fastest)
 		{"--compression", "zstd"},         // tar + zstd
+		{"--use-model-pack"},              // modelpack
 	}
 
 	for _, args := range packArgCases {
@@ -103,6 +104,7 @@ func TestPackUnpackRaw(t *testing.T) {
 		{"--compression", "gzip"},         // raw + gzip
 		{"--compression", "gzip-fastest"}, // raw + gzip (fastest)
 		{"--compression", "zstd"},         // raw + zstd
+		{"--use-model-pack"},              // modelpack
 	}
 
 	for _, args := range packArgCases {
@@ -153,6 +155,7 @@ func TestPackRawPreservesDiffID(t *testing.T) {
 		{"--compression", "gzip"},         // raw + gzip
 		{"--compression", "gzip-fastest"}, // raw + gzip (fastest)
 		{"--compression", "zstd"},         // raw + zstd
+		{"--use-model-pack"},              // modelpack
 	}
 
 	for _, args := range packArgCases {
@@ -201,6 +204,9 @@ func TestPackReproducibility(t *testing.T) {
 		{},                        // default case; tar format, no compression
 		{"--layer-format", "raw"}, // raw format
 		{"--compression", "gzip"}, // tar + gzip
+		{"--use-model-pack"},      // modelpack default
+		{"--use-model-pack", "--layer-format", "raw"},      // modelpack + raw format
+		{"--use-model-pack", "--compression", "gzip"},      // modelpack + tar + gzip
 		{"--layer-format", "raw", "--compression", "gzip"}, // raw + gzip
 	}
 
@@ -251,8 +257,8 @@ datasets:
 
 			// Overall ModelKit digests may not be the same due to a creation time annotation; nonetheless, layer digests _should_
 			// be reproducible.
-			assert.Contains(t, pack2Out, "Already saved model layer")
-			assert.Contains(t, pack2Out, "Already saved dataset layer")
+			assert.Regexp(t, "Already saved (model|weight) layer", pack2Out)
+			assert.Regexp(t, "Already saved dataset layer", pack2Out)
 		})
 	}
 }
