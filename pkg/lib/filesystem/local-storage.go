@@ -20,9 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -238,62 +236,14 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 }
 
 func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
-	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
-	// to a temporary file. Ideally, we can also add this to the internal store by moving the file to avoid
-	// copying if possible.
-	if mediaType.Format() != mediatype.TarFormat {
-		// TODO: Add support for ModelPack's "raw" layer type
-		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("Only tar-formatted layers are currently supported")
+	switch mediaType.Format() {
+	case mediatype.TarFormat:
+		return saveContentLayerAsTar(ctx, localRepo, path, mediaType, ignore)
+	case mediatype.RawFormat:
+		return saveContentLayerAsRaw(ctx, localRepo, path, mediaType, ignore)
+	default:
+		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("unknown layer format")
 	}
-	tempPath, desc, info, err := packLayerToTar(path, mediaType, ignore)
-	if err != nil {
-		return ocispec.DescriptorEmptyJSON, nil, err
-	}
-
-	defer func() {
-		if err := os.Remove(tempPath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			output.Errorf("Failed to remove temporary file %s: %s", tempPath, err)
-		}
-	}()
-
-	if exists, err := localRepo.Exists(ctx, desc); err != nil {
-		return ocispec.DescriptorEmptyJSON, nil, err
-	} else if exists {
-		output.Infof("Already saved %s layer: %s", mediaType.UserString(), desc.Digest)
-		return desc, info, nil
-	}
-
-	// Workaround to avoid copying a potentially very large file: move it to the expected path
-	// and verify that it exists afterwards.
-	if err := localRepo.EnsureDirs(desc); err != nil {
-		return ocispec.DescriptorEmptyJSON, nil, err
-	}
-	blobPath := localRepo.BlobPath(desc)
-	if err := os.Rename(tempPath, blobPath); err != nil {
-		// This may fail on some systems (e.g. linux where / and /home are different partitions)
-		// Fallback to regular push which is basically a copy
-		output.Debugf("Failed to move temp file into storage (will copy instead): %s", err)
-		file, err := os.Open(tempPath)
-		if err != nil {
-			return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to open temporary file: %w", err)
-		}
-		defer file.Close()
-		if err := localRepo.Push(ctx, desc, file); err != nil {
-			return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to add layer to storage: %w", err)
-		}
-	}
-
-	// Verify blob is in store now
-	exists, err := localRepo.Exists(ctx, desc)
-	if err != nil {
-		return ocispec.DescriptorEmptyJSON, nil, err
-	}
-	if !exists {
-		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to move layer to storage: file is not stored")
-	}
-
-	output.Infof("Saved %s layer: %s", mediaType.UserString(), desc.Digest)
-	return desc, info, nil
 }
 
 func saveModelManifest(ctx context.Context, store oras.Target, manifest ocispec.Manifest) (*ocispec.Descriptor, error) {

@@ -156,12 +156,20 @@ func (t *ProgressTar) WriteHeader(hdr *tar.Header) error {
 }
 
 func (t *ProgressTar) Close() error {
+	// Note: at the time of implementation, the proxied io.WriteCloser returned by ProxyWriter is simply the underlying
+	// io.Writer, wrapped in a no-op Close() if it is not already a WriteCloser. Closing both pw and tw represents a double
+	// close on the underlying WriteCloser and should be avoided. This is something that could change in future versions
+	// of the dependency.
 	if t.pw != nil {
 		return t.pw.Close()
+	} else {
+		return t.tw.Close()
 	}
-	return nil
 }
 
+// TarProgress is used to get an io.Writer and logger that print progress bars when written to (if progress bars
+// are enabled). Closing the returned io.WriteCloser will close the input tar.Writer as well; the input tar.Writer
+// *should not* be closed independently.
 func TarProgress(total int64, tw *tar.Writer) (*ProgressTar, *ProgressLogger) {
 	if !progressEnabled || total == 0 {
 		return &ProgressTar{tw: tw}, &ProgressLogger{stdout}
@@ -183,6 +191,9 @@ func TarProgress(total int64, tw *tar.Writer) (*ProgressTar, *ProgressLogger) {
 		),
 		mpb.BarRemoveOnComplete(),
 	)
+
+	// Note: ProxyWriter returns a WriteCloser, but the Close() implementation simply forwards to the underlying writer's
+	// Close() implmentation if it exists. This leads to potential accidental double closes so we have to be careful
 	pw := bar.ProxyWriter(tw)
 	return &ProgressTar{tw: tw, pw: pw, bar: bar}, &ProgressLogger{p}
 }
@@ -282,13 +293,15 @@ func (pb *DownloadProgressBar) Done() {
 }
 
 // WrapReadCloser wraps a io.ReadCloser so that a progress bar is printed when it is read from.
-// The wrapped io.ReadCloser calls the underlying Close() method on close, so only the returned
-// ReadCloser should be closed. If progress bars are disabled, the io.ReadCloser is returned unchanged.
+// The returned io.ReadCloser will forward Close() calls to the underlying io.ReadCloser, so only
+// Close() should be called _only_ for the returned io.ReadCloser to avoid double-closing.
+//
+// Once all read operations are complete, the returned *ProgressLogger's Wait() method should be called to
+// ensure any progress bars are marked as completed.
 func WrapReadCloser(prependText string, size int64, rc io.ReadCloser) (io.ReadCloser, *ProgressLogger) {
 	if !progressEnabled {
 		return rc, &ProgressLogger{stdout}
 	}
-
 	p := mpb.New(
 		mpb.WithWidth(60),
 		mpb.WithRefreshRate(150*time.Millisecond),
@@ -306,7 +319,9 @@ func WrapReadCloser(prependText string, size int64, rc io.ReadCloser) (io.ReadCl
 		mpb.BarRemoveOnComplete(),
 	)
 
-	// note: bar.ProxyReader takes an io.Reader only, but the underlying implementation
-	// will check if that Reader is a ReadCloser and call its Close method on close.
+	// Note: bar.ProxyReader takes an io.Reader only, suggesting an independent Close() implementation, but it simply
+	// forward Close() calls to the underlying ReadCloser via interface assertion. This means closing both the ReadCloser
+	// provided *and* the proxied ReadCloser is a double-close. In case the implementation of ProxyReader() changes
+	// in the future, *only* the proxied reader should be closed.
 	return bar.ProxyReader(rc), &ProgressLogger{p}
 }

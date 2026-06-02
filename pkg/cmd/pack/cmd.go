@@ -62,6 +62,7 @@ type packOptions struct {
 	storageHome  string
 	fullTagRef   string
 	compression  string
+	layerFormat  string
 	modelRef     *registry.Reference
 	extraRefs    []string
 	useModelPack bool
@@ -79,7 +80,8 @@ func PackCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&opts.modelFile, "file", "f", "", "Specifies the path to the Kitfile explicitly (use \"-\" to read from standard input)")
 	cmd.Flags().StringVarP(&opts.fullTagRef, "tag", "t", "", "Assigns one or more tags to the built modelkit. Example: -t registry/repository:tag1,tag2")
-	cmd.Flags().StringVar(&opts.compression, "compression", "none", "Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest'")
+	cmd.Flags().StringVar(&opts.compression, "compression", "none", "Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest', 'zstd'")
+	cmd.Flags().StringVar(&opts.layerFormat, "layer-format", "tar", "Packaging format to use for layers. Valid options: 'tar' (default), 'raw'")
 	cmd.Flags().BoolVar(&opts.useModelPack, "use-model-pack", false, "Pack model in ModelPack format instead of ModelKit")
 	cmd.Flags().SortFlags = false
 	cmd.Args = cobra.ExactArgs(1)
@@ -146,6 +148,10 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 	}
 
 	if err := mediatype.IsValidCompression(opts.compression); err != nil {
+		return err
+	}
+
+	if err := mediatype.IsValidLayerFormat(opts.layerFormat); err != nil {
 		return err
 	}
 
