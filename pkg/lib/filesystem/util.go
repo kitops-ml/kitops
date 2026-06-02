@@ -18,22 +18,66 @@ package filesystem
 
 import (
 	"archive/tar"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
+	"slices"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-// callAndPrintError is a wrapper to print an error message for a function that
-// may return an error. The error is printed and then discarded.
-func callAndPrintError(f func() error, msg string) {
-	if err := f(); err != nil {
-		output.Errorf(msg, err)
+func saveFileToRepo(ctx context.Context, filePath string, desc ocispec.Descriptor, repo local.LocalRepo) error {
+	mt, err := mediatype.ParseMediaType(desc.MediaType)
+	if err != nil {
+		return err
 	}
+
+	if exists, err := repo.Exists(ctx, desc); err != nil {
+		return err
+	} else if exists {
+		output.Infof("Already saved %s layer: %s", mt.UserString(), desc.Digest)
+		return nil
+	}
+
+	// Workaround to avoid copying a potentially very large file: move it to the expected path
+	// and verify that it exists afterwards.
+	if err := repo.EnsureDirs(desc); err != nil {
+		return err
+	}
+	blobPath := repo.BlobPath(desc)
+	if err := os.Rename(filePath, blobPath); err != nil {
+		// This may fail on some systems (e.g. linux where / and /home are different partitions)
+		// Fallback to regular push which is basically a copy
+		output.Debugf("Failed to move temp file into storage (will copy instead): %s", err)
+		file, err := os.Open(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to open temporary file: %w", err)
+		}
+		defer file.Close()
+		if err := repo.Push(ctx, desc, file); err != nil {
+			return fmt.Errorf("failed to add layer to storage: %w", err)
+		}
+	}
+
+	// Verify blob is in store now
+	exists, err := repo.Exists(ctx, desc)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("failed to move layer to storage: file is not stored")
+	}
+	output.Infof("Saved %s layer: %s", mt.UserString(), desc.Digest)
+	return nil
 }
 
 func fillDescAnnotations(desc *ocispec.Descriptor, targetPath string, fi fs.FileInfo) error {
@@ -66,4 +110,15 @@ func fillDescAnnotations(desc *ocispec.Descriptor, targetPath string, fi fs.File
 		desc.Annotations[modelspecv1.AnnotationFileMetadata] = string(metabytes)
 	}
 	return nil
+}
+
+// closeAll closes all Closers one by one, returning any errors that occure while closing. To support a chain of closers
+// that is used for a write operation, the list of io.Closers is closed in reverse order, assuming that the list is in
+// the order the Closers were created.
+func closeAll(toClose []io.Closer) error {
+	var errs error
+	for _, tc := range slices.Backward(toClose) {
+		errs = errors.Join(errs, tc.Close())
+	}
+	return errs
 }

@@ -101,10 +101,14 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 	if err != nil {
 		return nil, err
 	}
+	layerFormat, err := mediatype.ParseLayerFormat(opts.layerFormat)
+	if err != nil {
+		return nil, err
+	}
 	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, &filesystem.SaveModelOptions{
 		ModelFormat: modelFormat,
 		Compression: compression,
-		LayerFormat: mediatype.TarFormat,
+		LayerFormat: layerFormat,
 	})
 	if err != nil {
 		return nil, err

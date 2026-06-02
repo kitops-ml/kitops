@@ -19,6 +19,7 @@ package filesystem
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -31,11 +32,35 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+func saveContentLayerAsTar(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
+	// to a temporary file. Ideally, we can also add this to the internal store by moving the file to avoid
+	// copying if possible.
+	tempPath, desc, info, err := packLayerToTar(path, mediaType, ignore)
+	if err != nil {
+		return ocispec.DescriptorEmptyJSON, nil, err
+	}
+
+	defer func() {
+		if err := os.Remove(tempPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			output.Errorf("Failed to remove temporary file %s: %s", tempPath, err)
+		}
+	}()
+
+	if err := saveFileToRepo(ctx, tempPath, desc, localRepo); err != nil {
+		return ocispec.DescriptorEmptyJSON, nil, err
+	}
+
+	return desc, info, nil
+}
 
 // packLayerToTar compresses an *artifact.ModelLayer to a gzipped tar file. In order to return
 // a descriptor (including hash) for the compressed file, the layer is saved to a temporary file
@@ -64,59 +89,78 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to create temporary file: %w", err)
 	}
 	tempFileName := tempFile.Name()
-	output.Debugf("Compressing layer to temporary file %s", tempFileName)
+	output.Debugf("Saving layer to temporary file %s", tempFileName)
+
+	toClose := []io.Closer{tempFile}
 
 	digester := digest.Canonical.Digester()
-	var diffIdDigester digest.Digester
 	fileWriter := io.MultiWriter(tempFile, digester.Hash())
 
-	var compressedWriter io.WriteCloser
-	var tarWriter *tar.Writer
+	var pWriter *output.ProgressTar
+	var pLog *output.ProgressLogger
+	var diffIdDigester digest.Digester
+
 	switch mediaType.Compression() {
 	case mediatype.GzipCompression:
-		compressedWriter = gzip.NewWriter(fileWriter)
+		compressedWriter := gzip.NewWriter(fileWriter)
 		diffIdDigester = digest.Canonical.Digester()
 		mw := io.MultiWriter(compressedWriter, diffIdDigester.Hash())
-		tarWriter = tar.NewWriter(mw)
+		tarWriter := tar.NewWriter(mw)
+		pWriter, pLog = output.TarProgress(totalSize, tarWriter)
+		toClose = append(toClose, compressedWriter, pWriter)
 	case mediatype.GzipFastestCompression:
-		compressedWriter, err = gzip.NewWriterLevel(fileWriter, gzip.BestSpeed)
+		compressedWriter, err := gzip.NewWriterLevel(fileWriter, gzip.BestSpeed)
 		if err != nil {
+			_ = closeAll(toClose)
+			tempFileCleanup()
 			return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to set up gzip compression: %w", err)
 		}
 		diffIdDigester = digest.Canonical.Digester()
 		mw := io.MultiWriter(compressedWriter, diffIdDigester.Hash())
-		tarWriter = tar.NewWriter(mw)
-	case mediatype.NoneCompression:
-		tarWriter = tar.NewWriter(fileWriter)
-		diffIdDigester = digester
-	default:
-		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("Unsupported compression format: %s", mediaType.Compression())
-	}
-	progressTarWriter, plog := output.TarProgress(totalSize, tarWriter)
-
-	if err := writeLayerToTar(path, ignore, progressTarWriter, plog); err != nil {
-		// Don't care about these errors since we'll be deleting the file anyways
-		_ = progressTarWriter.Close()
-		_ = tarWriter.Close()
-		if compressedWriter != nil {
-			_ = compressedWriter.Close()
+		tarWriter := tar.NewWriter(mw)
+		pWriter, pLog = output.TarProgress(totalSize, tarWriter)
+		toClose = append(toClose, compressedWriter, pWriter)
+	case mediatype.ZstdCompression:
+		compressedWriter, err := zstd.NewWriter(fileWriter)
+		if err != nil {
+			_ = closeAll(toClose)
+			tempFileCleanup()
+			return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to set up zstd compression: %w", err)
 		}
+		diffIdDigester = digest.Canonical.Digester()
+		mw := io.MultiWriter(compressedWriter, diffIdDigester.Hash())
+		tarWriter := tar.NewWriter(mw)
+		pWriter, pLog = output.TarProgress(totalSize, tarWriter)
+		toClose = append(toClose, compressedWriter, pWriter)
+	case mediatype.NoneCompression:
+		tarWriter := tar.NewWriter(fileWriter)
+		diffIdDigester = digester
+		pWriter, pLog = output.TarProgress(totalSize, tarWriter)
+		toClose = append(toClose, pWriter)
+	default:
+		_ = closeAll(toClose)
 		tempFileCleanup()
-	}
-	plog.Wait()
-
-	callAndPrintError(progressTarWriter.Close, "Failed to close writer: %s")
-	callAndPrintError(tarWriter.Close, "Failed to close tar writer: %s")
-	if compressedWriter != nil {
-		callAndPrintError(compressedWriter.Close, "Failed to close compression writer: %s")
+		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("unsupported compression format: %s", mediaType.Compression())
 	}
 
-	tempFileInfo, err := tempFile.Stat()
+	if err := writeLayerToTar(path, ignore, pWriter, pLog); err != nil {
+		// Don't care about these errors since we'll be deleting the file anyways
+		_ = closeAll(toClose)
+		tempFileCleanup()
+		return "", ocispec.DescriptorEmptyJSON, nil, err
+	}
+	pLog.Wait()
+
+	// We want to make sure all writes are flushed to ensure we get the correct digest
+	if err := closeAll(toClose); err != nil {
+		return "", ocispec.DescriptorEmptyJSON, nil, err
+	}
+
+	tempFileInfo, err := os.Stat(tempFileName)
 	if err != nil {
 		tempFileCleanup()
 		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to stat temporary file: %w", err)
 	}
-	callAndPrintError(tempFile.Close, "Failed to close temporary file: %s")
 
 	desc = ocispec.Descriptor{
 		MediaType: mediaType.String(),
@@ -228,7 +272,7 @@ func writeFileToTar(file string, fi os.FileInfo, ptw *output.ProgressTar, plog *
 	if written, err := io.Copy(ptw, f); err != nil {
 		return fmt.Errorf("failed to add file to archive: %w", err)
 	} else if written != fi.Size() {
-		return fmt.Errorf("error writing file: %w", err)
+		return fmt.Errorf("file written to tar does not match expected size")
 	}
 	plog.Debugf("Wrote file %s to tar file", file)
 	return nil
