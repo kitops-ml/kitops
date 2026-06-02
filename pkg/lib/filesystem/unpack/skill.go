@@ -31,6 +31,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/lib/skill"
 	"github.com/kitops-ml/kitops/pkg/output"
+	"github.com/klauspost/compress/zstd"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/content"
 )
@@ -74,7 +75,12 @@ func unpackSkill(ctx context.Context, opts *UnpackOptions) error {
 		if mediaType.Base() != mediatype.CodeBaseType {
 			continue
 		}
+
 		if layerDesc.Annotations[constants.LayerSubtypeAnnotation] != constants.LayerSubtypePrompt {
+			continue
+		}
+		if mediaType.Format() != mediatype.TarFormat {
+			output.Logf(output.LogLevelWarn, "skill layers in raw format are unsupported")
 			continue
 		}
 
@@ -146,12 +152,19 @@ func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocisp
 		if err != nil {
 			return nil, fmt.Errorf("decompressing layer: %w", err)
 		}
+		defer func() { _ = cr.Close() }()
+	case mediatype.ZstdCompression:
+		zstdReader, err := zstd.NewReader(rc)
+		if err != nil {
+			return nil, fmt.Errorf("decompressing layer: %w", err)
+		}
+		cr = zstdReader.IOReadCloser()
+		defer func() { _ = cr.Close() }()
 	case mediatype.NoneCompression:
 		cr = rc
 	default:
 		return nil, fmt.Errorf("unsupported compression type %q for prompt layer %q", compression, entry.Path)
 	}
-	defer func() { _ = cr.Close() }()
 
 	tr := tar.NewReader(cr)
 	entries, isSkill, frontmatterName, err := skill.ReadSkillLayer(tr)
