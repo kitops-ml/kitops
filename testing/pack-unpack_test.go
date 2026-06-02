@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -50,35 +52,105 @@ func TestPackUnpack(t *testing.T) {
 	testPreflight(t)
 
 	tests := loadAllTestCasesOrPanic[packUnpackTestcase](t, filepath.Join("testdata", "pack-unpack"))
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%s (%s)", tt.Name, tt.Description), func(t *testing.T) {
-			// Set up temporary directory for work
-			tmpDir := setupTempDir(t)
+	packArgCases := [][]string{
+		{},                                // default case; tar format, no compression
+		{"--compression", "gzip"},         // tar + gzip
+		{"--compression", "gzip-fastest"}, // tar + gzip (fastest)
+		{"--compression", "zstd"},         // tar + zstd
+	}
 
-			// Set up paths to use for test
-			modelKitPath, unpackPath, contextPath := setupTestDirs(t, tmpDir)
-			t.Setenv(constants.KitopsHomeEnvVar, contextPath)
+	for _, args := range packArgCases {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(fmt.Sprintf("%s (%s)", tt.Name, tt.Description), func(t *testing.T) {
+					// Set up temporary directory for work
+					tmpDir := setupTempDir(t)
 
-			// Create Kitfile
-			setupKitfileAndKitignore(t, modelKitPath, tt.Kitfile, tt.Kitignore)
-			// Create files for test case
-			setupFiles(t, modelKitPath, append(tt.Files, tt.IgnoredFiles...))
+					// Set up paths to use for test
+					modelKitPath, unpackPath, contextPath := setupTestDirs(t, tmpDir)
+					t.Setenv(constants.KitopsHomeEnvVar, contextPath)
 
-			runCommand(t, expectNoError, "pack", modelKitPath, "-t", modelKitTag)
-			runCommand(t, expectNoError, "list")
-			runCommand(t, expectNoError, "unpack", modelKitTag, "-d", unpackPath)
+					// Create Kitfile
+					setupKitfileAndKitignore(t, modelKitPath, tt.Kitfile, tt.Kitignore)
+					// Create files for test case
+					setupFiles(t, modelKitPath, append(tt.Files, tt.IgnoredFiles...))
 
-			checkFilesExist(t, unpackPath, tt.Files)
-			checkFilesDoNotExist(t, unpackPath, append(tt.IgnoredFiles, ".kitignore"))
+					packArgs := []string{"pack", modelKitPath, "-t", modelKitTag}
+					packArgs = append(packArgs, args...)
+					runCommand(t, expectNoError, packArgs...)
+					runCommand(t, expectNoError, "list")
+					runCommand(t, expectNoError, "unpack", modelKitTag, "-d", unpackPath)
+
+					checkFilesExistWithContent(t, unpackPath, tt.Files)
+					checkFilesDoNotExist(t, unpackPath, append(tt.IgnoredFiles, ".kitignore"))
+				})
+			}
+		})
+	}
+}
+
+// TestPackUnpack tests kit raw-layer functionality by generating a file tree, packing it,
+// unpacking it, and verifying that the unpacked contents match expectations.
+// We work in a new temporary directory for each test to avoid interaction between
+// tests. Since raw layers do not support directories, these tests skip kitignore support
+// and use kit init to generate a kitfile for every file in the test case.
+func TestPackUnpackRaw(t *testing.T) {
+	testPreflight(t)
+
+	tests := loadAllTestCasesOrPanic[packUnpackTestcase](t, filepath.Join("testdata", "pack-unpack"))
+	packArgCases := [][]string{
+		{},                                // raw, no compression
+		{"--compression", "gzip"},         // raw + gzip
+		{"--compression", "gzip-fastest"}, // raw + gzip (fastest)
+		{"--compression", "zstd"},         // raw + zstd
+	}
+
+	for _, args := range packArgCases {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(fmt.Sprintf("%s (%s)", tt.Name, tt.Description), func(t *testing.T) {
+					if slices.Contains(tt.Files, "./code/SKILL.md") {
+						// Workaround: this test depends on kit init, which handles skills separately and always stores
+						// them as directories, which is incompatible with raw layers
+						t.Skip("Skipping raw handling for skills; only tar should be used here")
+					}
+
+					// Set up temporary directory for work
+					tmpDir := setupTempDir(t)
+
+					// Set up paths to use for test
+					modelKitPath, unpackPath, contextPath := setupTestDirs(t, tmpDir)
+					t.Setenv(constants.KitopsHomeEnvVar, contextPath)
+
+					// Create files for test case
+					setupFiles(t, modelKitPath, append(tt.Files, tt.IgnoredFiles...))
+					// Generate a kitfile that lists every file individually
+					runCommand(t, expectNoError, "init", "--depth", "-1", modelKitPath)
+
+					packArgs := []string{"pack", modelKitPath, "-t", modelKitTag, "--layer-format", "raw"}
+					packArgs = append(packArgs, args...)
+					runCommand(t, expectNoError, packArgs...)
+					runCommand(t, expectNoError, "list")
+					runCommand(t, expectNoError, "unpack", modelKitTag, "-d", unpackPath)
+
+					// For the raw case, .kitignore does not make sense (since each path has to be a separate file and
+					// only those files are packed. To reuse the test cases here, lets just ensure all files are accounted
+					// for.
+					checkFilesExistWithContent(t, unpackPath, tt.Files)
+					checkFilesExistWithContent(t, unpackPath, tt.IgnoredFiles)
+				})
+			}
 		})
 	}
 }
 
 func TestPackReproducibility(t *testing.T) {
-	tmpDir := setupTempDir(t)
-
-	modelKitPath, _, contextPath := setupTestDirs(t, tmpDir)
-	t.Setenv(constants.KitopsHomeEnvVar, contextPath)
+	packArgCases := [][]string{
+		{},                        // default case; tar format, no compression
+		{"--layer-format", "raw"}, // raw format
+		{"--compression", "gzip"}, // tar + gzip
+		{"--layer-format", "raw", "--compression", "gzip"}, // raw + gzip
+	}
 
 	testKitfile := `
 manifestVersion: 1.0.0
@@ -89,29 +161,46 @@ model:
 datasets:
   - path: test-dir/test-subfile.txt
 `
-	kitfilePath := filepath.Join(modelKitPath, constants.DefaultKitfileName)
-	if err := os.WriteFile(kitfilePath, []byte(testKitfile), 0644); err != nil {
-		t.Fatal(err)
-	}
-	setupFiles(t, modelKitPath, []string{"test-file.txt", "test-dir/test-subfile.txt"})
 
-	packOut := runCommand(t, expectNoError, "pack", modelKitPath, "-t", "test:repack1")
-	digestOne := digestFromPack(t, packOut)
+	for _, args := range packArgCases {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			tmpDir := setupTempDir(t)
 
-	// Change timestamps on file to simulate an unpacked modelkit at a future time
-	futureTime := time.Now().Add(time.Hour)
-	if err := os.Chtimes(filepath.Join(modelKitPath, "test-file.txt"), futureTime, futureTime); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chtimes(filepath.Join(modelKitPath, "test-dir"), futureTime, futureTime); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chtimes(filepath.Join(modelKitPath, "test-dir/test-subfile.txt"), futureTime, futureTime); err != nil {
-		t.Fatal(err)
-	}
+			modelKitPath, _, contextPath := setupTestDirs(t, tmpDir)
+			t.Setenv(constants.KitopsHomeEnvVar, contextPath)
 
-	packOut = runCommand(t, expectNoError, "pack", modelKitPath, "-t", "test:repack2")
-	digestTwo := digestFromPack(t, packOut)
+			kitfilePath := filepath.Join(modelKitPath, constants.DefaultKitfileName)
+			if err := os.WriteFile(kitfilePath, []byte(testKitfile), 0644); err != nil {
+				t.Fatal(err)
+			}
+			setupFiles(t, modelKitPath, []string{"test-file.txt", "test-dir/test-subfile.txt"})
 
-	assert.Equal(t, digestOne, digestTwo, "Digests should be the same")
+			tag1, tag2 := "test:repack1", "test:repack2"
+
+			pack1Args := []string{"pack", modelKitPath, "-t", tag1}
+			pack1Args = append(pack1Args, args...)
+			_ = runCommand(t, expectNoError, pack1Args...)
+
+			// Change timestamps on file to simulate an unpacked modelkit at a future time
+			futureTime := time.Now().Add(time.Hour)
+			if err := os.Chtimes(filepath.Join(modelKitPath, "test-file.txt"), futureTime, futureTime); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chtimes(filepath.Join(modelKitPath, "test-dir"), futureTime, futureTime); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chtimes(filepath.Join(modelKitPath, "test-dir/test-subfile.txt"), futureTime, futureTime); err != nil {
+				t.Fatal(err)
+			}
+
+			pack2Args := []string{"pack", modelKitPath, "-t", tag2}
+			pack2Args = append(pack2Args, args...)
+			pack2Out := runCommand(t, expectNoError, pack2Args...)
+
+			// Overall ModelKit digests may not be the same due to a creation time annotation; nonetheless, layer digests _should_
+			// be reproducible.
+			assert.Contains(t, pack2Out, "Already saved model layer")
+			assert.Contains(t, pack2Out, "Already saved dataset layer")
+		})
+	}
 }

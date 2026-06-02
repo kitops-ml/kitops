@@ -30,6 +30,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -163,6 +164,25 @@ func checkFilesExist(t *testing.T, tmpDir string, files []string) {
 			}
 		} else {
 			assert.True(t, stat.Mode().IsRegular(), "Path %s should be regular file", path)
+		}
+	}
+}
+
+func checkFilesExistWithContent(t *testing.T, tmpDir string, files []string) {
+	for _, file := range files {
+		path := filepath.Join(tmpDir, file)
+		stat, err := os.Stat(path)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				t.Errorf("File %s should exist", file)
+			} else {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		} else {
+			assert.True(t, stat.Mode().IsRegular(), "Path %s should be regular file", path)
+			fileContents, err := os.ReadFile(path)
+			require.NoError(t, err)
+			assert.Equal(t, "testing: "+file, string(fileContents), "File contents should not be changed")
 		}
 	}
 }
