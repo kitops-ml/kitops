@@ -1,4 +1,4 @@
-description: Pack and unpack a basic modelkit
+description: Pack and unpack an empty Kitfile
 kitfile: |
   manifestVersion: 1.0.0
   package:
