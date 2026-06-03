@@ -36,16 +36,47 @@ await pack('.', { tag: 'registry.example.com/org/my-model:v1.0.0' });
 await push('registry.example.com/org/my-model:v1.0.0');
 ```
 
+## Cancellation
+
+Every function returns a `CancellablePromise<T>` — a standard `Promise` extended with a `.cancel()` method. Calling `.cancel()` kills the underlying `kit` process and rejects the promise with a `DOMException` named `'AbortError'`.
+
+```typescript
+import { pull } from '@kitops/kitops-ts';
+
+const op = pull('registry.example.com/org/my-model:v1.0.0');
+
+// Cancel if the pull takes more than 60 seconds
+const timeout = setTimeout(() => op.cancel(), 60_000);
+
+try {
+  await op;
+} catch (err) {
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    console.log('Pull was cancelled');
+  } else {
+    throw err; // propagate real errors
+  }
+} finally {
+  clearTimeout(timeout);
+}
+```
+
+`CancellablePromise` extends `Promise`, so all existing `await` code works without any changes — `.cancel()` is purely opt-in.
+
 ## Error handling
 
-All functions return Promises and reject with a descriptive string on failure. Wrap calls in `try/catch`:
+All functions return `CancellablePromise`s and reject with a descriptive string on failure. Wrap calls in `try/catch`:
 
 ```typescript
 try {
   await push('registry.example.com/org/my-model:v1.0.0');
 } catch (err) {
-  console.error(err); // "Kit command failed with exit code 1: ..."
-  process.exit(1);
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    console.log('Operation was cancelled');
+  } else {
+    console.error(err); // "Kit command failed with exit code 1: ..."
+    process.exit(1);
+  }
 }
 ```
 

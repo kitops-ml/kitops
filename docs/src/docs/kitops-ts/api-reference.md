@@ -1,10 +1,30 @@
 # API Reference
 
-All functions are exported from `@kitops/kitops-ts` and return `Promise`s. They reject with a string error message containing the exit code and stderr output on failure.
+All functions are exported from `@kitops/kitops-ts` and return a [`CancellablePromise`](#cancellablepromise). They reject with a string error message containing the exit code and stderr output on failure, or with a `DOMException` named `'AbortError'` if `.cancel()` is called.
 
 ```typescript
 import { pack, push, pull, /* ... */ } from '@kitops/kitops-ts';
 ```
+
+## Cancellation
+
+Every function returns a `CancellablePromise<T>`. Call `.cancel()` on the returned value at any time to kill the underlying `kit` process. The promise will reject with a `DOMException` named `'AbortError'`.
+
+```typescript
+const op = push('registry.example.com/org/my-model:v1.0.0');
+
+setTimeout(() => op.cancel(), 30_000); // cancel after 30 s
+
+try {
+  await op;
+} catch (err) {
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    console.log('Cancelled');
+  }
+}
+```
+
+Since `CancellablePromise` extends `Promise`, existing `await` usage requires no changes — `.cancel()` is opt-in.
 
 ---
 
@@ -24,7 +44,7 @@ Scans a directory for ML artifacts and generates a `Kitfile`. Automatically dete
 | `flags.author` | `string` | Package author. |
 | `flags.force` | `boolean` | Overwrite an existing Kitfile. |
 
-**Returns** `Promise<InitResult>`
+**Returns** `CancellablePromise<InitResult>`
 
 ```typescript
 type InitResult = {
@@ -47,7 +67,7 @@ console.log(result.kitfilePath);
 
 ---
 
-### `info(repository, tag, flags?)`
+### `info(path, flags?)`
 
 Returns the parsed `Kitfile` for a ModelKit. The result also carries a non-enumerable `_raw` property with the original YAML string.
 
@@ -55,24 +75,23 @@ Returns the parsed `Kitfile` for a ModelKit. The result also carries a non-enume
 
 | Name | Type | Description |
 |---|---|---|
-| `repository` | `string` | Registry/repository path (e.g. `registry.example.com/org/model`). |
-| `tag` | `string` | Tag or digest to inspect. |
+| `path` | `string` | Full ModelKit reference (`registry/repository[:tag\|@digest]`). |
 | `flags.remote` | `boolean` | Inspect from the registry without pulling first. |
 | `flags.filter` | `FilterFlag` | Limit output to specific layers or paths. |
 
-**Returns** `Promise<Kitfile>`
+**Returns** `CancellablePromise<Kitfile>`
 
 **Example**
 
 ```typescript
-const kitfile = await info('registry.example.com/org/my-model', 'v1.0.0');
+const kitfile = await info('registry.example.com/org/my-model:v1.0.0');
 console.log(kitfile.package?.name);
 console.log(kitfile.model?.path);
 ```
 
 ---
 
-### `inspect(repository, tag, flags?)`
+### `inspect(path, flags?)`
 
 Returns the full OCI manifest and parsed Kitfile for a ModelKit.
 
@@ -80,11 +99,10 @@ Returns the full OCI manifest and parsed Kitfile for a ModelKit.
 
 | Name | Type | Description |
 |---|---|---|
-| `repository` | `string` | Registry/repository path. |
-| `tag` | `string` | Tag or digest to inspect. |
+| `path` | `string` | Full ModelKit reference (`registry/repository[:tag\|@digest]`). |
 | `flags.remote` | `boolean` | Inspect directly from the registry without pulling first. |
 
-**Returns** `Promise<InspectResult>`
+**Returns** `CancellablePromise<InspectResult>`
 
 ```typescript
 type InspectResult = {
@@ -98,7 +116,7 @@ type InspectResult = {
 **Example**
 
 ```typescript
-const result = await inspect('registry.example.com/org/my-model', 'v1.0.0', { remote: true });
+const result = await inspect('registry.example.com/org/my-model:v1.0.0', { remote: true });
 console.log(result.digest);
 console.log(result.manifest.layers);
 ```
@@ -119,7 +137,7 @@ Packages a directory containing a `Kitfile` into a local ModelKit.
 | `flags.compression` | `string` | Compression algorithm (e.g. `'zstd'`, `'gzip'`). |
 | `flags.useModelPack` | `boolean` | Use model-pack format. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -146,7 +164,7 @@ Extracts a ModelKit into a directory. Use `flags.filter` to pull out specific la
 | `flags.ignoreExisting` | `boolean` | Skip files that already exist instead of failing. |
 | `flags.filter` | `FilterFlag` | Limit extraction to specific layers or paths. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -163,7 +181,7 @@ await unpack('./output', { filter: 'datasets:validation,docs' });
 
 ---
 
-### `list(repository?)`
+### `list(repository?, flags?)`
 
 Lists ModelKits. Omit the argument to list local storage; pass a registry/repository to list remote tags.
 
@@ -172,8 +190,9 @@ Lists ModelKits. Omit the argument to list local storage; pass a registry/reposi
 | Name | Type | Description |
 |---|---|---|
 | `repository` | `string` | Optional registry/repository to list remotely. |
+| `flags.format` | `'table' \| 'json' \| 'template'` | Output format. Defaults to `'table'`. |
 
-**Returns** `Promise<ModelKit[]>`
+**Returns** `CancellablePromise<ModelKit[] | string>`
 
 ```typescript
 type ModelKit = {
@@ -199,7 +218,7 @@ for (const kit of local) {
 
 ---
 
-### `push(source, destination?)`
+### `push(source, destination?, flags?)`
 
 Pushes a ModelKit to a registry. Optionally provide `destination` to push under a different reference (e.g. promote from staging to production).
 
@@ -209,8 +228,10 @@ Pushes a ModelKit to a registry. Optionally provide `destination` to push under 
 |---|---|---|
 | `source` | `string` | Local ModelKit reference to push. |
 | `destination` | `string` | Optional target reference (different registry or tag). |
+| `flags.tlsVerify` | `boolean` | Verify the server's TLS certificate. |
+| `flags.tlsCert` | `string` | Path to a client TLS certificate file. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -223,7 +244,7 @@ await push('staging.example.com/my-model:rc1', 'registry.example.com/org/my-mode
 
 ---
 
-### `pull(reference)`
+### `pull(reference, flags?)`
 
 Pulls a ModelKit from a registry into local storage.
 
@@ -232,8 +253,10 @@ Pulls a ModelKit from a registry into local storage.
 | Name | Type | Description |
 |---|---|---|
 | `reference` | `string` | Full ModelKit reference including registry, repository, and tag/digest. |
+| `flags.tlsVerify` | `boolean` | Verify the server's TLS certificate. |
+| `flags.tlsCert` | `string` | Path to a client TLS certificate file. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -243,7 +266,7 @@ await pull('registry.example.com/org/my-model:v1.0.0');
 
 ---
 
-### `login(registry, username, password)`
+### `login(registry, username, password, flags?)`
 
 Authenticates with a registry. The password is passed via **stdin**, keeping it out of the process list. Preferred for CI and automated workflows.
 
@@ -254,8 +277,9 @@ Authenticates with a registry. The password is passed via **stdin**, keeping it 
 | `registry` | `string` | Registry hostname (e.g. `'ghcr.io'`). |
 | `username` | `string` | Registry username. |
 | `password` | `string` | Registry password or token. |
+| `flags.tlsVerify` | `boolean` | Verify the server's TLS certificate. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -269,7 +293,7 @@ await login(
 
 ---
 
-### `loginUnsafe(registry, username, password)`
+### `loginUnsafe(registry, username, password, flags?)`
 
 Same as `login` but passes the password as a CLI argument, making it visible in the process list. Use only in environments where the process list is not observable (e.g. isolated containers).
 
@@ -280,8 +304,9 @@ Same as `login` but passes the password as a CLI argument, making it visible in 
 | `registry` | `string` | Registry hostname. |
 | `username` | `string` | Registry username. |
 | `password` | `string` | Registry password or token (passed as a CLI flag — visible in `ps`). |
+| `flags.tlsVerify` | `boolean` | Verify the server's TLS certificate. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -301,7 +326,7 @@ Removes stored credentials for a registry.
 |---|---|---|
 | `registry` | `string` | Registry hostname to log out from. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -322,7 +347,7 @@ Assigns a new tag to an existing local ModelKit without re-packing. Use `push` a
 | `source` | `string` | Existing ModelKit reference. |
 | `destination` | `string` | New reference to assign. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
@@ -332,7 +357,7 @@ await tag('registry.example.com/org/my-model:rc1', 'registry.example.com/org/my-
 
 ---
 
-### `remove(registry, repository, tagOrDigest, flags?)`
+### `remove(path, flags?)`
 
 Removes a ModelKit from local storage or a remote registry.
 
@@ -340,31 +365,51 @@ Removes a ModelKit from local storage or a remote registry.
 
 | Name | Type | Description |
 |---|---|---|
-| `registry` | `string` | Registry hostname (empty string for local storage). |
-| `repository` | `string` | Repository path. |
-| `tagOrDigest` | `string` | Tag or digest to remove. |
-| `flags.force` | `boolean` | Force removal even if the ModelKit is referenced elsewhere. |
-| `flags.all` | `boolean` | Remove all locally cached ModelKits. |
-| `flags.remote` | `boolean` | Remove from the remote registry instead of local storage. |
+| `path` | `string` | Full ModelKit reference to remove. |
+| `flags.force` | `boolean` | Skip confirmation prompt. |
+| `flags.all` | `boolean` | Remove all locally cached ModelKits (ignores `path`). |
+| `flags.remote` | `boolean` | Remove from the registry instead of local storage. |
 
-**Returns** `Promise<void>`
+**Returns** `CancellablePromise<void>`
 
 **Example**
 
 ```typescript
 // Remove a specific tag from local storage
-await remove('registry.example.com', 'org/my-model', 'v0.9.0');
+await remove('registry.example.com/org/my-model:v0.9.0');
 
 // Remove all locally cached ModelKits
-await remove('', '', '', { all: true });
+await removeAll();
 
 // Force-remove from the remote registry
-await remove('registry.example.com', 'org/my-model', 'v0.9.0', { force: true, remote: true });
+await remove('registry.example.com/org/my-model:v0.9.0', { force: true, remote: true });
 ```
 
 ---
 
-### `diff(modelKit1, modelKit2, flags?)`
+### `removeAll(flags?)`
+
+Removes all locally cached ModelKits. Equivalent to `remove('', { all: true })` but without requiring a dummy path argument.
+
+To remove all kits from a remote registry, use `remove('', { all: true, remote: true })` instead.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `flags.force` | `boolean` | Skip confirmation prompt. |
+
+**Returns** `CancellablePromise<void>`
+
+**Example**
+
+```typescript
+await removeAll();
+```
+
+---
+
+### `diff(reference1, reference2, flags?)`
 
 Compares two ModelKits and returns a structured diff of their layers.
 
@@ -372,11 +417,11 @@ Compares two ModelKits and returns a structured diff of their layers.
 
 | Name | Type | Description |
 |---|---|---|
-| `modelKit1` | `string` | First ModelKit reference. |
-| `modelKit2` | `string` | Second ModelKit reference. |
-| `flags.plainHttp` | `boolean` | Use plain HTTP (no TLS) when fetching from a registry. |
+| `reference1` | `string` | First ModelKit reference. Prefix with `local://` or `remote://` to be explicit. |
+| `reference2` | `string` | Second ModelKit reference. |
+| `flags.plainHttp` | `boolean` | Allow plain HTTP connections to the registry. |
 
-**Returns** `Promise<DiffResult>`
+**Returns** `CancellablePromise<DiffResult>`
 
 ```typescript
 type DiffResult = {
@@ -415,7 +460,7 @@ console.log('New layers:', result.uniqueToKit2);
 
 Returns version information for the installed `kit` binary.
 
-**Returns** `Promise<VersionResult>`
+**Returns** `CancellablePromise<VersionResult>`
 
 ```typescript
 type VersionResult = {
@@ -447,8 +492,9 @@ Low-level escape hatch for running any `kit` subcommand directly. Useful when th
 | `args` | `string[]` | Arguments to pass to the subcommand. |
 | `stdin` | `string` | Optional data to write to stdin before closing it (e.g. a password). |
 | `options.cwd` | `string` | Working directory for the spawned process. |
+| `options.env` | `Record<string, string>` | Extra environment variables merged on top of `process.env`. |
 
-**Returns** `Promise<ExecResult>`
+**Returns** `CancellablePromise<ExecResult>`
 
 ```typescript
 type ExecResult = {

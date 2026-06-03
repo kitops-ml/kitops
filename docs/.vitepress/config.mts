@@ -132,6 +132,7 @@ export default defineConfig({
           { text: 'Overview', link: '/docs/kitops-ts' },
           { text: 'Getting Started', link: '/docs/kitops-ts/getting-started/' },
           { text: 'API Reference', link: '/docs/kitops-ts/api-reference/' },
+          { text: 'Type Definition', link: '/docs/kitops-ts/types/' },
           { text: 'Examples', link: '/docs/kitops-ts/examples/' },
         ]
       },
