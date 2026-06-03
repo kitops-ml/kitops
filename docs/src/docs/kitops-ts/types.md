@@ -3,12 +3,42 @@
 All types are exported from `@kitops/kitops-ts`.
 
 ```typescript
-import type { Kitfile, ModelKit, FilterFlag, /* ... */ } from '@kitops/kitops-ts';
+import type { Kitfile, ModelKit, FilterFlag, CancellablePromise, /* ... */ } from '@kitops/kitops-ts';
 ```
 
 ---
 
 ## Core Types
+
+### `CancellablePromise`
+
+Every command function returns a `CancellablePromise<T>`. It is a standard `Promise<T>` extended with a `.cancel()` method.
+
+```typescript
+type CancellablePromise<T> = Promise<T> & {
+  /** Kills the underlying `kit` process and rejects with a `DOMException` named `'AbortError'`. */
+  cancel: () => void;
+}
+```
+
+Because `CancellablePromise` extends `Promise`, all existing `await` code works without modification — `.cancel()` is purely opt-in.
+
+**Cancelling an operation:**
+
+```typescript
+const op = pull('registry.example.com/org/my-model:v1.0.0');
+setTimeout(() => op.cancel(), 30_000);
+
+try {
+  await op;
+} catch (err) {
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    console.log('Pull was cancelled');
+  }
+}
+```
+
+---
 
 ### `Layer`
 
@@ -27,7 +57,7 @@ type Layer =
 
 ### `FilterFlag`
 
-A filter expression used by [`unpack`](../api-reference.md#unpackdestination-flags) and [`info`](../api-reference.md#inforepository-tag-flags) to select specific layers or paths within a layer.
+A filter expression used by [`unpack`](api-reference.md#unpackdestination-flags) and [`info`](api-reference.md#infopath-flags) to select specific layers or paths within a layer.
 
 ```typescript
 type FilterFlag = string  // see accepted formats below
@@ -70,7 +100,7 @@ type KitCommand =
 
 ### `ExecResult`
 
-Raw output from a spawned `kit` process. Returned by the low-level `runCommand` helper.
+Raw output from a spawned `kit` process. Returned by the low-level [`kit`](api-reference.md#kitcommand-args-stdin-options) helper.
 
 ```typescript
 type ExecResult = {
@@ -84,7 +114,7 @@ type ExecResult = {
 
 ### `ModelKit`
 
-A single entry returned by [`list`](../api-reference.md#listrepository).
+A single entry returned by [`list`](api-reference.md#listrepository-flags).
 
 ```typescript
 type ModelKit = {
@@ -270,7 +300,7 @@ type TLSFlags = {
 
 ### `InitResult`
 
-Returned by [`init`](../api-reference.md#initpath-flags).
+Returned by [`init`](api-reference.md#initpath-flags).
 
 ```typescript
 type InitResult = {
@@ -283,7 +313,7 @@ type InitResult = {
 
 ### `InspectResult`
 
-Returned by [`inspect`](../api-reference.md#inspectrepository-tag-flags).
+Returned by [`inspect`](api-reference.md#inspectpath-flags).
 
 ```typescript
 type InspectResult = {
@@ -305,7 +335,7 @@ type InspectResult = {
 
 ### `VersionResult`
 
-Returned by [`version`](../api-reference.md#version).
+Returned by [`version`](api-reference.md#version).
 
 ```typescript
 type VersionResult = {
@@ -327,7 +357,7 @@ type VersionResult = {
 
 ### `DiffResult`
 
-Returned by [`diff`](../api-reference.md#diffmodelkit1-modelkit2-flags).
+Returned by [`diff`](api-reference.md#diffreference1-reference2).
 
 ```typescript
 type DiffResult = {
@@ -379,7 +409,7 @@ type DiffLayerEntry = {
 
 ## Kitfile Types
 
-These types mirror the Kitfile schema. They are returned by [`info`](../api-reference.md#inforepository-tag-flags) and [`inspect`](../api-reference.md#inspectrepository-tag-flags), and can also be used when constructing Kitfiles programmatically.
+These types mirror the Kitfile schema. They are returned by [`info`](api-reference.md#infopath-flags) and [`inspect`](api-reference.md#inspectpath-flags), and can also be used when constructing Kitfiles programmatically.
 
 ### `Kitfile`
 
@@ -447,7 +477,7 @@ interface LayerCommons {
 
 ### `Model`
 
-Model artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
+Model artifact definition in a Kitfile. Extends [`LayerCommons`](#layercommons).
 
 ```typescript
 interface Model extends LayerCommons {
@@ -495,7 +525,7 @@ interface ModelPart {
 
 ### `Dataset`
 
-Dataset artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
+Dataset artifact definition in a Kitfile. Extends [`LayerCommons`](#layercommons).
 
 ```typescript
 interface Dataset extends LayerCommons {
@@ -517,7 +547,7 @@ interface Dataset extends LayerCommons {
 
 ### `Code`
 
-Source code artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
+Source code artifact definition in a Kitfile. Extends [`LayerCommons`](#layercommons).
 
 ```typescript
 interface Code extends LayerCommons {
@@ -535,7 +565,7 @@ interface Code extends LayerCommons {
 
 ### `Doc`
 
-Documentation artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
+Documentation artifact definition in a Kitfile. Extends [`LayerCommons`](#layercommons).
 
 ```typescript
 interface Doc extends LayerCommons {}
@@ -550,7 +580,7 @@ interface Doc extends LayerCommons {}
 
 ### `Prompt`
 
-Prompt artifact definition in a Kitfile. Extends [`LayerCommons`](#layerbase).
+Prompt artifact definition in a Kitfile. Extends [`LayerCommons`](#layercommons).
 
 ```typescript
 interface Prompt extends LayerCommons {}
@@ -565,7 +595,7 @@ interface Prompt extends LayerCommons {}
 
 ## Manifest Types
 
-These types represent the OCI image manifest returned by [`inspect`](../api-reference.md#inspectrepository-tag-flags).
+These types represent the OCI image manifest returned by [`inspect`](api-reference.md#inspectpath-flags).
 
 ### `Manifest`
 

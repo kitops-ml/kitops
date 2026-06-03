@@ -20,6 +20,14 @@ await pack('.', { tag: 'ghcr.io/my-org/my-model:v1.0.0' });
 await push('ghcr.io/my-org/my-model:v1.0.0');
 ```
 
+Every function returns a `CancellablePromise` — a standard `Promise` extended with a `.cancel()` method that kills the underlying `kit` process at any time. Existing `await` code works without changes; cancellation is purely opt-in.
+
+```typescript
+const op = push('ghcr.io/my-org/my-model:v1.0.0');
+setTimeout(() => op.cancel(), 30_000); // cancel if it takes too long
+await op;
+```
+
 ## Related
 
 - [KitOps](https://kitops.org) — The ModelKit standard and CLI

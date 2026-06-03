@@ -121,7 +121,7 @@ const v1Ref = `${prodRegistry}/org/my-model:v1.0.0`;
 const latestRef = `${prodRegistry}/org/my-model:latest`;
 
 // Inspect the candidate before promoting
-const metadata = await inspect('org/my-model', 'rc1', { remote: true });
+const metadata = await inspect(`${stagingRegistry}/org/my-model:rc1`, { remote: true });
 console.log(`Promoting digest: ${metadata.digest}`);
 
 // Pull the RC so we can tag it locally
@@ -207,4 +207,57 @@ try {
 **Run:**
 ```bash
 MODEL_VERSION=0.2.0 REGISTRY_USER=... REGISTRY_PASS=... node examples/llm-prompts-ci.js
+```
+
+---
+
+## Cancellation with timeout
+
+Every function returns a `CancellablePromise`. Call `.cancel()` to kill the underlying `kit` process and reject with `AbortError`. This is useful for imposing deadlines on long-running operations like `push` or `pull`.
+
+```javascript
+import { push } from '@kitops/kitops-ts';
+
+async function pushWithTimeout(ref, timeoutMs) {
+  const op = push(ref);
+  const timer = setTimeout(() => op.cancel(), timeoutMs);
+
+  try {
+    await op;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.error(`Push timed out after ${timeoutMs}ms`);
+      process.exit(1);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+await pushWithTimeout('registry.example.com/org/my-model:v1.0.0', 5 * 60 * 1000);
+```
+
+You can also wire cancellation to a user signal (e.g. `SIGINT`) to allow graceful interruption:
+
+```javascript
+import { pull } from '@kitops/kitops-ts';
+
+const op = pull('registry.example.com/org/my-model:v1.0.0');
+
+process.once('SIGINT', () => {
+  console.log('\nInterrupted — cancelling pull…');
+  op.cancel();
+});
+
+try {
+  await op;
+  console.log('Pull complete.');
+} catch (err) {
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    console.log('Pull cancelled.');
+    process.exit(130); // standard exit code for SIGINT
+  }
+  throw err;
+}
 ```
