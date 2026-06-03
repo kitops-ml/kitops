@@ -34,10 +34,15 @@ import (
 	"github.com/kitops-ml/kitops/pkg/output"
 )
 
-func importUsingGit(ctx context.Context, opts *importOptions) error {
+func importUsingGit(ctx context.Context, opts *importOptions) (*ProvenanceData, error) {
+	var prov *ProvenanceData
+	if opts.attestationOutput != "" {
+		prov = newProvenanceData()
+	}
+
 	tmpDir, cleanupTmp, err := cache.MkCacheDir(cache.CacheImportSubdir, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	doCleanup := true
 	defer func() {
@@ -46,36 +51,53 @@ func importUsingGit(ctx context.Context, opts *importOptions) error {
 		}
 	}()
 
-	if err := cloneRepository(opts.repo, opts.repoRef, tmpDir, opts.token); err != nil {
-		return err
+	fullRepo := resolveRepoURL(opts.repo)
+	if err := git.CloneRepository(fullRepo, opts.repoRef, tmpDir, opts.token); err != nil {
+		return nil, err
+	}
+
+	// Resolve HEAD before stripping git metadata; the commit pins the source tree.
+	if prov != nil {
+		headSHA, err := git.ResolveHead(tmpDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve git HEAD: %w", err)
+		}
+		// fullRepo may carry userinfo (e.g. https://user:token@host/...) when the
+		// caller embedded credentials in the clone URL; scrub before recording.
+		prov.SourceURI = "git+" + git.SanitizeURL(fullRepo)
+		prov.SourceCommitSHA = headSHA
+	}
+
+	if err := git.CleanGitMetadata(tmpDir); err != nil {
+		return nil, err
 	}
 
 	var kitfile *artifact.KitFile
 	if opts.kitfilePath == "-" {
 		kitfile = &artifact.KitFile{}
 		if err := kitfile.LoadModel(os.Stdin); err != nil {
-			return fmt.Errorf("failed to read Kitfile from input: %w", err)
+			return nil, fmt.Errorf("failed to read Kitfile from input: %w", err)
 		}
 	} else if opts.kitfilePath != "" {
 		kf, err := readExistingKitfile(opts.kitfilePath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		kitfile = kf
 	} else if kfpath, err := filesystem.FindKitfileInPath(tmpDir); err == nil {
 		kf, err := readExistingKitfile(kfpath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		kitfile = kf
 	} else {
 		dirContents, err := kfgen.DirectoryListingFromFS(tmpDir)
 		if err != nil {
-			return fmt.Errorf("error processing directory: %w", err)
+			return nil, fmt.Errorf("error processing directory: %w", err)
 		}
-		kf, err := generateKitfile(dirContents, opts.repo, tmpDir)
+		kf, err := generateKitfile(dirContents, opts.repo, tmpDir, opts.depth)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		kitfile = kf
 
@@ -92,38 +114,39 @@ func importUsingGit(ctx context.Context, opts *importOptions) error {
 					output.Logf(output.LogLevelWarn, "and run command")
 					output.Logf(output.LogLevelWarn, "    kit pack -t %s %s", opts.tag, tmpDir)
 					output.Logf(output.LogLevelWarn, "to complete process")
-					return err
+					return nil, err
 				}
-				return err
+				return nil, err
 			}
 			kitfile = newKitfile
 		}
 	}
 
 	output.Infof("Packing model to %s", opts.tag)
-	if err := packDirectory(ctx, opts.configHome, tmpDir, kitfile, opts.modelKitRef); err != nil {
-		return fmt.Errorf("failed to pack ModelKit: %w", err)
+	manifestDesc, err := packDirectory(ctx, opts.configHome, tmpDir, kitfile, opts.modelKitRef)
+	if err != nil {
+		return nil, fmt.Errorf("failed to pack ModelKit: %w", err)
 	}
 	output.Infof("Model is packed as %s", opts.tag)
+	if prov != nil {
+		if err := prov.finalize(manifestDesc, kitfile); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := cache.CleanCacheDir(cache.CacheImportSubdir); err != nil {
 		output.Logf(output.LogLevelWarn, "Failed to clean cache directory: %s", err)
 	}
 
-	return nil
+	return prov, nil
 }
 
-func cloneRepository(repo, repoRef, destDir, token string) error {
-	fullRepo := repo
-	if !strings.HasPrefix(fullRepo, "http") {
-		fullRepo = fmt.Sprintf("https://huggingface.co/%s", repo)
+// resolveRepoURL canonicalizes the user-provided repository identifier into a
+// full clone URL. Bare org/repo strings (no scheme) are assumed to refer to a
+// HuggingFace repository, matching kit import's documented default behavior.
+func resolveRepoURL(repo string) string {
+	if strings.HasPrefix(repo, "http") {
+		return repo
 	}
-	if err := git.CloneRepository(fullRepo, repoRef, destDir, token); err != nil {
-		return err
-	}
-	// Clean up git-related files, since we probably don't want those
-	if err := git.CleanGitMetadata(destDir); err != nil {
-		return err
-	}
-	return nil
+	return "https://huggingface.co/" + repo
 }

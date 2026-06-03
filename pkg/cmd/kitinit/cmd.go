@@ -80,6 +80,7 @@ type initOptions struct {
 	repoRef             string
 	token               string
 	outputPath          string
+	depth               int
 	// Computed fields (remote only)
 	repo     string
 	repoType hf.RepositoryType
@@ -105,6 +106,7 @@ func InitCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.repoRef, "ref", "main", "Branch or tag for remote repository (requires --remote)")
 	cmd.Flags().StringVar(&opts.token, "token", "", "Auth token for remote repository (requires --remote)")
 	cmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)")
+	cmd.Flags().IntVar(&opts.depth, "depth", 0, "Maximum directory depth to process when generating a Kitfile. Setting to a negative number processes all files individually")
 	cmd.Flags().SortFlags = false
 	return cmd
 }
@@ -146,7 +148,7 @@ func runCommand(opts *initOptions) func(*cobra.Command, []string) error {
 func runInit(dirContents *kfgen.DirectoryListing, opts *initOptions) error {
 	modelPackage := buildPackageFromRepo(opts.repo, opts.modelkitName, opts.modelkitDescription, opts.modelkitAuthor)
 
-	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage)
+	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage, opts.depth)
 	if err != nil {
 		return output.Fatalf("Error generating Kitfile: %s", err)
 	}
@@ -155,26 +157,42 @@ func runInit(dirContents *kfgen.DirectoryListing, opts *initOptions) error {
 		return output.Fatalf("Error formatting Kitfile: %s", err)
 	}
 
-	if opts.outputPath == "-" {
-		fmt.Print(string(bytes))
-		return nil
-	}
 	return writeKitfile(bytes, opts)
 }
 
 func writeKitfile(bytes []byte, opts *initOptions) error {
-	if _, err := os.Stat(opts.outputPath); err == nil {
-		if !opts.overwrite {
-			return output.Fatalf("Kitfile already exists at %s. Use '--force' to overwrite", opts.outputPath)
+	// For real file paths, honor the existing-file/--force contract before
+	// opening the sink (OpenDataSink truncates unconditionally).
+	if opts.outputPath != "-" {
+		if _, err := os.Stat(opts.outputPath); err == nil {
+			if !opts.overwrite {
+				return output.Fatalf("Kitfile already exists at %s. Use '--force' to overwrite", opts.outputPath)
+			}
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			return output.Fatalf("Error checking for existing Kitfile: %s", err)
 		}
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return output.Fatalf("Error checking for existing Kitfile: %s", err)
 	}
-	if err := os.WriteFile(opts.outputPath, bytes, 0644); err != nil {
+
+	sink, err := output.OpenDataSink(opts.outputPath)
+	if err != nil {
 		return output.Fatalf("Failed to write Kitfile: %s", err)
 	}
-	output.Infof("Generated Kitfile:\n\n%s", string(bytes))
-	output.Infof("Saved to path '%s'", opts.outputPath)
+	defer func() {
+		if err := sink.Close(); err != nil {
+			output.Logf(output.LogLevelWarn, "failed to close output: %s", err)
+		}
+	}()
+	if _, err := sink.Write(bytes); err != nil {
+		return output.Fatalf("Failed to write Kitfile: %s", err)
+	}
+	if err := sink.Commit(); err != nil {
+		return output.Fatalf("Failed to finalize Kitfile: %s", err)
+	}
+
+	if opts.outputPath != "-" {
+		output.Infof("Generated Kitfile:\n\n%s", string(bytes))
+		output.Infof("Saved to path '%s'", opts.outputPath)
+	}
 	return nil
 }
 

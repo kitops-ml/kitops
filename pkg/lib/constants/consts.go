@@ -44,6 +44,7 @@ const (
 	HarnessProcessFile                = "process.pid"
 	HarnessLogFile                    = "harness.log"
 	UpdateNotificationsConfigFilename = "disable-update-notifications"
+	UpdateCheckCacheFilename          = "update-check.json"
 
 	// Dev command model extraction/cache paths
 	DevModelsSubpath       = "dev-models"

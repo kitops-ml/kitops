@@ -92,7 +92,7 @@ func TestParseSkillFrontmatter(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			fm := parseSkillFrontmatter(path)
+			fm := parseSkillFrontmatter(tmpDir, "SKILL.md")
 			if tt.expectNil {
 				if fm != nil {
 					t.Errorf("expected nil, got %+v", fm)
@@ -129,12 +129,12 @@ func TestDirContainsSkillMD(t *testing.T) {
 		{
 			name:   "has skill.md lowercase",
 			files:  []string{"skill.md"},
-			expect: true,
+			expect: false,
 		},
 		{
 			name:   "has Skill.md mixed case",
 			files:  []string{"Skill.md"},
-			expect: true,
+			expect: false,
 		},
 		{
 			name:   "no skill file",
@@ -184,8 +184,8 @@ func TestBuildPromptFromSkill(t *testing.T) {
 	}
 
 	prompt, _ := buildPromptFromSkill(dir)
-	if prompt.Path != "myskill" {
-		t.Errorf("Path = %q, want %q", prompt.Path, "myskill")
+	if prompt.Path != "myskill/" {
+		t.Errorf("Path = %q, want %q", prompt.Path, "myskill/")
 	}
 	if prompt.Name != "test-skill" {
 		t.Errorf("Name = %q, want %q", prompt.Name, "test-skill")
@@ -214,7 +214,7 @@ func TestGenerateKitfile_RootSkillMD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kitfile, err := GenerateKitfile(dir, nil)
+	kitfile, err := GenerateKitfile(dir, nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestGenerateKitfile_SubdirSkillMD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kitfile, err := GenerateKitfile(dir, nil)
+	kitfile, err := GenerateKitfile(dir, nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,8 +268,8 @@ func TestGenerateKitfile_SubdirSkillMD(t *testing.T) {
 	if len(kitfile.Prompts) != 1 {
 		t.Fatalf("expected 1 prompt, got %d", len(kitfile.Prompts))
 	}
-	if kitfile.Prompts[0].Path != "pdf-tools" {
-		t.Errorf("prompt path = %q, want %q", kitfile.Prompts[0].Path, "pdf-tools")
+	if kitfile.Prompts[0].Path != "pdf-tools/" {
+		t.Errorf("prompt path = %q, want %q", kitfile.Prompts[0].Path, "pdf-tools/")
 	}
 	if kitfile.Prompts[0].Name != "pdf-tools" {
 		t.Errorf("prompt name = %q, want %q", kitfile.Prompts[0].Name, "pdf-tools")
@@ -299,7 +299,7 @@ func TestGenerateKitfile_UserOverridesFrontmatter(t *testing.T) {
 		Name:        "user-name",
 		Description: "user desc",
 	}
-	kitfile, err := GenerateKitfile(dir, userPkg)
+	kitfile, err := GenerateKitfile(dir, userPkg, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,7 +342,7 @@ func TestGenerateKitfile_MultiSkill(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kitfile, err := GenerateKitfile(dir, nil)
+	kitfile, err := GenerateKitfile(dir, nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,7 +387,7 @@ func TestGenerateKitfile_MultiSkillMixedDirs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kitfile, err := GenerateKitfile(dir, nil)
+	kitfile, err := GenerateKitfile(dir, nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -429,7 +429,7 @@ func TestGenerateKitfile_RootSkillOverridesSubdir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kitfile, err := GenerateKitfile(dir, nil)
+	kitfile, err := GenerateKitfile(dir, nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

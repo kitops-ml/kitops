@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core'
-import { useSlots, useAttrs, defineOptions } from 'vue'
+import { useSlots, useAttrs, defineOptions, type HTMLAttributes } from 'vue'
 
 defineOptions({
   inheritAttrs: false
@@ -8,8 +8,8 @@ defineOptions({
 
 const props = withDefaults(defineProps<{
   id?: string,
-  wrapperClass?: unknown,
-  class?: unknown,
+  wrapperClass?: HTMLAttributes['class'],
+  class?: HTMLAttributes['class'],
   label?: string,
   modelValue?: boolean
 }>(), {

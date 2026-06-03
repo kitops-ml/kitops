@@ -359,13 +359,15 @@ kit import myorg/myrepo --file ./path/to/Kitfile
 ### Options
 
 ```
-      --ref string        Version (tag) of repository to import (default "main")
-      --token string      Token to use for authenticating with repository
-  -t, --tag string        Tag for the ModelKit (default is '[repository]:latest')
-  -f, --file string       Path to Kitfile to use for packing (use '-' to read from standard input)
-      --tool string       Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)
-      --concurrency int   Maximum number of simultaneous downloads (for huggingface) (default 5)
-  -h, --help              help for import
+      --ref string                  Version (tag) of repository to import (default "main")
+      --token string                Token to use for authenticating with repository
+  -t, --tag string                  Tag for the ModelKit (default is '[repository]:latest')
+  -f, --file string                 Path to Kitfile to use for packing (use '-' to read from standard input)
+      --tool string                 Tool to use for downloading files: options are 'git' and 'hf' (default: detect based on repository)
+      --concurrency int             Maximum number of simultaneous downloads (for huggingface) (default 5)
+      --depth int                   Maximum directory depth to process when generating a Kitfile. Setting to -1 processes all files individually
+      --attestation-output string   Write SLSA Provenance v1 predicate to <path> ('-' for stdout)
+  -h, --help                        help for import
 ```
 
 ### Options inherited from parent commands
@@ -432,15 +434,19 @@ kit info --remote registry.example.com/my-model:1.0.0
 
 ## kit init
 
-Generate a Kitfile for the contents of a directory
+Generate a Kitfile for the contents of a directory or remote repository
 
 ### Synopsis
 
-Examine the contents of a directory and attempt to generate a basic Kitfile
-based on common file formats. Any files whose type (i.e. model, dataset, etc.)
-cannot be determined will be included in a code layer.
+Examine the contents of a directory or remote repository and attempt to generate
+a basic Kitfile based on common file formats. Any files whose type (i.e. model,
+dataset, etc.) cannot be determined will be included in a code layer.
 
-By default the command will prompt for input for a name and description for the Kitfile
+For local directories, the generated Kitfile is saved in the target directory by
+default. Use --output to specify a different path, or --output=- for stdout.
+For remote repositories (--remote), the Kitfile is printed to stdout by default.
+
+By default the command will prompt for input for a name and description for the Kitfile.
 
 ```
 kit init [flags] PATH
@@ -457,6 +463,18 @@ kit init ./my-model --name "mymodel" --desc "This is my model's description"
 
 # Generate a Kitfile, overwriting any existing Kitfile:
 kit init ./my-model --force
+
+# Generate a Kitfile for a remote HuggingFace model:
+kit init https://huggingface.co/myorg/mymodel --remote
+
+# Generate a Kitfile for a HuggingFace dataset:
+kit init huggingface.co/datasets/myorg/mydataset --remote
+
+# Generate a Kitfile for a remote repository with a specific ref:
+kit init myorg/mymodel --remote --ref v1.0
+
+# Save the generated Kitfile to a specific path:
+kit init myorg/mymodel --remote --output ./Kitfile
 ```
 
 ### Options
@@ -466,6 +484,11 @@ kit init ./my-model --force
       --desc string     Description for the ModelKit
       --author string   Author for the ModelKit
   -f, --force           Overwrite existing Kitfile if present
+      --remote          Generate Kitfile from a remote HuggingFace repository
+      --ref string      Branch or tag for remote repository (requires --remote) (default "main")
+      --token string    Auth token for remote repository (requires --remote)
+  -o, --output string   Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)
+      --depth int       Maximum directory depth to process when generating a Kitfile. Setting to a negative number processes all files individually
   -h, --help            help for init
 ```
 
@@ -552,6 +575,16 @@ appear multiple times in the list, distinguished by their DIGEST.
 The SIZE displayed for each modelkit represents the total storage space
 occupied by all its components.
 
+Use the --filter (-f) flag to narrow results based on modelkit contents. Only
+modelkits containing at least one layer matching the filter will be shown.
+
+Valid filters have the format
+    [types]:[filters]
+where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets,
+code, docs, or prompts) and [filters] is an optional comma-separated list of names
+or paths to match against. Multiple --filter flags use OR logic (a modelkit is
+listed if it matches any filter).
+
 Use the --format flag to change how results are printed. Valid values are
 "table", "json", or a Go template. When a value other than "table" or "json"
 is supplied, the flag contents are treated as a Go template executed once per
@@ -578,20 +611,33 @@ kit list
 
 # List modelkits from a remote repository
 kit list registry.example.com/my-namespace/my-model
+
+# List only modelkits that contain prompt layers
+kit list -f prompts
+
+# List only modelkits containing a model
+kit list -f model
+
+# List modelkits that have either prompts or datasets
+kit list -f prompts -f datasets
+
+# List modelkits with a specific named prompt
+kit list -f prompts:pdf-processing
 ```
 
 ### Options
 
 ```
-      --format string      Output format: table, json, or Go template string (default "table")
-      --plain-http         Use plain HTTP when connecting to remote registries
-      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
-      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
-      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string       Proxy to use for connections (overrides proxy set by environment)
-  -h, --help               help for list
+      --format string        Output format: table, json, or Go template string (default "table")
+  -f, --filter stringArray   Filter modelkits by content type (e.g., model, datasets, code, docs, prompts). Can be specified multiple times
+      --plain-http           Use plain HTTP when connecting to remote registries
+      --tls-verify           Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings     Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string          Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string           Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int      Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string         Proxy to use for connections (overrides proxy set by environment)
+  -h, --help                 help for list
 ```
 
 ### Options inherited from parent commands
@@ -1006,7 +1052,14 @@ Additional filters match elements of the Kitfile on either the name (if present)
 the path used.
 
 The filter field can be specified multiple times. A layer will be unpacked if it matches
-any of the specified filters
+any of the specified filters.
+
+Use --as-skill to install SKILL.md prompt layers as agent skills instead of unpacking
+them to their original paths. Without a value, kit auto-discovers installed agents by
+checking their global config directories. With a value, specify agents as a comma-
+separated list (e.g. --as-skill=claude-code,cursor). By default, skills are installed
+globally (user-scoped). When -d is specified, skills are installed into that project
+directory instead.
 
 ```
 kit unpack [flags] [registry/]repository[:tag|@digest]
@@ -1032,28 +1085,42 @@ kit unpack myrepo/my-model:latest --filter=model --filter=datasets:validation
 
 # Unpack a modelkit from a remote registry with overwrite enabled
 kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked
+
+# Install SKILL.md prompt layers as agent skills (auto-detect agents)
+kit unpack myrepo/my-model:latest --as-skill
+
+# Install skills for specific agents (= required when specifying agents)
+kit unpack myrepo/my-model:latest --as-skill=claude-code,cursor,windsurf
+
+# Install skills into a project directory
+kit unpack myrepo/my-model:latest --as-skill -d /path/to/project
+
+# Overwrite existing skills
+kit unpack myrepo/my-model:latest --as-skill -o
 ```
 
 ### Options
 
 ```
-  -d, --dir string           The target directory to unpack components into. This directory will be created if it does not exist
-  -o, --overwrite            Overwrites existing files and directories in the target unpack directory without prompting
-  -i, --ignore-existing      Skip unpacking files if a file with that name already exists
-  -f, --filter stringArray   Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times
-      --kitfile              Unpack only Kitfile (deprecated: use --filter=kitfile)
-      --model                Unpack only model (deprecated: use --filter=model)
-      --code                 Unpack only code (deprecated: use --filter=code)
-      --datasets             Unpack only datasets (deprecated: use --filter=datasets)
-      --docs                 Unpack only docs (deprecated: use --filter=docs)
-      --plain-http           Use plain HTTP when connecting to remote registries
-      --tls-verify           Require TLS and verify certificates when connecting to remote registries (default true)
-      --tls-cert strings     Path to TLS cert to add to trust store (flag can be repeated)
-      --cert string          Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string           Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int      Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string         Proxy to use for connections (overrides proxy set by environment)
-  -h, --help                 help for unpack
+  -d, --dir string                 The target directory to unpack components into. This directory will be created if it does not exist
+  -o, --overwrite                  Overwrites existing files and directories in the target unpack directory without prompting
+  -i, --ignore-existing            Skip unpacking files if a file with that name already exists
+  -f, --filter stringArray         Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times
+      --include-remote             Include remote datasets in unpacked files
+      --kitfile                    Unpack only Kitfile (deprecated: use --filter=kitfile)
+      --model                      Unpack only model (deprecated: use --filter=model)
+      --code                       Unpack only code (deprecated: use --filter=code)
+      --datasets                   Unpack only datasets (deprecated: use --filter=datasets)
+      --docs                       Unpack only docs (deprecated: use --filter=docs)
+      --as-skill string[="auto"]   Install SKILL.md prompt layers as agent skills. Without a value, auto-discovers installed agents. With a value, specify agents as a comma-separated list (e.g. --as-skill=claude-code,cursor)
+      --plain-http                 Use plain HTTP when connecting to remote registries
+      --tls-verify                 Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings           Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string                Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string                 Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int            Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string               Proxy to use for connections (overrides proxy set by environment)
+  -h, --help                       help for unpack
 ```
 
 ### Options inherited from parent commands

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
@@ -28,6 +29,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
 	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
+	"github.com/kitops-ml/kitops/pkg/lib/skill"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -62,7 +64,14 @@ Additional filters match elements of the Kitfile on either the name (if present)
 the path used.
 
 The filter field can be specified multiple times. A layer will be unpacked if it matches
-any of the specified filters`
+any of the specified filters.
+
+Use --as-skill to install SKILL.md prompt layers as agent skills instead of unpacking
+them to their original paths. Without a value, kit auto-discovers installed agents by
+checking their global config directories. With a value, specify agents as a comma-
+separated list (e.g. --as-skill=claude-code,cursor). By default, skills are installed
+globally (user-scoped). When -d is specified, skills are installed into that project
+directory instead.`
 
 	example = `# Unpack all components of a modelkit to the current directory
 kit unpack myrepo/my-model:latest -d /path/to/unpacked
@@ -80,7 +89,19 @@ kit unpack myrepo/my-model:latest --filter=docs:./README.md
 kit unpack myrepo/my-model:latest --filter=model --filter=datasets:validation
 
 # Unpack a modelkit from a remote registry with overwrite enabled
-kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked`
+kit unpack registry.example.com/myrepo/my-model:latest -o -d /path/to/unpacked
+
+# Install SKILL.md prompt layers as agent skills (auto-detect agents)
+kit unpack myrepo/my-model:latest --as-skill
+
+# Install skills for specific agents (= required when specifying agents)
+kit unpack myrepo/my-model:latest --as-skill=claude-code,cursor,windsurf
+
+# Install skills into a project directory
+kit unpack myrepo/my-model:latest --as-skill -d /path/to/project
+
+# Overwrite existing skills
+kit unpack myrepo/my-model:latest --as-skill -o`
 )
 
 type unpackOptions struct {
@@ -93,6 +114,7 @@ type unpackOptions struct {
 	overwrite      bool
 	ignoreExisting bool
 	includeRemote  bool
+	asSkill        string
 }
 
 // unpackConf configures which elements of the modelkit should be unpacked.
@@ -166,6 +188,8 @@ func UnpackCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackCode, "code", false, "Unpack only code (deprecated: use --filter=code)")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackDatasets, "datasets", false, "Unpack only datasets (deprecated: use --filter=datasets)")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackDocs, "docs", false, "Unpack only docs (deprecated: use --filter=docs)")
+	cmd.Flags().StringVar(&opts.asSkill, "as-skill", "", "Install SKILL.md prompt layers as agent skills. Without a value, auto-discovers installed agents. With a value, specify agents as a comma-separated list (e.g. --as-skill=claude-code,cursor)")
+	cmd.Flags().Lookup("as-skill").NoOptDefVal = "auto"
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
@@ -217,9 +241,38 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 			for _, filter := range opts.filters {
 				filterConf, err := kitfile.ParseFilter(filter)
 				if err != nil {
-					return output.Fatalf("Invalid filter %q: %s", filter, err)
+					return output.Fatalf("Invalid filter '%s': %s", filter, err)
 				}
 				libOpts.FilterConfs = append(libOpts.FilterConfs, *filterConf)
+			}
+		}
+
+		// Handle --as-skill flag
+		if cmd.Flags().Changed("as-skill") {
+			// Only set ProjectDir when -d was explicitly provided; otherwise install globally
+			projectDir := ""
+			if cmd.Flags().Changed("dir") {
+				projectDir = opts.unpackDir
+			}
+			skillOpts, err := parseAsSkillFlag(opts.asSkill, projectDir, opts.overwrite, opts.ignoreExisting, opts.modelRef)
+			if err != nil {
+				return output.Fatalf("%s", err)
+			}
+			libOpts.SkillOptions = skillOpts
+
+			// Implicitly add prompts filter if no filters specified
+			if len(libOpts.FilterConfs) == 0 {
+				promptFilter, _ := kitfile.ParseFilter("prompts")
+				libOpts.FilterConfs = []kitfile.FilterConf{*promptFilter}
+			} else {
+				// Warn if user specified non-prompt filters — they have no effect in skill mode
+				for _, fc := range libOpts.FilterConfs {
+					for _, bt := range fc.BaseTypes {
+						if bt != "prompts" {
+							output.Logf(output.LogLevelWarn, "Filter type '%s' has no effect with --as-skill (only 'prompts' filters apply)", bt)
+						}
+					}
+				}
 			}
 		}
 
@@ -229,6 +282,44 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		}
 		return nil
 	}
+}
+
+func parseAsSkillFlag(value, unpackDir string, overwrite, ignoreExisting bool, modelRef *registry.Reference) (*skill.SkillInstallOptions, error) {
+	var agents []string
+
+	if value == "auto" {
+		// Auto-discover installed agents
+		detected, err := skill.DetectInstalledAgents()
+		if err != nil {
+			return nil, fmt.Errorf("failed to detect installed agents: %w", err)
+		}
+		if len(detected) == 0 {
+			return nil, fmt.Errorf("no installed agents detected. Specify agents explicitly, e.g. --as-skill=claude-code,cursor")
+		}
+		output.Infof("Detected installed agents: %s", strings.Join(detected, ", "))
+		agents = detected
+	} else {
+		// Parse comma-separated agent names
+		parts := strings.Split(value, ",")
+		for _, p := range parts {
+			name := strings.TrimSpace(p)
+			if name == "" {
+				return nil, fmt.Errorf("invalid agent list: empty agent name in '%s'", value)
+			}
+			if !skill.IsValidAgentName(name) {
+				return nil, fmt.Errorf("unknown agent '%s'. Valid agents: %s", name, strings.Join(skill.ValidAgentNames(), ", "))
+			}
+			agents = append(agents, name)
+		}
+	}
+
+	return &skill.SkillInstallOptions{
+		Agents:         agents,
+		ProjectDir:     unpackDir,
+		Overwrite:      overwrite,
+		IgnoreExisting: ignoreExisting,
+		ModelRef:       modelRef,
+	}, nil
 }
 
 func printConfig(opts *unpackOptions) {

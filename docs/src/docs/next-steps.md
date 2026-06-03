@@ -59,6 +59,48 @@ kit unpack myrepo/my-model:latest
 
 Get more information on unpack and filtering in the [CLI reference docs](../cli/cli-reference/#kit-unpack).
 
+### Installing Agent Skills
+
+ModelKits can include agent skill files — prompt layers that contain a `SKILL.md` file. The `--as-skill` flag installs these skills directly into supported coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot, and [40+ more](../cli/cli-reference/#kit-unpack)).
+
+**Auto-discover installed agents:**
+
+```sh
+kit unpack myrepo/my-agent-kit:latest --as-skill
+```
+
+Kit checks the global config directories for each supported agent and installs the skill for any agents it detects on your machine.
+
+**Install for specific agents:**
+
+```sh
+kit unpack myrepo/my-agent-kit:latest --as-skill=claude-code,cursor,windsurf
+```
+
+Use `=` followed by a comma-separated list of agent names. Run `kit unpack --help` to see all supported agent names.
+
+**Install globally (default) vs. project-scoped:**
+
+```sh
+# Install globally (user-scoped, default):
+kit unpack myrepo/my-agent-kit:latest --as-skill
+
+# Install into a specific project directory:
+kit unpack myrepo/my-agent-kit:latest --as-skill -d /path/to/project
+```
+
+Without `-d`, skills are installed into each agent's global config directory (e.g. `~/.claude/skills/` for Claude Code). With `-d`, skills are installed into the agent's project-relative subdirectory (e.g. `.claude/skills/`) inside the specified directory.
+
+**Overwrite existing skills:**
+
+```sh
+kit unpack myrepo/my-agent-kit:latest --as-skill -o
+```
+
+:::tip What makes a prompt layer a skill?
+A prompt layer is installed as a skill only when it contains a `SKILL.md` file. Prompt layers without `SKILL.md` are skipped. The skill name is taken from the `name` field in the `SKILL.md` frontmatter, falling back to the Kitfile prompt name, directory name, or repository name.
+:::
+
 ## Signing your ModelKit
 
 Because ModelKits are OCI 1.1 artifacts, they can be signed like any other OCI artifact (you may already sign your containers, for example).
@@ -82,7 +124,7 @@ If you are building a ModelKit from a Hugging Face repository you can use the [k
 
 ### 2/ Generating a Kitfile From a Directory
 
-If you have your AI/ML project artifacts in a directory structure already then the easiest way to get started is with [kit init](../cli/cli-reference/#kit-init). From the root of the directory with the AI/ML artifacts you wish to pack in the ModelKit run:
+If you have your AI project artifacts in a directory structure already then the easiest way to get started is with [kit init](../cli/cli-reference/#kit-init). From the root of the directory with the artifacts you wish to pack in the ModelKit run:
 
 ```sh
 kit init .
@@ -95,15 +137,16 @@ You can learn more about the syntax, options, and flags in our [CLI docs](../cli
 
 ### 3/ Writing Your Own Kitfile
 
-There are five parts to a Kitfile:
+There are six parts to a Kitfile:
 
 1. The `package` section: Metadata about the ModelKit, including the author, description, and license
 1. The `model` section: Information about the serialized model
 1. The `datasets` section: Information on included datasets
-1. The `code` section: Information about codebases related to the project, including Jupyter notebook folders
+1. The `code` section: Information about codebases, scripts, and MCP server configurations
+1. The `prompts` section: Prompt files, agent skill files, and other text-based AI configuration
 1. The `docs` section: Information about documentation for the ModelKit
 
-A Kitfile only needs the `package` section, plus one or more of the other sections.
+A Kitfile needs a `manifestVersion` plus at least one of the other sections. The `package` section is recommended for metadata but not strictly required. Not every ModelKit needs a model - you can create ModelKits that contain only prompts and skill files, or only code and MCP server configurations.
 
 The `model` section can contain a single model, or you can create model dependencies with `model parts` which is covered in the [KitFile format documentation](../kitfile/format/#model).
 

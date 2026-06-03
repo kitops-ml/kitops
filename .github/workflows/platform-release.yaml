@@ -39,12 +39,12 @@ jobs:
 
       ## install build dependencies for frontend generation
       - name: Install Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: './frontend/dev-mode/.nvmrc'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           package_json_file: './docs/package.json'
 
@@ -66,7 +66,7 @@ jobs:
           syft-version: v1.32.0
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
+        uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 #v7.2.2
         with:
           version: latest
           distribution: goreleaser
@@ -90,7 +90,7 @@ jobs:
           ./build/scripts/sign ./dist/kitops-darwin-x86_64.zip
           ./build/scripts/sign ./dist/kitops-offline-darwin-x86_64.zip
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
             name: dist-macos
             if-no-files-found: error
@@ -117,7 +117,7 @@ jobs:
           syft-version: v1.32.0
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
+        uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 #v7.2.2
         with:
           version: latest
           distribution: goreleaser
@@ -125,7 +125,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
             name: dist-windows
             if-no-files-found: error
@@ -151,7 +151,7 @@ jobs:
           syft-version: v1.32.0
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
+        uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 #v7.2.2
         with:
           version: latest
           distribution: goreleaser
@@ -160,7 +160,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
             name: dist-linux
             if-no-files-found: error
@@ -176,11 +176,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-linux, build-macos, build-windows]
     steps:
-      # checkout the current repository
+      - name: Generate a token for docs update PR
+        id: generate-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1   ## v3.2.0
+        with:
+          app-id: ${{ vars.KITOPS_BOT_ID }}
+          private-key: ${{ secrets.KITOPS_BOT_PRIVATE_KEY }}
+          owner: kitops-ml
+
+      # checkout the current repository using the App token
+      # so that git credentials are set correctly for the docs update PR
       - name: Checkout kitops
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: kitops
+          token: ${{ steps.generate-token.outputs.token }}
 
       # Create the homebrew-file directory to store the
       # homebrew artifacts and copy the awk script and
@@ -215,7 +225,7 @@ jobs:
       # homebrew recipe and pushing it to the repository:
       # 'kitops-ml/homebrew-kitops'
       - name: Upload homebrew-files as a build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: homebrew-files
           if-no-files-found: error
@@ -251,7 +261,7 @@ jobs:
       - name: Generate CLI documentation
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           TAG_NAME: ${{ inputs.release_tag || github.ref_name}}
         run: |
           pushd kitops
@@ -283,7 +293,7 @@ jobs:
     steps:
       - name: Generate a token
         id: generate-token
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859   ## v3.0.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1   ## v3.2.0
         with:
           app-id: ${{ vars.KITOPS_BOT_ID }}
           private-key: ${{ secrets.KITOPS_BOT_PRIVATE_KEY }}
@@ -369,7 +379,7 @@ jobs:
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd  # v4.0.0
 
       - name: Login to ghcr.io
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2         # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121         # v4.1.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -380,7 +390,7 @@ jobs:
 
       - name: Build and push base Kit container
         id: build-kit-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -398,7 +408,7 @@ jobs:
 
       - name: Build and push Kit init container
         id: build-kit-init-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -416,7 +426,7 @@ jobs:
 
       - name: Build and push Kit KServe container
         id: build-kit-serve-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -434,7 +444,7 @@ jobs:
 
       - name: Build and push Kubeflow Pipeline components container
         id: build-kubeflow-container
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294    # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f    # v7.1.0
         with:
           platforms: linux/amd64,linux/arm64
           push: true

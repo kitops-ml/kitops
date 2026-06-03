@@ -32,11 +32,11 @@ expectedKitfile:
     - path: my.prompt.md
     - path: suffix.prompt
     - path: test.prompt.pdf
-    - path: prompts-dir
+    - path: prompts-dir/
   docs:
     - path: README.md
       description: Readme file
     - path: notes.md
     - path: prompt.md
   code:
-    - path: mixed-prompts
+    - path: mixed-prompts/

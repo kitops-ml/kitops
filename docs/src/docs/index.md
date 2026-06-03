@@ -12,5 +12,3 @@ if (typeof window !== 'undefined') {
   window.location.replace('/docs/overview/')
 }
 </script>
-
-<!-- AGENT_MODIFIED: Human review required before merge -->

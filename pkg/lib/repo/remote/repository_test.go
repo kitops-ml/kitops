@@ -195,13 +195,53 @@ func TestUploadBlobChunkedVerifyRequestHeaders(t *testing.T) {
 
 	testRepo := Repository{
 		Repository:      nil, // Not testing library functionality here!
-		Reference:       registry.Reference{Registry: "testreg", Repository: "testrepo", Reference: "testtag"},
+		Reference:       registry.Reference{Registry: "127.0.0.1", Repository: "testrepo", Reference: "testtag"},
 		PlainHttp:       true,
 		Client:          tc,
 		uploadChunkSize: uploadChunkDefaultSize,
 	}
 
 	_, tErr := testRepo.uploadBlobChunked(t.Context(), startUrl, expectedAuthHeader, expectedDesc, testContent)
+	t.Logf("Function output:\n%s\n", logbuf.String())
+	assert.ErrorIs(t, tErr, completedErr, "Unexpected error returned")
+}
+
+func TestUploadBlobChunkedDropsAuthOnCrossOrigin(t *testing.T) {
+	var logbuf bytes.Buffer
+	teardown := setup(&logbuf)
+	defer teardown()
+
+	startUrl, err := url.Parse("http://127.0.0.1/start")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedSize := uploadChunkDefaultSize
+	expectedDigest := ocispec.DescriptorEmptyJSON.Digest
+	expectedDesc := ocispec.Descriptor{Digest: expectedDigest, Size: expectedSize}
+	testContent := io.LimitReader(rand.Reader, expectedSize)
+	completedErr := errors.New("test complete")
+
+	responses := []func(*http.Request) (*http.Response, error){
+		func(req *http.Request) (*http.Response, error) {
+			processRequest(req, http.MethodPatch, "/start")
+			assert.Empty(t, req.Header.Get("Authorization"),
+				"Authorization must not be forwarded to a cross-origin upload target")
+			return nil, completedErr
+		},
+	}
+
+	tc := &testClient{responses: responses}
+
+	testRepo := Repository{
+		Repository:      nil,
+		Reference:       registry.Reference{Registry: "testreg", Repository: "testrepo", Reference: "testtag"},
+		PlainHttp:       true,
+		Client:          tc,
+		uploadChunkSize: uploadChunkDefaultSize,
+	}
+
+	_, tErr := testRepo.uploadBlobChunked(t.Context(), startUrl, "test-auth", expectedDesc, testContent)
 	t.Logf("Function output:\n%s\n", logbuf.String())
 	assert.ErrorIs(t, tErr, completedErr, "Unexpected error returned")
 }
@@ -422,6 +462,122 @@ func TestUploadBlobChunkedRetriesLimit(t *testing.T) {
 		return
 	}
 	assert.ErrorContains(t, tErr, "end of test", "Unexpected error returned")
+}
+
+func TestCopyAuth(t *testing.T) {
+	const authHeader = "Bearer test-token"
+
+	tests := []struct {
+		name       string
+		reference  registry.Reference
+		plainHttp  bool
+		authHeader string
+		requestURL string
+		wantAuth   string
+	}{
+		{
+			name:       "empty auth header is a no-op",
+			reference:  registry.Reference{Registry: "registry.example.com", Repository: "repo"},
+			authHeader: "",
+			requestURL: "https://registry.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "same host with default https port",
+			reference:  registry.Reference{Registry: "registry.example.com", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "https://registry.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   authHeader,
+		},
+		{
+			name:       "same host with default http port for plainHttp registry",
+			reference:  registry.Reference{Registry: "registry.example.com", Repository: "repo"},
+			plainHttp:  true,
+			authHeader: authHeader,
+			requestURL: "http://registry.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   authHeader,
+		},
+		{
+			name:       "same host with matching explicit port",
+			reference:  registry.Reference{Registry: "registry.example.com:5000", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "https://registry.example.com:5000/v2/repo/blobs/uploads/abc",
+			wantAuth:   authHeader,
+		},
+		{
+			name:       "host match is case-insensitive",
+			reference:  registry.Reference{Registry: "Registry.Example.com", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "https://registry.EXAMPLE.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   authHeader,
+		},
+		{
+			name:       "different host drops auth",
+			reference:  registry.Reference{Registry: "registry.example.com", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "https://other.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "different explicit port drops auth",
+			reference:  registry.Reference{Registry: "registry.example.com:5000", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "https://registry.example.com:6000/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "default port mismatch drops auth (https registry, http request)",
+			reference:  registry.Reference{Registry: "registry.example.com", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "http://registry.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "explicit registry port vs default request port drops auth",
+			reference:  registry.Reference{Registry: "registry.example.com:5000", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "https://registry.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "unknown scheme without port drops auth",
+			reference:  registry.Reference{Registry: "registry.example.com", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "ftp://registry.example.com/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "plain http scheme mismatch",
+			reference:  registry.Reference{Registry: "registry.example.com:8080", Repository: "repo"},
+			plainHttp:  true,
+			authHeader: authHeader,
+			requestURL: "https://registry.example.com:8080/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+		{
+			name:       "https scheme mismatch",
+			reference:  registry.Reference{Registry: "registry.example.com:8080", Repository: "repo"},
+			authHeader: authHeader,
+			requestURL: "http://registry.example.com:8080/v2/repo/blobs/uploads/abc",
+			wantAuth:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Repository{
+				Reference: tt.reference,
+				PlainHttp: tt.plainHttp,
+			}
+			req, err := http.NewRequest(http.MethodPut, tt.requestURL, nil)
+			if err != nil {
+				t.Fatalf("failed to build request: %v", err)
+			}
+
+			r.copyAuth(req, tt.authHeader)
+			assert.Equal(t, tt.wantAuth, req.Header.Get("Authorization"))
+		})
+	}
 }
 
 func gobbleBody(req *http.Request) error {
