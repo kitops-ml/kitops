@@ -27,7 +27,7 @@ type Layer =
 
 ### `FilterFlag`
 
-A filter expression used by [`unpack`](../../api-reference.md#unpackdestination-flags) and [`info`](../../api-reference.md#inforepository-tag-flags) to select specific layers or paths within a layer.
+A filter expression used by [`unpack`](api-reference.md#unpackdestination-flags) and [`info`](api-reference.md#inforepository-tag-flags) to select specific layers or paths within a layer.
 
 ```typescript
 type FilterFlag = string  // see accepted formats below
@@ -84,7 +84,7 @@ type ExecResult = {
 
 ### `ModelKit`
 
-A single entry returned by [`list`](../../api-reference.md#listrepository).
+A single entry returned by [`list`](api-reference.md#listrepository).
 
 ```typescript
 type ModelKit = {
@@ -270,7 +270,7 @@ type TLSFlags = {
 
 ### `InitResult`
 
-Returned by [`init`](../../api-reference.md#initpath-flags).
+Returned by [`init`](api-reference.md#initpath-flags).
 
 ```typescript
 type InitResult = {
@@ -283,7 +283,7 @@ type InitResult = {
 
 ### `InspectResult`
 
-Returned by [`inspect`](../../api-reference.md#inspectrepository-tag-flags).
+Returned by [`inspect`](api-reference.md#inspectrepository-tag-flags).
 
 ```typescript
 type InspectResult = {
@@ -305,7 +305,7 @@ type InspectResult = {
 
 ### `VersionResult`
 
-Returned by [`version`](../../api-reference.md#version).
+Returned by [`version`](api-reference.md#version).
 
 ```typescript
 type VersionResult = {
@@ -327,7 +327,7 @@ type VersionResult = {
 
 ### `DiffResult`
 
-Returned by [`diff`](../../api-reference.md#diffmodelkit1-modelkit2-flags).
+Returned by [`diff`](api-reference.md#diffmodelkit1-modelkit2-flags).
 
 ```typescript
 type DiffResult = {
@@ -379,7 +379,7 @@ type DiffLayerEntry = {
 
 ## Kitfile Types
 
-These types mirror the Kitfile schema. They are returned by [`info`](../../api-reference.md#inforepository-tag-flags) and [`inspect`](../../api-reference.md#inspectrepository-tag-flags), and can also be used when constructing Kitfiles programmatically.
+These types mirror the Kitfile schema. They are returned by [`info`](api-reference.md#inforepository-tag-flags) and [`inspect`](api-reference.md#inspectrepository-tag-flags), and can also be used when constructing Kitfiles programmatically.
 
 ### `Kitfile`
 
@@ -565,7 +565,7 @@ interface Prompt extends LayerCommons {}
 
 ## Manifest Types
 
-These types represent the OCI image manifest returned by [`inspect`](../../api-reference.md#inspectrepository-tag-flags).
+These types represent the OCI image manifest returned by [`inspect`](api-reference.md#inspectrepository-tag-flags).
 
 ### `Manifest`
 
