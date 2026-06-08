@@ -25,6 +25,7 @@ The KitOps community has built some great integrations:
 The most fully-featured model registry integration for ModelKits is the [Jozu Hub](https://jozu.ml/), however, many users find it easiest to store their ModelKits in an existing enterprise container registry:
 * Amazon Elastic Container Registry (ECR)
 * Azure Container Registry
+* Cloudsmith Registry
 * Docker Hub
 * GitHub Packages Container Registry
 * GitLab Container Registry (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/master/docs/supported-media-types.md?ref_type=heads))
