@@ -44,6 +44,7 @@ type SaveModelOptions struct {
 	ModelFormat mediatype.ModelFormat
 	Compression mediatype.CompressionType
 	LayerFormat mediatype.Format
+	Subject     *ocispec.Descriptor
 }
 
 // SaveModel saves an *artifact.Model to the provided oras.Target, compressing layers. It attempts to block
@@ -63,6 +64,9 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 	manifest, err := createManifest(configDesc, layerDescs, opts.ModelFormat)
 	if err != nil {
 		return nil, fmt.Errorf("error creating manifest: %w", err)
+	}
+	if opts.Subject != nil {
+		manifest.Subject = opts.Subject
 	}
 
 	// If not storing a Kitfile, save the Kitfile to an annotation since it will be lost otherwise
