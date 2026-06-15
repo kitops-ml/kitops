@@ -1,0 +1,6 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  mcpServers:
+    - name: filesystem
+      path: s3://test-s3/key
+errRegexp: "invalid path for mcpServer.*only local paths are permitted"

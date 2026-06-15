@@ -58,7 +58,7 @@ to unpack only the dataset named 'my-dataset'.
 Valid filters have the format
     [types]:[filters]
 where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets
-code, or docs) and [filters] is an optional comma-separated list of additional filters
+code, docs, prompts, or mcpservers) and [filters] is an optional comma-separated list of additional filters
 to apply, which are matched against the Kitfile to further restrict what is extracted.
 Additional filters match elements of the Kitfile on either the name (if present) or
 the path used.

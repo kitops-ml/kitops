@@ -115,6 +115,13 @@ func generateUnpackPlan(manifest *ocispec.Manifest, kitfile *artifact.KitFile, f
 			}
 		}
 	}
+	for _, server := range kitfile.MCPServers {
+		if kfutils.LayerMatchesAnyFilter(server, filters) {
+			if err := addStep(server.Digest, "MCP server", server.Name, server.Path); err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	return steps, nil
 }

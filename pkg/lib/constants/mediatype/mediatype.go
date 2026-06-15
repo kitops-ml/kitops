@@ -59,6 +59,8 @@ const (
 	CodeBaseType
 	// DocsBaseType is the base type for documentation layers
 	DocsBaseType
+	// MCPBBaseType is the base type for MCP Bundle (.mcpb) layers, stored as verbatim ZIP archives
+	MCPBBaseType
 )
 
 type CompressionType int

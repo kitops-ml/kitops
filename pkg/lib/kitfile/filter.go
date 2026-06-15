@@ -30,15 +30,16 @@ import (
 type BaseType string
 
 const (
-	BaseTypeKitfile  BaseType = "kitfile"
-	BaseTypeModel    BaseType = "model"
-	BaseTypeDatasets BaseType = "datasets"
-	BaseTypeCode     BaseType = "code"
-	BaseTypePrompts  BaseType = "prompts"
-	BaseTypeDocs     BaseType = "docs"
+	BaseTypeKitfile    BaseType = "kitfile"
+	BaseTypeModel      BaseType = "model"
+	BaseTypeDatasets   BaseType = "datasets"
+	BaseTypeCode       BaseType = "code"
+	BaseTypePrompts    BaseType = "prompts"
+	BaseTypeDocs       BaseType = "docs"
+	BaseTypeMCPServers BaseType = "mcpservers"
 )
 
-var validFilterTypes = []string{"kitfile", "model", "datasets", "code", "prompts", "docs"}
+var validFilterTypes = []string{"kitfile", "model", "datasets", "code", "prompts", "docs", "mcpservers"}
 
 type FilterConf struct {
 	BaseTypes []BaseType
@@ -121,6 +122,8 @@ func LayerMatchesAnyFilter(layer any, filters []FilterConf) bool {
 		return matchesFilters(BaseTypeCode, l.Path, filters)
 	case artifact.Prompt:
 		return matchesFilters(BaseTypePrompts, l.Name, filters) || matchesFilters(BaseTypePrompts, l.Path, filters)
+	case artifact.MCPServer:
+		return matchesFilters(BaseTypeMCPServers, l.Name, filters) || matchesFilters(BaseTypeMCPServers, l.Path, filters)
 	default:
 		return false
 	}
@@ -181,6 +184,12 @@ func KitfileContainsMatchingLayer(kf *artifact.KitFile, filters []FilterConf) bo
 
 	for _, prompt := range kf.Prompts {
 		if LayerMatchesAnyFilter(prompt, filters) {
+			return true
+		}
+	}
+
+	for _, server := range kf.MCPServers {
+		if LayerMatchesAnyFilter(server, filters) {
 			return true
 		}
 	}

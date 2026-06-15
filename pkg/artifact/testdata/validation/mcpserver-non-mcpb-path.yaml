@@ -1,0 +1,6 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  mcpServers:
+    - name: filesystem
+      path: filesystem.zip
+errRegexp: "invalid path for mcpServer.*path must point to a single .mcpb file"

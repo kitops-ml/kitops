@@ -4,7 +4,7 @@ The Kitfile manifest for AI/ML is a YAML file designed to encapsulate all the ne
 
 ## Overview
 
-The manifest is structured into several key sections: `manifestVersion`, `package`, `code`, `datasets`, `docs`, `prompts`, and `model`. Each section serves a specific purpose in describing the AI/ML package components and requirements.
+The manifest is structured into several key sections: `manifestVersion`, `package`, `code`, `datasets`, `docs`, `prompts`, `mcpServers`, and `model`. Each section serves a specific purpose in describing the AI/ML package components and requirements.
 
 ### `manifestVersion`
 
@@ -69,6 +69,14 @@ This section provides general information about the AI/ML project.
   - `path`: Location of the prompt file or directory relative to the context
   - `description`: Description of the prompt
 
+### `mcpServers`
+
+- **Description**: Information about MCP servers packaged as MCP Bundle (`.mcpb`) archives. Each entry's path must point to a single `.mcpb` file: a ZIP archive containing a local MCP server and a `manifest.json` at its root. Each bundle is stored verbatim as its own raw, uncompressed layer (media type `application/vnd.kitops.modelkit.mcpb.v1.raw`), so the layer digest covers the exact bundle bytes and unpacking yields a byte-identical archive. The bundle's `manifest.json` remains the source of truth for the server's configuration; none of its fields are duplicated in the Kitfile.
+- **Type**: Object Array
+  - `name`: Name for the MCP server. Required, and must be unique within `mcpServers`.
+  - `path`: Location of the `.mcpb` file relative to the context.
+  - `description`: Description of the MCP server.
+
 ### `model`
 
 - **Description**: Details of the trained models included in the package.
@@ -108,6 +116,10 @@ datasets:
 prompts:
   - path: system.prompt.md
     description: System prompt for the LLM.
+mcpServers:
+  - name: filesystem
+    path: filesystem.mcpb
+    description: MCP server providing filesystem access.
 model:
     name: ModelName
     path: models/model.h5

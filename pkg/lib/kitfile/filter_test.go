@@ -161,6 +161,55 @@ func TestShouldUnpackLayer_PromptByName(t *testing.T) {
 	}
 }
 
+func TestShouldUnpackLayer_MCPServerByName(t *testing.T) {
+	tests := []struct {
+		name   string
+		server artifact.MCPServer
+		filter string
+		expect bool
+	}{
+		{
+			name:   "match by name",
+			server: artifact.MCPServer{Name: "filesystem", Path: "filesystem.mcpb"},
+			filter: "mcpservers:filesystem",
+			expect: true,
+		},
+		{
+			name:   "match by path",
+			server: artifact.MCPServer{Name: "filesystem", Path: "filesystem.mcpb"},
+			filter: "mcpservers:filesystem.mcpb",
+			expect: true,
+		},
+		{
+			name:   "no match",
+			server: artifact.MCPServer{Name: "filesystem", Path: "filesystem.mcpb"},
+			filter: "mcpservers:postgres",
+			expect: false,
+		},
+		{
+			name:   "mcpservers type without specific filter matches all",
+			server: artifact.MCPServer{Name: "filesystem", Path: "filesystem.mcpb"},
+			filter: "mcpservers",
+			expect: true,
+		},
+		{
+			name:   "other type does not match",
+			server: artifact.MCPServer{Name: "filesystem", Path: "filesystem.mcpb"},
+			filter: "datasets",
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fc, err := ParseFilter(tt.filter)
+			require.NoError(t, err)
+			result := LayerMatchesAnyFilter(tt.server, []FilterConf{*fc})
+			assert.Equal(t, tt.expect, result)
+		})
+	}
+}
+
 func TestFiltersFromUnpackConf(t *testing.T) {
 	tests := []struct {
 		name              string

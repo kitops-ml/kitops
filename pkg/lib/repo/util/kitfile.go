@@ -40,6 +40,9 @@ func LayerPathsFromKitfile(kitfile *artifact.KitFile) []string {
 	for _, prompt := range kitfile.Prompts {
 		layerPaths = append(layerPaths, cleanPath(prompt.Path))
 	}
+	for _, server := range kitfile.MCPServers {
+		layerPaths = append(layerPaths, cleanPath(server.Path))
+	}
 
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" {

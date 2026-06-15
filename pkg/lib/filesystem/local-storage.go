@@ -230,6 +230,25 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 		kitfile.Prompts[idx].LayerInfo = layerInfo
 	}
+	if len(kitfile.MCPServers) > 0 && opts.ModelFormat == mediatype.ModelPackFormat {
+		// The mcpb media type is KitOps-local; it is not defined for the ModelPack format
+		return nil, nil, fmt.Errorf("mcpServers are not supported when packing in modelpack format")
+	}
+	for idx, server := range kitfile.MCPServers {
+		// MCP Bundles are stored as raw, uncompressed layers so that the .mcpb ZIP archive
+		// round-trips byte-for-byte. Validate it is a well-formed bundle before packing.
+		if err := ValidateMCPB(server.Path); err != nil {
+			return nil, nil, fmt.Errorf("invalid MCP bundle for mcpServer %s: %w", server.Name, err)
+		}
+		mediaType := mediatype.New(mediatype.KitFormat, mediatype.MCPBBaseType, mediatype.RawFormat, mediatype.NoneCompression)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, server.Path, mediaType, ignore)
+		if err != nil {
+			return nil, nil, err
+		}
+		layers = append(layers, layer)
+		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
+		kitfile.MCPServers[idx].LayerInfo = layerInfo
+	}
 
 	if len(toVerifyRemote) > 0 {
 		client, err := s3api.SetUpClient(ctx)

@@ -1,0 +1,8 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  mcpServers:
+    - name: filesystem
+      path: filesystem.mcpb
+    - name: postgres
+      path: postgres.mcpb
+errRegexp: ""

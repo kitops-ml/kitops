@@ -51,13 +51,14 @@ const (
 
 type (
 	KitFile struct {
-		ManifestVersion string    `json:"manifestVersion" yaml:"manifestVersion"`
-		Package         Package   `json:"package,omitempty" yaml:"package,omitempty"`
-		Model           *Model    `json:"model,omitempty" yaml:"model,omitempty"`
-		Code            []Code    `json:"code,omitempty" yaml:"code,omitempty"`
-		DataSets        []DataSet `json:"datasets,omitempty" yaml:"datasets,omitempty"`
-		Docs            []Docs    `json:"docs,omitempty" yaml:"docs,omitempty"`
-		Prompts         []Prompt  `json:"prompts,omitempty" yaml:"prompts,omitempty"`
+		ManifestVersion string      `json:"manifestVersion" yaml:"manifestVersion"`
+		Package         Package     `json:"package,omitempty" yaml:"package,omitempty"`
+		Model           *Model      `json:"model,omitempty" yaml:"model,omitempty"`
+		Code            []Code      `json:"code,omitempty" yaml:"code,omitempty"`
+		DataSets        []DataSet   `json:"datasets,omitempty" yaml:"datasets,omitempty"`
+		Docs            []Docs      `json:"docs,omitempty" yaml:"docs,omitempty"`
+		Prompts         []Prompt    `json:"prompts,omitempty" yaml:"prompts,omitempty"`
+		MCPServers      []MCPServer `json:"mcpServers,omitempty" yaml:"mcpServers,omitempty"`
 	}
 
 	Package struct {
@@ -124,6 +125,17 @@ type (
 		//  * It's recommended to store metadata like preprocessing steps, formats, etc.
 		Parameters any `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 		*LayerInfo `json:",inline" yaml:",inline"`
+	}
+
+	// MCPServer describes an MCP server packaged as an MCP Bundle (.mcpb) archive.
+	// The path must point to a single .mcpb file, which is stored verbatim as its
+	// own layer. The bundle's manifest.json remains the source of truth for the
+	// server's configuration; none of its fields are replicated here.
+	MCPServer struct {
+		Name        string `json:"name,omitempty" yaml:"name,omitempty"`
+		Path        string `json:"path,omitempty" yaml:"path,omitempty"`
+		Description string `json:"description,omitempty" yaml:"description,omitempty"`
+		*LayerInfo  `json:",inline" yaml:",inline"`
 	}
 
 	Prompt struct {
@@ -287,6 +299,26 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 		}
 		if pathType != LocalPathType {
 			addErr("invalid path for prompt (%s): only local paths are permitted", prompt.Path)
+		}
+	}
+	mcpServerNames := map[string]bool{}
+	for idx, server := range kf.MCPServers {
+		addPath(server.Path, fmt.Sprintf("mcpServer layer %d", idx))
+		pathType, err := GetPathType(server.Path)
+		if err != nil {
+			addErr("invalid path for mcpServer (%s): %s", server.Path, err)
+		}
+		if pathType != LocalPathType {
+			addErr("invalid path for mcpServer (%s): only local paths are permitted", server.Path)
+		} else if !strings.HasSuffix(server.Path, ".mcpb") {
+			addErr("invalid path for mcpServer (%s): path must point to a single .mcpb file", server.Path)
+		}
+		if server.Name == "" {
+			addErr("mcpServer with path %s must have a name", server.Path)
+		} else if mcpServerNames[server.Name] {
+			addErr("duplicate mcpServer name %s: names must be unique", server.Name)
+		} else {
+			mcpServerNames[server.Name] = true
 		}
 	}
 
