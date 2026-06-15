@@ -39,6 +39,7 @@ const (
 	fileTypeDocs
 	fileTypeMetadata
 	fileTypePrompt
+	fileTypeMCPServer
 	fileTypeUnknown
 )
 
@@ -72,6 +73,10 @@ var metadataSuffixes = []string{
 
 var datasetSuffixes = []string{
 	".tar", ".zip", ".parquet", ".csv",
+}
+
+var mcpServerSuffixes = []string{
+	".mcpb",
 }
 
 // Files that are considered prompt files based on their names; entries should be in lowercase to support
@@ -227,6 +232,8 @@ func classifyDirectoryRecursive(kitfile *artifact.KitFile, dir DirectoryListing,
 			kitfile.DataSets = append(kitfile.DataSets, artifact.DataSet{Path: file.Path})
 		case fileTypePrompt:
 			kitfile.Prompts = append(kitfile.Prompts, artifact.Prompt{Path: file.Path})
+		case fileTypeMCPServer:
+			kitfile.MCPServers = append(kitfile.MCPServers, mcpServerFromPath(file.Path))
 		case fileTypeCode:
 			kitfile.Code = append(kitfile.Code, artifact.Code{Path: file.Path})
 		default:
@@ -330,6 +337,13 @@ func addDirToKitfile(kitfile *artifact.KitFile, dir DirectoryListing) (modelFile
 	case fileTypePrompt:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as a prompts directory", dir.Path)
 		kitfile.Prompts = append(kitfile.Prompts, artifact.Prompt{Path: unixWithTrailingSlash(dir.Path)})
+	case fileTypeMCPServer:
+		// Each mcpServer entry must point to a single .mcpb file, so add the directory's
+		// bundles individually rather than the directory as a whole
+		output.Logf(output.LogLevelTrace, "Interpreting directory %s as MCP server bundles", dir.Path)
+		for _, path := range directoryContents[int(fileTypeMCPServer)] {
+			kitfile.MCPServers = append(kitfile.MCPServers, mcpServerFromPath(path))
+		}
 	case fileTypeCode:
 		output.Logf(output.LogLevelTrace, "Interpreting directory %s as code directory", dir.Path)
 		kitfile.Code = append(kitfile.Code, artifact.Code{Path: unixWithTrailingSlash(dir.Path)})
@@ -366,7 +380,19 @@ func determineFileType(filename string) fileType {
 	if anySuffix(filename, datasetSuffixes) {
 		return fileTypeDataset
 	}
+	if anySuffix(filename, mcpServerSuffixes) {
+		return fileTypeMCPServer
+	}
 	return fileTypeUnknown
+}
+
+// mcpServerFromPath returns an MCPServer entry for a .mcpb file, deriving the
+// required name from the path without the extension
+func mcpServerFromPath(path string) artifact.MCPServer {
+	return artifact.MCPServer{
+		Name: strings.TrimSuffix(filepath.ToSlash(path), ".mcpb"),
+		Path: path,
+	}
 }
 
 func addModelToKitfile(kitfile *artifact.KitFile, files []FileListing) error {

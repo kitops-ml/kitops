@@ -75,6 +75,8 @@ func (mt *kitopsMediaType) baseTypeString() string {
 		return "code"
 	case DocsBaseType:
 		return "docs"
+	case MCPBBaseType:
+		return "mcpb"
 	}
 	return "invalid mediatype"
 }
@@ -95,6 +97,8 @@ func ParseKitBaseType(s string) (BaseType, error) {
 		return CodeBaseType, nil
 	case "docs":
 		return DocsBaseType, nil
+	case "mcpb":
+		return MCPBBaseType, nil
 	default:
 		return UnknownBaseType, fmt.Errorf("invalid base type %s", s)
 	}

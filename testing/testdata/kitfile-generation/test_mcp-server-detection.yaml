@@ -1,0 +1,25 @@
+description: "Detects .mcpb files as MCP servers"
+
+files:
+  - filesystem.mcpb
+  - postgres.mcpb
+  # directory with only MCP bundles
+  - servers/extra.mcpb
+  - README.md
+
+modelName: test-mcp-server-detection
+expectedKitfile:
+  manifestVersion: "1.0.0"
+  package:
+    name: test-mcp-server-detection
+    description: "Detects .mcpb files as MCP servers"
+  docs:
+    - path: README.md
+      description: Readme file
+  mcpServers:
+    - name: filesystem
+      path: filesystem.mcpb
+    - name: postgres
+      path: postgres.mcpb
+    - name: servers/extra
+      path: servers/extra.mcpb

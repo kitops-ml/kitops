@@ -165,7 +165,7 @@ func ListCommand() *cobra.Command {
 
 	cmd.Args = cobra.MaximumNArgs(1)
 	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table, json, or Go template string")
-	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter modelkits by content type (e.g., model, datasets, code, docs, prompts). Can be specified multiple times")
+	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter modelkits by content type (e.g., model, datasets, code, docs, prompts, mcpservers). Can be specified multiple times")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 

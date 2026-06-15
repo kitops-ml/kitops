@@ -1,0 +1,8 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  code:
+    - path: filesystem.mcpb
+  mcpServers:
+    - name: filesystem
+      path: filesystem.mcpb
+errRegexp: "use the same path filesystem.mcpb"

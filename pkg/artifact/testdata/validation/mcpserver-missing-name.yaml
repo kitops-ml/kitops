@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  mcpServers:
+    - path: filesystem.mcpb
+errRegexp: "mcpServer with path filesystem.mcpb must have a name"

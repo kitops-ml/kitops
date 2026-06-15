@@ -56,6 +56,7 @@ func TestParseKitopsMediaType(t *testing.T) {
 		"application/vnd.kitops.modelkit.docs.v1.tar",
 		"application/vnd.kitops.modelkit.docs.v1.tar+gzip",
 		"application/vnd.kitops.modelkit.docs.v1.tar+zstd",
+		"application/vnd.kitops.modelkit.mcpb.v1.raw",
 	}
 
 	for _, mediaType := range mediaTypes {
@@ -67,6 +68,21 @@ func TestParseKitopsMediaType(t *testing.T) {
 			assert.Equal(t, mediaType, parsedType.String(), "Parsed media type should match input")
 		})
 	}
+}
+
+func TestKitopsMCPBMediaType(t *testing.T) {
+	const mcpbMediaType = "application/vnd.kitops.modelkit.mcpb.v1.raw"
+	parsed, err := ParseMediaType(mcpbMediaType)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, MCPBBaseType, parsed.Base())
+	assert.Equal(t, RawFormat, parsed.Format())
+	assert.Equal(t, NoneCompression, parsed.Compression())
+	assert.Equal(t, "mcpb", parsed.UserString())
+
+	created := New(KitFormat, MCPBBaseType, RawFormat, NoneCompression)
+	assert.Equal(t, mcpbMediaType, created.String())
 }
 
 func TestParseKitopsInvalidType(t *testing.T) {
