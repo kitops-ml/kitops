@@ -21,7 +21,7 @@ require (
 	golang.org/x/sys v0.44.0
 	golang.org/x/term v0.43.0
 	golang.org/x/text v0.37.0
-	oras.land/oras-go/v2 v2.6.0
+	oras.land/oras-go/v2 v2.6.1
 )
 
 require (
