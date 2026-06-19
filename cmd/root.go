@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kitops-ml/kitops/pkg/cmd/config"
 	"github.com/kitops-ml/kitops/pkg/cmd/dev"
 	"github.com/kitops-ml/kitops/pkg/cmd/diff"
 	"github.com/kitops-ml/kitops/pkg/cmd/info"
@@ -73,33 +74,44 @@ func RunCommand() *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			output.SetOut(cmd.OutOrStdout())
 			output.SetErr(cmd.ErrOrStderr())
-			if err := output.SetLogLevelFromString(opts.loglevel); err != nil {
-				return output.Fatalln(err)
-			}
-			output.SetProgressBars(opts.progressBars)
 
-			switch opts.verbosity {
-			case 0:
-				break
-			case 1:
-				output.Debugf("Setting verbosity to %s", output.LogLevelDebug)
-				output.SetLogLevel(output.LogLevelDebug)
-			case 2:
-				output.Debugf("Setting verbosity to %s", output.LogLevelTrace)
-				output.SetLogLevel(output.LogLevelTrace)
-			default:
-				output.Debugf("Setting verbosity to %s and disabling progress bars", output.LogLevelTrace)
-				output.SetLogLevel(output.LogLevelTrace)
-				output.SetProgressBars("none")
-			}
-
-			configHome, err := getConfigHome(opts)
+			configHome, err := getConfigHomePath(opts)
 			if err != nil {
 				output.Errorf("Failed to read base config directory")
 				output.Infof("Use the --config flag or set the $%s environment variable to provide a default", constants.KitopsHomeEnvVar)
 				output.Debugf("Error: %s", err)
 				return errors.New("exit")
 			}
+
+			configYamlPath := constants.ConfigYamlPath(configHome)
+			configStruct, loadErr := config.LoadConfigFileHelper(configYamlPath)
+			if loadErr != nil && !errors.Is(loadErr, os.ErrNotExist) {
+				return loadErr
+			}
+
+			if cmd.Flags().Changed("log-level") || configStruct.LogLevel == "" {
+				if err := output.SetLogLevelFromString(opts.loglevel); err != nil {
+					return output.Fatalln(err)
+				}
+			} else {
+				if err := output.SetLogLevelFromString(configStruct.LogLevel); err != nil {
+					output.Errorf("Invalid log level: %s", err)
+					output.SetLogLevelFromString(opts.loglevel)
+				}
+			}
+
+			if cmd.Flags().Changed("progress") || configStruct.ProgressBars == "" {
+				output.SetProgressBars(opts.progressBars)
+			} else {
+				output.SetProgressBars(configStruct.ProgressBars)
+			}
+
+			if cmd.Flags().Changed("verbose") || configStruct.Verbosity == 0 {
+				setVerbosity(opts.verbosity)
+			} else {
+				setVerbosity(configStruct.Verbosity)
+			}
+
 			ctx := context.WithValue(cmd.Context(), constants.ConfigKey{}, configHome)
 			cache.SetCacheHome(constants.CachePath(configHome))
 			cmd.SetContext(ctx)
@@ -167,6 +179,7 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(diff.DiffCommand())
 	rootCmd.AddCommand(kitimport.ImportCommand())
 	rootCmd.AddCommand(kitcache.CacheCommand())
+	rootCmd.AddCommand(config.ConfigCommand())
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -178,7 +191,7 @@ func Execute() {
 	}
 }
 
-func getConfigHome(opts *rootOptions) (string, error) {
+func getConfigHomePath(opts *rootOptions) (string, error) {
 	if opts.configHome != "" {
 		output.Debugf("Using config directory from flag: %s", opts.configHome)
 		absHome, err := filepath.Abs(opts.configHome)
@@ -198,10 +211,28 @@ func getConfigHome(opts *rootOptions) (string, error) {
 		return absHome, nil
 	}
 
-	defaultHome, err := constants.DefaultConfigPath()
-	if err != nil {
-		return "", err
+	defaultHome, defaultHomeErr := constants.DefaultConfigPath()
+	if defaultHomeErr != nil {
+		return "", defaultHomeErr
 	}
+
 	output.Debugf("Using default config directory: %s", defaultHome)
 	return defaultHome, nil
+}
+
+func setVerbosity(verbosity int) {
+	switch verbosity {
+	case 0:
+		break
+	case 1:
+		output.Debugf("Setting verbosity to %s", output.LogLevelDebug)
+		output.SetLogLevel(output.LogLevelDebug)
+	case 2:
+		output.Debugf("Setting verbosity to %s", output.LogLevelTrace)
+		output.SetLogLevel(output.LogLevelTrace)
+	default:
+		output.Debugf("Setting verbosity to %s and disabling progress bars", output.LogLevelTrace)
+		output.SetLogLevel(output.LogLevelTrace)
+		output.SetProgressBars("none")
+	}
 }

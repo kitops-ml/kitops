@@ -40,6 +40,7 @@ const (
 	StorageSubpath                    = "storage"
 	CacheSubpath                      = "cache"
 	CredentialsSubpath                = "credentials.json"
+	ConfigYamlSubpath                 = "config.yaml"
 	HarnessSubpath                    = "harness"
 	HarnessProcessFile                = "process.pid"
 	HarnessLogFile                    = "harness.log"
@@ -136,6 +137,10 @@ func HarnessPath(configBase string) string {
 
 func CredentialsPath(configBase string) string {
 	return filepath.Join(configBase, CredentialsSubpath)
+}
+
+func ConfigYamlPath(configBase string) string {
+	return filepath.Join(configBase, ConfigYamlSubpath)
 }
 
 func CachePath(configBase string) string {
