@@ -142,7 +142,11 @@ func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) erro
 		return fmt.Errorf("failed to check if manifest can be deleted: %w", err)
 	}
 	if canDelete {
-		if err := lr.Store.Delete(ctx, target); err != nil {
+		// Delete the manifest and its now-dangling blobs. If some referenced content is already
+		// gone from storage (e.g. left over from an interrupted delete or external cleanup), treat
+		// it as already-deleted so we can still remove the manifest from the local index below and
+		// leave the repository in a consistent state.
+		if err := lr.Store.Delete(ctx, target); err != nil && !errors.Is(err, errdef.ErrNotFound) {
 			return err
 		}
 	}
