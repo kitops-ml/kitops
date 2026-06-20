@@ -53,6 +53,11 @@ func listLocalKits(ctx context.Context, opts *listOptions) ([]modelInfo, error) 
 func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []kitfile.FilterConf) ([]modelInfo, error) {
 	var infos []modelInfo
 	manifestDescs := repo.GetAllModels()
+	// Strip localhost from repo if present, since we added it
+	repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
+	if repository == "" {
+		repository = "<none>"
+	}
 	for _, manifestDesc := range manifestDescs {
 		manifest, config, err := util.GetManifestAndKitfile(ctx, repo, manifestDesc)
 		if err != nil {
@@ -64,7 +69,7 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []k
 				// The manifest references content that is no longer in local storage (e.g. left over from
 				// an interrupted removal). Skip it rather than failing the entire listing; the entry can be
 				// cleaned up with 'kit remove'.
-				output.Logf(output.LogLevelWarn, "Skipping %s@%s: content is missing from local storage; run 'kit remove' to clean it up", repo.GetRepoName(), manifestDesc.Digest)
+				output.Logf(output.LogLevelWarn, "Skipping %s@%s: content is missing from local storage; run 'kit remove' to clean it up", repository, manifestDesc.Digest)
 				continue
 			}
 			// Allow artifacts without Kitfiles as all that will be lacking is some metadata; we can still
@@ -80,11 +85,6 @@ func readInfoFromRepo(ctx context.Context, repo local.LocalRepo, filterConfs []k
 		}
 
 		tags := repo.GetTags(manifestDesc)
-		// Strip localhost from repo if present, since we added it
-		repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
-		if repository == "" {
-			repository = "<none>"
-		}
 		info := modelInfo{
 			Repo:   repository,
 			Digest: string(manifestDesc.Digest),
