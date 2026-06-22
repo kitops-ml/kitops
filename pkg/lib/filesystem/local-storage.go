@@ -292,6 +292,7 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 	case mediatype.KitFormat:
 		manifest = ocispec.Manifest{
 			Versioned:    specs.Versioned{SchemaVersion: 2},
+			MediaType:    ocispec.MediaTypeImageManifest,
 			ArtifactType: mediatype.ArtifactTypeKitManifest,
 			Config:       configDesc,
 			Layers:       layerDescs,
@@ -299,6 +300,7 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 	case mediatype.ModelPackFormat:
 		manifest = ocispec.Manifest{
 			Versioned:    specs.Versioned{SchemaVersion: 2},
+			MediaType:    ocispec.MediaTypeImageManifest,
 			ArtifactType: mediatype.ArtifactTypeModelManifest,
 			Config:       configDesc,
 			Layers:       layerDescs,
