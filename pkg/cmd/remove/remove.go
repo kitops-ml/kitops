@@ -107,7 +107,7 @@ func removeModel(ctx context.Context, opts *removeOptions) error {
 	}
 	desc, err := removeModelRef(ctx, localRepo, opts.modelRef, opts.forceDelete)
 	if err != nil {
-		return fmt.Errorf("failed to remove: %s", err)
+		return fmt.Errorf("failed to remove: %w", err)
 	}
 	displayRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 	output.Infof("Removed %s (digest %s)", displayRef, desc.Digest)
@@ -132,7 +132,7 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 		if err == errdef.ErrNotFound {
 			return ocispec.DescriptorEmptyJSON, fmt.Errorf("model %s not found", artifact.FormatRepositoryForDisplay(ref.String()))
 		}
-		return ocispec.DescriptorEmptyJSON, fmt.Errorf("error resolving model: %s", err)
+		return ocispec.DescriptorEmptyJSON, fmt.Errorf("error resolving model: %w", err)
 	}
 
 	// If reference passed in is a digest, remove the manifest ignoring any tags the manifest might have

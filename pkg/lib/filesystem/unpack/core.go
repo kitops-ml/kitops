@@ -87,7 +87,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	store, err := getStoreForRef(ctx, opts)
 	if err != nil {
 		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
-		return fmt.Errorf("failed to find reference %s: %s", ref, err)
+		return fmt.Errorf("failed to find reference %s: %w", ref, err)
 	}
 
 	_, manifest, kitfile, err := util.ResolveManifestAndConfig(ctx, store, ref.Reference)

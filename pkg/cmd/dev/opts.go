@@ -106,7 +106,7 @@ func (opts *DevStartOptions) complete(ctx context.Context, args []string) error 
 	if opts.port == 0 {
 		availPort, err := findAvailablePort()
 		if err != nil {
-			return fmt.Errorf("invalid arguments: %s", err)
+			return fmt.Errorf("failed to find an available port: %w", err)
 		}
 		opts.port = availPort
 	}

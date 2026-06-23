@@ -63,7 +63,7 @@ func generateKitfile(dirContents *kfgen.DirectoryListing, repo string, outDir st
 	}
 	kitfilePath := filepath.Join(outDir, constants.DefaultKitfileName)
 	if err := os.WriteFile(kitfilePath, kitfileBytes, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write Kitfile: %s", err)
+		return nil, fmt.Errorf("failed to write Kitfile: %w", err)
 	}
 	output.Infof("Generated Kitfile:\n\n%s\n", string(kitfileBytes))
 	return kitfile, nil

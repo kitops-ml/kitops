@@ -38,7 +38,7 @@ func RunTag(ctx context.Context, options *tagOptions) error {
 		if err == errdef.ErrNotFound {
 			return fmt.Errorf("model %s not found", options.sourceRef.String())
 		}
-		return fmt.Errorf("error resolving model: %s", err)
+		return fmt.Errorf("error resolving model: %w", err)
 	}
 	if options.sourceRef.Registry == options.targetRef.Registry && options.sourceRef.Repository == options.targetRef.Repository {
 		err = sourceRepo.Tag(ctx, descriptor, options.targetRef.Reference)
