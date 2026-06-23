@@ -57,7 +57,7 @@ func removeAllModels(ctx context.Context, opts *removeOptions) error {
 			// First untag all manifests for this digest
 			for _, tag := range tags {
 				if err := localRepo.Untag(ctx, tag); err != nil {
-					output.Errorf("Failed to untag %s:%s: %w", repository, tag, err)
+					output.Errorf("Failed to untag %s:%s: %s", repository, tag, err)
 				}
 				output.Infof("Untagged %s:%s", repository, tag)
 			}
@@ -144,7 +144,7 @@ func removeModelRef(ctx context.Context, localRepo local.LocalRepo, ref *registr
 	if err := ref.ValidateReferenceAsDigest(); err == nil || forceDelete {
 		output.Debugf("Deleting manifest with digest %s", ref.Reference)
 		if err := localRepo.Delete(ctx, desc); err != nil {
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to delete model: %ws", err)
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to delete model: %w", err)
 		}
 		return desc, nil
 	}

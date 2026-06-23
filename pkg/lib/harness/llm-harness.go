@@ -163,7 +163,7 @@ func (harness *LLMHarness) Stop() error {
 
 	err = process.Signal(os.Interrupt) // Try to kill it gently
 	if err != nil {
-		output.Debugf("Error killing process %w", err)
+		output.Debugf("Error killing process %v", err)
 		// If SIGTERM failed, kill it with SIGKILL
 		err = process.Kill()
 		if err != nil {

@@ -89,7 +89,7 @@ func MkCacheFile(subDir CacheSubDir, basename string) (tempFile *os.File, cleanu
 			output.Errorf("Error closing temporary file %s: %s", tempFilePath, err)
 		}
 		if err := os.Remove(f.Name()); err != nil && !os.IsNotExist(err) {
-			output.Errorf("Failed to remove temporary file %s: %w", tempFilePath, err)
+			output.Errorf("Failed to remove temporary file %s: %s", tempFilePath, err)
 		}
 	}
 	return f, cleanup, nil

@@ -119,7 +119,7 @@ func runCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 		} else {
 			yamlBytes, err := config.MarshalToYAML()
 			if err != nil {
-				return output.Fatalf("Error formatting manifest: %w", err)
+				return output.Fatalf("Error formatting manifest: %v", err)
 			}
 			fmt.Print(string(yamlBytes))
 		}
