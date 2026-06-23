@@ -189,7 +189,7 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		}
 		// Make sure target directory exists, in case user is using the -d flag
 		if err := os.MkdirAll(opts.unpackDir, 0755); err != nil {
-			return output.Fatalf("failed to create directory %s: %w", opts.unpackDir, err)
+			return output.Fatalf("failed to create directory %s: %v", opts.unpackDir, err)
 		}
 		output.Infof("Unpacking to %s", unpackTo)
 
