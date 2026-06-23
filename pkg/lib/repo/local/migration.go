@@ -77,7 +77,7 @@ func MigrateStorage(ctx context.Context, baseStoragePath string) error {
 		// Clean up this repos blobs; we'll clean up the directories later
 		repoDir := localStore.getStorePath()
 		if err := os.RemoveAll(repoDir); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("failed to clean up directory %s after migration: %s", repoDir, err)
+			return fmt.Errorf("failed to clean up directory %s after migration: %w", repoDir, err)
 		}
 		pb.Increment()
 	}
@@ -90,7 +90,7 @@ func MigrateStorage(ctx context.Context, baseStoragePath string) error {
 		rmDir := filepath.Join(baseStoragePath, baseSubDir)
 		output.Debugf("Removing storage directory %s", rmDir)
 		if err := os.RemoveAll(rmDir); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("failed to clean up directory %s after migration: %s", rmDir, err)
+			return fmt.Errorf("failed to clean up directory %s after migration: %w", rmDir, err)
 		}
 	}
 	output.Debugf("Migration done!")

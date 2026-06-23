@@ -45,7 +45,7 @@ func unpackSkill(ctx context.Context, opts *UnpackOptions) error {
 	store, err := getStoreForRef(ctx, opts)
 	if err != nil {
 		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
-		return fmt.Errorf("failed to find reference %s: %s", ref, err)
+		return fmt.Errorf("failed to find reference %s: %w", ref, err)
 	}
 	manifestDesc, err := store.Resolve(ctx, ref.Reference)
 	if err != nil {
@@ -53,7 +53,7 @@ func unpackSkill(ctx context.Context, opts *UnpackOptions) error {
 	}
 	manifest, err := util.GetManifest(ctx, store, manifestDesc)
 	if err != nil {
-		return fmt.Errorf("failed to read manifest: %s", err)
+		return fmt.Errorf("failed to read manifest: %w", err)
 	}
 	config, err := util.GetKitfileForManifest(ctx, store, manifest)
 	if err != nil {

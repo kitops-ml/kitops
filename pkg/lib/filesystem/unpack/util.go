@@ -131,7 +131,7 @@ func getStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, erro
 	storageHome := constants.StoragePath(opts.ConfigHome)
 	localRepo, err := local.NewLocalRepo(storageHome, opts.ModelRef)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read local storage: %s\n", err)
+		return nil, fmt.Errorf("failed to read local storage: %w", err)
 	}
 
 	if _, err := localRepo.Resolve(ctx, opts.ModelRef.Reference); err == nil {
