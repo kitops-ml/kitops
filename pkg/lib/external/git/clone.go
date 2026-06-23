@@ -19,6 +19,7 @@ package git
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -113,13 +114,19 @@ func checkDestination(path string) error {
 	if !stat.IsDir() {
 		return fmt.Errorf("path %s exists and is not a directory", path)
 	}
-	// TODO: probably don't need to read the _whole_ directory
-	contents, err := os.ReadDir(path)
+	// Only check whether at least one entry exists; avoid reading full directory.
+	dir, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("failed to inspect directory %s: %w", path, err)
 	}
-	if len(contents) > 0 {
+	defer dir.Close()
+
+	_, err = dir.ReadDir(1)
+	if err == nil {
 		return fmt.Errorf("cannot clone to a non-empty directory")
+	}
+	if !errors.Is(err, io.EOF) {
+		return fmt.Errorf("failed to inspect directory %s: %w", path, err)
 	}
 	return nil
 }
