@@ -335,12 +335,13 @@ func createManifest(configDesc ocispec.Descriptor, layerDescs []ocispec.Descript
 	manifest.Annotations[constants.CliVersionAnnotation] = constants.Version
 	createdTime := time.Now().UTC()
 	if epochStr := os.Getenv("SOURCE_DATE_EPOCH"); epochStr != "" {
-		if epochSec, err := strconv.ParseInt(epochStr, 10, 64); err == nil {
-			createdTime = time.Unix(epochSec, 0).UTC()
+		epochSec, err := strconv.ParseInt(epochStr, 10, 64)
+		if err != nil {
+			return ocispec.Manifest{}, fmt.Errorf("invalid SOURCE_DATE_EPOCH %q: %w", epochStr, err)
 		}
+		createdTime = time.Unix(epochSec, 0).UTC()
 	}
 	manifest.Annotations[ocispec.AnnotationCreated] = createdTime.Format(time.RFC3339)
 
 	return manifest, nil
 }
-// AGENT_MODIFIED: Human review required before merge
