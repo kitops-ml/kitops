@@ -47,3 +47,24 @@ func TestMkCacheDirReusesDeterministicDirectory(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("partial"), contents)
 }
+
+func TestMkCacheDirRejectsUnsafeCacheKeys(t *testing.T) {
+	originalCacheHome := cacheHome()
+	t.Cleanup(func() {
+		SetCacheHome(originalCacheHome)
+	})
+	SetCacheHome(t.TempDir())
+
+	for _, cacheKey := range []string{
+		".",
+		"..",
+		"nested/path",
+		`nested\path`,
+		filepath.Join("..", "outside"),
+	} {
+		t.Run(cacheKey, func(t *testing.T) {
+			_, _, err := MkCacheDir(CacheImportSubdir, cacheKey)
+			require.Error(t, err)
+		})
+	}
+}
