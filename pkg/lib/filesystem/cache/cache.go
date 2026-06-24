@@ -54,7 +54,7 @@ func MkCacheDir(subDir CacheSubDir, cacheKey string) (cacheDir string, cleanup f
 	}
 	if cacheKey != "" {
 		cacheDir = filepath.Join(cacheSubDir, cacheKey)
-		if err := os.Mkdir(cacheDir, 0700); err != nil {
+		if err := os.MkdirAll(cacheDir, 0700); err != nil {
 			return "", nil, fmt.Errorf("failed to create cache directory %s: %w", cacheDir, err)
 		}
 	} else {

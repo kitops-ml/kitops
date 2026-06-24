@@ -43,3 +43,12 @@ func TestHFSourceURI(t *testing.T) {
 		})
 	}
 }
+
+func TestHFImportCacheKey(t *testing.T) {
+	modelKey := hfImportCacheKey("org/repo", hf.RepoTypeModel, "abc123")
+
+	assert.Equal(t, modelKey, hfImportCacheKey("org/repo", hf.RepoTypeModel, "abc123"))
+	assert.NotEqual(t, modelKey, hfImportCacheKey("org/repo", hf.RepoTypeDataset, "abc123"))
+	assert.NotEqual(t, modelKey, hfImportCacheKey("org/repo", hf.RepoTypeModel, "def456"))
+	assert.NotContains(t, modelKey, "/")
+}
