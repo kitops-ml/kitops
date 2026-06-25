@@ -769,8 +769,8 @@ kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1
 ```
   -f, --file string           Specifies the path to the Kitfile explicitly (use "-" to read from standard input)
   -t, --tag string            Assigns one or more tags to the built modelkit. Example: -t registry/repository:tag1,tag2
-      --compression string    Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest', 'zstd' (default "none")
-      --layer-format string   Packaging format to use for layers. Valid options: 'tar' (default), 'raw' (default "tar")
+      --compression string    Compression format to use for layers. Valid options: 'none', 'gzip', 'gzip-fastest', 'zstd' (default "none")
+      --layer-format string   Packaging format to use for layers. Valid options: 'tar', 'raw' (default "tar")
       --use-model-pack        Pack model in ModelPack format instead of ModelKit
   -h, --help                  help for pack
 ```
