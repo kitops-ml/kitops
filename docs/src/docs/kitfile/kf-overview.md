@@ -32,9 +32,9 @@ Each Kitfile includes one or more of the following sections:
 | `code`        | Code, scripts, and server configurations | Jupyter notebooks, MCP server code and config files |
 | `prompts`     | Prompt files and agent skill files | System prompts, SKILL.md, .cursorrules |
 | `docs`        | Additional documentation | README, usage guides |
-| `mcpServers`  | MCP Bundle (`.mcpb`) archives for local MCP servers | Packaged MCP server bundles |
+| `mcpServers`  | [MCP Bundle (`.mcpb`)](https://github.com/modelcontextprotocol/mcpb) archives for local MCP servers | Packaged MCP server bundles |
 
-The `prompts` section is the natural home for agent skill files and prompt templates. The `code` section is where MCP server code and configuration files go. Use `mcpServers` to package pre-built MCP Bundle (`.mcpb`) archives — these are stored verbatim so the bundle is byte-identical when unpacked. You can organize these however fits your project - the key is that everything gets versioned together.
+The `prompts` section is the natural home for agent skill files and prompt templates. The `code` section is where MCP server code and configuration files go. Use `mcpServers` to package pre-built [MCP Bundle (`.mcpb`)](https://github.com/modelcontextprotocol/mcpb) archives — these are stored verbatim so the bundle is byte-identical when unpacked. You can organize these however fits your project - the key is that everything gets versioned together.
 
 You can extract the Kitfile from any existing ModelKit:
 
@@ -156,7 +156,7 @@ docs:
 
 ## Example: ModelKit with MCP Bundles
 
-The `mcpServers` section packages pre-built MCP Bundle (`.mcpb`) archives alongside your model or agent. Each `.mcpb` file is a ZIP archive containing a local MCP server and a `manifest.json` at its root. When unpacked, the bundle is restored byte-for-byte to its original path.
+The `mcpServers` section packages pre-built [MCP Bundle (`.mcpb`)](https://github.com/modelcontextprotocol/mcpb) archives alongside your model or agent. Each `.mcpb` file is a ZIP archive containing a local MCP server and a `manifest.json` at its root. When unpacked, the bundle is restored byte-for-byte to its original path.
 
 ```yaml
 manifestVersion: v1.0.0
