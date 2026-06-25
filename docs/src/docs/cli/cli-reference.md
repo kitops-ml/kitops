@@ -581,7 +581,7 @@ modelkits containing at least one layer matching the filter will be shown.
 Valid filters have the format
     [types]:[filters]
 where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets,
-code, docs, or prompts) and [filters] is an optional comma-separated list of names
+code, docs, prompts, or mcpservers) and [filters] is an optional comma-separated list of names
 or paths to match against. Multiple --filter flags use OR logic (a modelkit is
 listed if it matches any filter).
 
@@ -629,7 +629,7 @@ kit list -f prompts:pdf-processing
 
 ```
       --format string        Output format: table, json, or Go template string (default "table")
-  -f, --filter stringArray   Filter modelkits by content type (e.g., model, datasets, code, docs, prompts). Can be specified multiple times
+  -f, --filter stringArray   Filter modelkits by content type (e.g., model, datasets, code, docs, prompts, mcpservers). Can be specified multiple times
       --plain-http           Use plain HTTP when connecting to remote registries
       --tls-verify           Require TLS and verify certificates when connecting to remote registries (default true)
       --tls-cert strings     Path to TLS cert to add to trust store (flag can be repeated)
@@ -769,7 +769,8 @@ kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1
 ```
   -f, --file string          Specifies the path to the Kitfile explicitly (use "-" to read from standard input)
   -t, --tag string           Assigns one or more tags to the built modelkit. Example: -t registry/repository:tag1,tag2
-      --compression string   Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest' (default "none")
+      --compression string   Compression format to use for layers. Valid options: 'none' (default), 'gzip', 'gzip-fastest', 'zstd' (default "none")
+      --layer-format string  Packaging format to use for layers. Valid options: 'tar' (default), 'raw' (default "tar")
       --use-model-pack       Pack model in ModelPack format instead of ModelKit
   -h, --help                 help for pack
 ```
@@ -1045,8 +1046,8 @@ to unpack only the dataset named 'my-dataset'.
 
 Valid filters have the format
     [types]:[filters]
-where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets
-code, or docs) and [filters] is an optional comma-separated list of additional filters
+where [types] is a comma-separated list of Kitfile fields (kitfile, model, datasets,
+code, docs, prompts, or mcpservers) and [filters] is an optional comma-separated list of additional filters
 to apply, which are matched against the Kitfile to further restrict what is extracted.
 Additional filters match elements of the Kitfile on either the name (if present) or
 the path used.
@@ -1164,3 +1165,4 @@ kit version [flags]
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
 
+<!-- AGENT_MODIFIED: Human review required before merge -->
