@@ -121,7 +121,7 @@ prompts:
 
 ## Example: Agentic AI Kitfile
 
-This Kitfile packages agent skill files, prompts, and an MCP server configuration together. No model is needed when the agent uses a hosted API (e.g., Claude, GPT).
+This Kitfile packages agent skill files, prompts, MCP server source code, and pre-built [MCP Bundle (`.mcpb`)](https://github.com/modelcontextprotocol/mcpb) archives together. No model is needed when the agent uses a hosted API (e.g., Claude, GPT). Use `code` for MCP server source and configuration files; use `mcpServers` for pre-built `.mcpb` bundles that are stored and restored byte-for-byte.
 
 ```yaml
 manifestVersion: v1.0.0
@@ -149,47 +149,17 @@ code:
   - path: ./mcp-servers/web-scraper
     description: MCP server for web scraping with rate limiting
 
-docs:
-  - path: ./README.md
-    description: Agent setup and deployment guide
-```
-
-## Example: ModelKit with MCP Bundles
-
-The `mcpServers` section packages pre-built [MCP Bundle (`.mcpb`)](https://github.com/modelcontextprotocol/mcpb) archives alongside your model or agent. Each `.mcpb` file is a ZIP archive containing a local MCP server and a `manifest.json` at its root. When unpacked, the bundle is restored byte-for-byte to its original path.
-
-```yaml
-manifestVersion: v1.0.0
-
-package:
-  name: my-agent-with-tools
-  description: Agent with bundled MCP servers for filesystem and web access
-  version: 1.0.0
-
-model:
-  name: local-llm
-  path: ./models/model.gguf
-  framework: llama.cpp
-
 mcpServers:
   - name: filesystem
     path: ./bundles/filesystem.mcpb
-    description: MCP server providing local filesystem access
+    description: Pre-built MCP server bundle providing local filesystem access
   - name: web-search
     path: ./bundles/web-search.mcpb
-    description: MCP server for web search capabilities
-```
+    description: Pre-built MCP server bundle for web search capabilities
 
-To unpack only the MCP bundles from a ModelKit:
-
-```sh
-kit unpack myrepo/my-agent:latest --filter=mcpservers
-```
-
-To unpack a specific MCP bundle by name:
-
-```sh
-kit unpack myrepo/my-agent:latest --filter=mcpservers:filesystem
+docs:
+  - path: ./README.md
+    description: Agent setup and deployment guide
 ```
 
 ## Learn More
