@@ -475,4 +475,3 @@ const onChatToggle = () => {
   animation: modalShow 150ms ease-in-out forwards;
 }
 </style>
-<!-- AGENT_MODIFIED: Human review required before merge -->
