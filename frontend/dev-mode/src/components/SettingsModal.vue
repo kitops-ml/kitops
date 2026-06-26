@@ -111,7 +111,7 @@ const onChatToggle = () => {
     <div class="max-h-screen overflow-y-auto">
       <div class="modal-content"
         @click.stop
-        @animationend="onModalAnimationEnd">
+        @animationend.self="onModalAnimationEnd">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl">Settings</h2>
           <button class="text-off-white hocus:text-gold" @click="closeModal()">
@@ -475,3 +475,4 @@ const onChatToggle = () => {
   animation: modalShow 150ms ease-in-out forwards;
 }
 </style>
+<!-- AGENT_MODIFIED: Human review required before merge -->
