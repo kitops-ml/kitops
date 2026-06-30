@@ -38,7 +38,7 @@ import (
 func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, targetPath string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	targetPath = filepath.Clean(targetPath)
 
-	fi, err := os.Stat(targetPath)
+	fi, err := os.Lstat(targetPath)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to read file %s: %w", targetPath, err)
 	}
