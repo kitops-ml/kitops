@@ -209,14 +209,19 @@ func writeLayerToTar(basePath string, ignore ignore.Paths, tarWriter *output.Pro
 		if file == "." {
 			return nil
 		}
-		// Skip anything that's not a regular file or directory
-		if !fi.Mode().IsRegular() && !fi.Mode().IsDir() {
-			return nil
-		}
 		// Since we're walking from the context directory, we want to skip irrelevant files (e.g. sibling directories)
 		if !sameDirTree(basePath, file) {
 			if fi.IsDir() {
 				return filepath.SkipDir
+			}
+			return nil
+		}
+		// Skip anything that's not a regular file or directory
+		if !fi.Mode().IsRegular() && !fi.Mode().IsDir() {
+			if fi.Mode()&os.ModeSymlink != 0 {
+				plog.Logf(output.LogLevelWarn, "Skipping symlink %s (symlinks are not supported)", file)
+			} else {
+				plog.Debugf("Skipping file %s (not a regular file)", file)
 			}
 			return nil
 		}
