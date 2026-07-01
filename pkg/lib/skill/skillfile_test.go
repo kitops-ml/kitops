@@ -161,15 +161,17 @@ func TestReadSkillLayer_RejectsOversizedEntry(t *testing.T) {
 
 func TestParseSkillFrontmatter(t *testing.T) {
 	tests := []struct {
-		name         string
-		content      string
-		expectNil    bool
-		expectedName string
+		name                string
+		content             string
+		expectNil           bool
+		expectedName        string
+		expectedDescription string
 	}{
 		{
-			name:         "basic frontmatter",
-			content:      "---\nname: my-skill\ndescription: test\n---\n\nBody",
-			expectedName: "my-skill",
+			name:                "basic frontmatter",
+			content:             "---\nname: my-skill\ndescription: test\n---\n\nBody",
+			expectedName:        "my-skill",
+			expectedDescription: "test",
 		},
 		{
 			name:      "no frontmatter",
@@ -177,14 +179,33 @@ func TestParseSkillFrontmatter(t *testing.T) {
 			expectNil: true,
 		},
 		{
-			name:         "no name field",
-			content:      "---\ndescription: test\n---\n",
-			expectedName: "",
+			name:                "no name field",
+			content:             "---\ndescription: test\n---\n",
+			expectedName:        "",
+			expectedDescription: "test",
 		},
 		{
 			name:      "empty content",
 			content:   "",
 			expectNil: true,
+		},
+		{
+			name:                "unquoted colon in description (lenient fallback)",
+			content:             "---\nname: pr-review-triage\ndescription: Turn a pull request: \"address the comments\" into a plan\n---\n",
+			expectedName:        "pr-review-triage",
+			expectedDescription: `Turn a pull request: "address the comments" into a plan`,
+		},
+		{
+			name:                "quoted scalar values are unquoted",
+			content:             "---\nname: \"my-skill\"\ndescription: 'a short one'\n---\n",
+			expectedName:        "my-skill",
+			expectedDescription: "a short one",
+		},
+		{
+			name:                "block scalar description parses strictly",
+			content:             "---\nname: multi\ndescription: |\n  line one\n  line two\n---\n",
+			expectedName:        "multi",
+			expectedDescription: "line one\nline two",
 		},
 	}
 
@@ -202,6 +223,9 @@ func TestParseSkillFrontmatter(t *testing.T) {
 			}
 			if fm.Name != tt.expectedName {
 				t.Errorf("Name = %q, want %q", fm.Name, tt.expectedName)
+			}
+			if fm.Description != tt.expectedDescription {
+				t.Errorf("Description = %q, want %q", fm.Description, tt.expectedDescription)
 			}
 		})
 	}

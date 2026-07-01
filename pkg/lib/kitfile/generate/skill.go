@@ -35,7 +35,11 @@ func parseSkillFrontmatter(contextDir, skillMDPath string) *skill.SkillFrontmatt
 		return nil
 	}
 
-	return skill.ParseSkillFrontmatter(data)
+	fm := skill.ParseSkillFrontmatter(data)
+	if fm == nil || (fm.Name == "" && fm.Description == "") {
+		output.Logf(output.LogLevelWarn, "Could not read a name or description from SKILL.md frontmatter at %s; the generated Kitfile will have no name or description", fullPath)
+	}
+	return fm
 }
 
 func dirContainsSkillMD(dir DirectoryListing) (bool, string) {
