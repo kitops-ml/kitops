@@ -56,9 +56,18 @@ func TestParseSkillFrontmatter(t *testing.T) {
 			expectNil: true,
 		},
 		{
-			name:      "malformed YAML",
-			content:   "---\nname: [invalid yaml\n---\n# Body",
-			expectNil: true,
+			// Frontmatter that is not valid YAML falls back to a lenient
+			name:       "malformed YAML recovered leniently",
+			content:    "---\nname: [invalid yaml\n---\n# Body",
+			expectName: "[invalid yaml",
+		},
+		{
+			// The common real-world case: an unquoted colon in a prose
+			// description. Strict YAML rejects it; the lenient fallback keeps it.
+			name:       "unquoted colon in description",
+			content:    "---\nname: pr-triage\ndescription: Handle review feedback on a pull request: address the comments\n---\n# Body",
+			expectName: "pr-triage",
+			expectDesc: "Handle review feedback on a pull request: address the comments",
 		},
 		{
 			name:      "no closing delimiter",

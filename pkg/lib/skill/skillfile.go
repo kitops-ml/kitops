@@ -122,7 +122,10 @@ type SkillFrontmatter struct {
 }
 
 // ParseSkillFrontmatter extracts and parses YAML frontmatter from SKILL.md
-// content. Returns nil if no valid frontmatter is found.
+// content. It first attempts a strict YAML parse; if that fails
+// it falls back to a lenient line-based parse of
+// the known keys. Returns nil if no frontmatter block is present or no known
+// fields could be recovered.
 func ParseSkillFrontmatter(data []byte) *SkillFrontmatter {
 	content := strings.ReplaceAll(string(data), "\r\n", "\n")
 	lines := strings.Split(content, "\n")
@@ -141,14 +144,67 @@ func ParseSkillFrontmatter(data []byte) *SkillFrontmatter {
 		return nil
 	}
 
-	fmYAML := strings.Join(lines[1:end], "\n")
+	fmLines := lines[1:end]
+	fmYAML := strings.Join(fmLines, "\n")
 	if strings.TrimSpace(fmYAML) == "" {
 		return nil
 	}
 
+	// Strict parse first
 	var fm SkillFrontmatter
-	if err := yaml.Unmarshal([]byte(fmYAML), &fm); err != nil {
+	if err := yaml.Unmarshal([]byte(fmYAML), &fm); err == nil {
+		return &fm
+	}
+
+	// The block is not valid YAML. Recover the known keys line-by-line
+	return parseFrontmatterLenient(fmLines)
+}
+
+// parseFrontmatterLenient recovers the known SKILL.md frontmatter keys from raw
+// lines by splitting each line on its first colon. It tolerates
+// YAML-significant characters (colons, quotes, '#') inside values but does not
+// support multi-line (block scalar) values. Returns nil if no known key is
+// found.
+func parseFrontmatterLenient(lines []string) *SkillFrontmatter {
+	var fm SkillFrontmatter
+	found := false
+	for _, line := range lines {
+		key, value, ok := strings.Cut(line, ":")
+		if !ok {
+			continue
+		}
+		value = unquoteScalar(strings.TrimSpace(value))
+		switch strings.TrimSpace(key) {
+		case "name":
+			if fm.Name == "" {
+				fm.Name = value
+				found = true
+			}
+		case "description":
+			if fm.Description == "" {
+				fm.Description = value
+				found = true
+			}
+		case "license":
+			if fm.License == "" {
+				fm.License = value
+				found = true
+			}
+		}
+	}
+	if !found {
 		return nil
 	}
 	return &fm
+}
+
+// unquoteScalar removes a single layer of matching surrounding quotes from a
+// scalar value, mirroring how a quoted YAML string would be interpreted.
+func unquoteScalar(s string) string {
+	if len(s) >= 2 {
+		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
+			return s[1 : len(s)-1]
+		}
+	}
+	return s
 }
