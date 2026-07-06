@@ -1,3 +1,9 @@
+---
+title: KitOps FAQ
+description: Frequently asked questions about KitOps and ModelKit packaging, including symlink handling and context boundaries.
+keywords: kitops faq, kit pack symlinks, modelkit symlinks, kitops context directory
+---
+
 # KitOps FAQ
 
 ## Why does kit pack not support symlinks?
