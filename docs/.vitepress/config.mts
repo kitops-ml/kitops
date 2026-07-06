@@ -89,6 +89,7 @@ export default defineConfig({
           { text: 'Deploy ModelKits', link: '/docs/deploy/' },
           { text: 'Securing ModelKits', link: '/docs/security/' },
           { text: 'Why KitOps?', link: '/docs/why-kitops/' },
+          { text: 'FAQ', link: '/docs/faq/' },
         ]
       },
       {
