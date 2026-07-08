@@ -178,7 +178,7 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 	return tempFileName, desc, layerInfo, nil
 }
 
-func writeLayerToTar(basePath string, ignore ignore.Paths, tarWriter *output.ProgressTar, plog *output.ProgressLogger) error {
+func writeLayerToTar(basePath string, ignorePaths ignore.Paths, tarWriter *output.ProgressTar, plog *output.ProgressLogger) error {
 	// Make sure target path exists; otherwise we'll miss it while walking below
 	_, err := os.Stat(basePath)
 	if err != nil {
@@ -226,11 +226,19 @@ func writeLayerToTar(basePath string, ignore ignore.Paths, tarWriter *output.Pro
 			return nil
 		}
 
+		if ignore.ShouldIgnoreFile(fi.Name()) {
+			plog.Debugf("Skipping file %s: OS-specific file", file)
+			if fi.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// Check if file should be ignored by the ignorefile/other Kitfile layers
-		if shouldIgnore, err := ignore.Matches(file, basePath); err != nil {
+		if shouldIgnore, err := ignorePaths.Matches(file, basePath); err != nil {
 			return fmt.Errorf("failed to match %s against ignore file: %w", file, err)
 		} else if shouldIgnore {
-			if !ignore.HasExclusions() && fi.IsDir() {
+			if !ignorePaths.HasExclusions() && fi.IsDir() {
 				plog.Debugf("Skipping directory %s: ignored", file)
 				return filepath.SkipDir
 			}
