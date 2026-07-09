@@ -173,7 +173,15 @@ func parseFrontmatterLenient(lines []string) *SkillFrontmatter {
 		if !ok {
 			continue
 		}
-		value = unquoteScalar(strings.TrimSpace(value))
+		value = strings.TrimSpace(value)
+		// Skip empty values and bare block-scalar indicators; multi-line
+		// values are not supported here and "|"/">" must not be captured as
+		// literal values. Checked before unquoting so a quoted "|" is kept.
+		switch value {
+		case "", "|", ">", "|-", "|+", ">-", ">+":
+			continue
+		}
+		value = unquoteScalar(value)
 		switch strings.TrimSpace(key) {
 		case "name":
 			if fm.Name == "" {
@@ -199,7 +207,9 @@ func parseFrontmatterLenient(lines []string) *SkillFrontmatter {
 }
 
 // unquoteScalar removes a single layer of matching surrounding quotes from a
-// scalar value, mirroring how a quoted YAML string would be interpreted.
+// scalar value. It does not process YAML escape sequences (e.g. `\n`, `\"`,
+// or doubled single quotes); escapes are left literal, which is acceptable
+// for this best-effort fallback.
 func unquoteScalar(s string) string {
 	if len(s) >= 2 {
 		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
