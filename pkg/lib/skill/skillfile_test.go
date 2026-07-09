@@ -207,6 +207,21 @@ func TestParseSkillFrontmatter(t *testing.T) {
 			expectedName:        "multi",
 			expectedDescription: "line one\nline two",
 		},
+		{
+			// Only empty known keys plus a malformed line: the lenient
+			// fallback must not report all-empty frontmatter as recovered.
+			name:      "empty values are not recovered leniently",
+			content:   "---\nname:\nunknown: [broken\n---\n",
+			expectNil: true,
+		},
+		{
+			// A block-scalar indicator must not become the literal value "|"
+			// when strict parsing fails for an unrelated reason.
+			name:                "block scalar indicator skipped in lenient fallback",
+			content:             "---\nname: [broken\ndescription: |\n  line one\n---\n",
+			expectedName:        "[broken",
+			expectedDescription: "",
+		},
 	}
 
 	for _, tt := range tests {
