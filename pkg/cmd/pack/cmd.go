@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -46,16 +47,23 @@ as pushing to a remote registry for collaboration.
 Unless a different location is specified, this command looks for the kitfile
 at the root of the provided context directory. Any relative paths defined
 within the kitfile are interpreted as being relative to this context
-directory.`
+directory.
+
+If --push is set along with a --tag pointing to a remote registry, the modelkit
+is streamed directly to that registry instead of being stored locally.`
 
 	examples = `# Pack a modelkit using the kitfile in the current directory
 kit pack .
 
 # Pack a modelkit with a specific kitfile and tag
-kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1`
+kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1
+
+# Pack a modelkit and push it directly to a remote registry without storing it locally
+kit pack . -t registry.example.com/my-org/my-model:latest --push`
 )
 
 type packOptions struct {
+	options.NetworkOptions
 	modelFile    string
 	contextDir   string
 	configHome   string
@@ -66,6 +74,7 @@ type packOptions struct {
 	modelRef     *registry.Reference
 	extraRefs    []string
 	useModelPack bool
+	push         bool
 }
 
 func PackCommand() *cobra.Command {
@@ -83,6 +92,8 @@ func PackCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.compression, "compression", "none", "Compression format to use for layers. Valid options: 'none', 'gzip', 'gzip-fastest', 'zstd'")
 	cmd.Flags().StringVar(&opts.layerFormat, "layer-format", "tar", "Packaging format to use for layers. Valid options: 'tar', 'raw'")
 	cmd.Flags().BoolVar(&opts.useModelPack, "use-model-pack", false, "Pack model in ModelPack format instead of ModelKit")
+	cmd.Flags().BoolVar(&opts.push, "push", false, "Stream the packed modelkit directly to the remote registry specified by --tag, without storing it locally")
+	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 	cmd.Args = cobra.ExactArgs(1)
 	cmd.CompletionOptions.SetDefaultShellCompDirective(cobra.ShellCompDirectiveDefault)
@@ -153,6 +164,15 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 
 	if err := mediatype.IsValidLayerFormat(opts.layerFormat); err != nil {
 		return err
+	}
+
+	if opts.push {
+		if opts.modelRef.Registry == artifact.DefaultRegistry {
+			return fmt.Errorf("--push requires a remote registry to be specified with --tag")
+		}
+		if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
+			return err
+		}
 	}
 
 	printConfig(opts)

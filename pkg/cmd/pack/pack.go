@@ -29,10 +29,12 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2"
 )
 
 // runPack compresses and stores a modelkit based on a Kitfile. Returns an error if packing
@@ -42,42 +44,59 @@ import (
 // Packed modelkits are saved to the local on-disk cache. As OCI-spec indexes only support one
 // registry/repository reference at a time, individual blobs may be duplicated on disk if stored
 // under different references.
+//
+// If options.push is set, the modelkit is instead streamed directly to the remote registry
+// specified by options.modelRef, skipping local storage entirely.
 func runPack(ctx context.Context, options *packOptions) error {
 	kitfile, err := readKitfile(options.modelFile)
 	if err != nil {
 		return err
 	}
 
-	storageHome := constants.StoragePath(options.configHome)
-	localRepo, err := local.NewLocalRepo(storageHome, options.modelRef)
-	if err != nil {
-		return fmt.Errorf("failed to open local storage: %w", err)
+	var target oras.Target
+	if options.push {
+		remoteRepo, err := remote.NewRepository(ctx, options.modelRef.Registry, options.modelRef.Repository, &options.NetworkOptions)
+		if err != nil {
+			return fmt.Errorf("failed to connect to remote registry: %w", err)
+		}
+		target = remoteRepo
+	} else {
+		storageHome := constants.StoragePath(options.configHome)
+		localRepo, err := local.NewLocalRepo(storageHome, options.modelRef)
+		if err != nil {
+			return fmt.Errorf("failed to open local storage: %w", err)
+		}
+		target = localRepo
 	}
 
-	manifestDesc, err := pack(ctx, options, kitfile, localRepo)
+	manifestDesc, err := pack(ctx, options, kitfile, target)
 	if err != nil {
 		return err
 	}
 
 	if options.modelRef != nil && options.modelRef.Reference != "" {
-		if err := localRepo.Tag(ctx, *manifestDesc, options.modelRef.Reference); err != nil {
+		if err := target.Tag(ctx, *manifestDesc, options.modelRef.Reference); err != nil {
 			return fmt.Errorf("failed to tag manifest: %w", err)
 		}
 		output.Debugf("Added tag to manifest: %s", options.modelRef.Reference)
 	}
 
 	for _, tag := range options.extraRefs {
-		if err := localRepo.Tag(ctx, *manifestDesc, tag); err != nil {
+		if err := target.Tag(ctx, *manifestDesc, tag); err != nil {
 			return err
 		}
 	}
 
-	output.Infof("Model saved: %s", manifestDesc.Digest)
+	if options.push {
+		output.Infof("Model pushed: %s", manifestDesc.Digest)
+	} else {
+		output.Infof("Model saved: %s", manifestDesc.Digest)
+	}
 
 	return nil
 }
 
-func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, localRepo local.LocalRepo) (*ocispec.Descriptor, error) {
+func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, target oras.Target) (*ocispec.Descriptor, error) {
 	var extraLayerPaths []string
 	if kitfile.Model != nil && artifact.IsModelKitReference(kitfile.Model.Path) {
 		baseRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
@@ -105,7 +124,7 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 	if err != nil {
 		return nil, err
 	}
-	manifestDesc, err := filesystem.SaveModel(ctx, localRepo, kitfile, ignore, &filesystem.SaveModelOptions{
+	manifestDesc, err := filesystem.SaveModel(ctx, target, kitfile, ignore, &filesystem.SaveModelOptions{
 		ModelFormat: modelFormat,
 		Compression: compression,
 		LayerFormat: layerFormat,

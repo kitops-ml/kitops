@@ -33,51 +33,63 @@ import (
 	"github.com/kitops-ml/kitops/pkg/output"
 	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2"
 )
 
-func saveFileToRepo(ctx context.Context, filePath string, desc ocispec.Descriptor, repo local.LocalRepo) error {
+// saveFileToRepo saves the content at filePath to target under desc. If target is a local.LocalRepo,
+// the file is moved directly into local storage to avoid copying a potentially very large file;
+// otherwise (e.g. a remote registry target), the file is streamed to the target via Push.
+func saveFileToRepo(ctx context.Context, filePath string, desc ocispec.Descriptor, target oras.Target) error {
 	mt, err := mediatype.ParseMediaType(desc.MediaType)
 	if err != nil {
 		return err
 	}
 
-	if exists, err := repo.Exists(ctx, desc); err != nil {
+	if exists, err := target.Exists(ctx, desc); err != nil {
 		return err
 	} else if exists {
 		output.Infof("Already saved %s layer: %s", mt.UserString(), desc.Digest)
 		return nil
 	}
 
-	// Workaround to avoid copying a potentially very large file: move it to the expected path
-	// and verify that it exists afterwards.
-	if err := repo.EnsureDirs(desc); err != nil {
-		return err
-	}
-	blobPath := repo.BlobPath(desc)
-	if err := os.Rename(filePath, blobPath); err != nil {
-		// This may fail on some systems (e.g. linux where / and /home are different partitions)
-		// Fallback to regular push which is basically a copy
-		output.Debugf("Failed to move temp file into storage (will copy instead): %s", err)
-		file, err := os.Open(filePath)
-		if err != nil {
-			return fmt.Errorf("failed to open temporary file: %w", err)
+	if localRepo, ok := target.(local.LocalRepo); ok {
+		// Workaround to avoid copying a potentially very large file: move it to the expected path
+		// and verify that it exists afterwards.
+		if err := localRepo.EnsureDirs(desc); err != nil {
+			return err
 		}
-		defer file.Close()
-		if err := repo.Push(ctx, desc, file); err != nil {
-			return fmt.Errorf("failed to add layer to storage: %w", err)
+		blobPath := localRepo.BlobPath(desc)
+		if err := os.Rename(filePath, blobPath); err != nil {
+			// This may fail on some systems (e.g. linux where / and /home are different partitions)
+			// Fallback to regular push which is basically a copy
+			output.Debugf("Failed to move temp file into storage (will copy instead): %s", err)
+			if err := pushFileToTarget(ctx, filePath, desc, target); err != nil {
+				return fmt.Errorf("failed to add layer to storage: %w", err)
+			}
 		}
+	} else if err := pushFileToTarget(ctx, filePath, desc, target); err != nil {
+		return fmt.Errorf("failed to push layer: %w", err)
 	}
 
 	// Verify blob is in store now
-	exists, err := repo.Exists(ctx, desc)
+	exists, err := target.Exists(ctx, desc)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("failed to move layer to storage: file is not stored")
+		return fmt.Errorf("failed to save layer to target: blob is not stored")
 	}
 	output.Infof("Saved %s layer: %s", mt.UserString(), desc.Digest)
 	return nil
+}
+
+func pushFileToTarget(ctx context.Context, filePath string, desc ocispec.Descriptor, target oras.Target) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open temporary file: %w", err)
+	}
+	defer file.Close()
+	return target.Push(ctx, desc, file)
 }
 
 func fillDescAnnotations(desc *ocispec.Descriptor, targetPath string, fi fs.FileInfo) error {
