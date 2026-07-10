@@ -51,7 +51,7 @@ Or use ZIP instead...
 </a>
 2. Move the kit executable to `/usr/local/bin`
 3. Test it worked by running `kit version` in your terminal
-4. [Verify your installation](#verify-the-installation)
+4. [Verify your installation](#verify-the-kitops-installation)
 
 ## Windows KitOps Install
 
@@ -82,7 +82,7 @@ Or use ZIP instead...
 </a>
 2. Unzip the file using “Extract All…”
 3. Move `kit.exe` to a folder in your system PATH
-4. [Verify your installation](#verify-the-installation)
+4. [Verify your installation](#verify-the-kitops-installation)
 
 ## Linux KitOps Install
 
