@@ -28,7 +28,7 @@ brew tap kitops-ml/kitops
 brew install kitops
 ```
 
-➡️ [Verify your installation](#verify-the-installation)
+➡️ [Verify your installation](#verify-the-kitops-installation)
 
 Or use ZIP instead...
 
