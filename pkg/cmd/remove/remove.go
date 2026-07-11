@@ -107,11 +107,12 @@ func removeModel(ctx context.Context, opts *removeOptions) error {
 	}
 	desc, err := removeModelRef(ctx, localRepo, opts.modelRef, opts.forceDelete)
 	if err != nil {
-		return fmt.Errorf("failed to remove: %s", err)
+		return fmt.Errorf("failed to remove: %w", err)
 	}
 	displayRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 	output.Infof("Removed %s (digest %s)", displayRef, desc.Digest)
 
+	var failedCount int
 	for _, tag := range opts.extraTags {
 		ref := *opts.modelRef
 		ref.Reference = tag
@@ -119,9 +120,13 @@ func removeModel(ctx context.Context, opts *removeOptions) error {
 		desc, err := removeModelRef(ctx, localRepo, &ref, opts.forceDelete)
 		if err != nil {
 			output.Errorf("Failed to remove tag %s: %s", tag, err)
+			failedCount++
 		} else {
 			output.Infof("Removed %s (digest %s)", displayRef, desc.Digest)
 		}
+	}
+	if failedCount > 0 {
+		return fmt.Errorf("failed to remove %d extra tag(s)", failedCount)
 	}
 	return nil
 }
