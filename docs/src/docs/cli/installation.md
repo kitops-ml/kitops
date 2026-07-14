@@ -13,14 +13,14 @@ import vGaTrack from '@theme/directives/ga'
 `kit` is the command-line tool for building and managing ModelKits.
 
 Pick your platform to get started:
--	[MacOS](#-macos-install)
-- [Windows](#-windows-install)
-- [Linux](#-linux-install)
-- [Build from source](#build-sources)
+-	[MacOS](#macos-kitops-install)
+- [Windows](#windows-kitops-install)
+- [Linux](#linux-kitops-install)
+- [Build from source](#build-kitops-from-source)
 
 Need help? [Join the community on Discord](https://discord.gg/Tapeh8agYy).
 
-## 🍎 MacOS KitOps Install
+## MacOS KitOps Install
 
 Install with Homebrew (recommended)
 ```sh
@@ -28,7 +28,7 @@ brew tap kitops-ml/kitops
 brew install kitops
 ```
 
-➡️ [Verify your installation](#verify-the-installation)
+➡️ [Verify your installation](#verify-the-kitops-installation)
 
 Or use ZIP instead...
 
@@ -51,9 +51,9 @@ Or use ZIP instead...
 </a>
 2. Move the kit executable to `/usr/local/bin`
 3. Test it worked by running `kit version` in your terminal
-4. [Verify your installation](#verify-the-installation)
+4. [Verify your installation](#verify-the-kitops-installation)
 
-## 🪟 Windows KitOps Install
+## Windows KitOps Install
 
 1. Get the ZIP for your CPU architecture:
    - Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-x86_64.zip"
@@ -82,9 +82,9 @@ Or use ZIP instead...
 </a>
 2. Unzip the file using “Extract All…”
 3. Move `kit.exe` to a folder in your system PATH
-4. [Verify your installation](#verify-the-installation)
+4. [Verify your installation](#verify-the-kitops-installation)
 
-## 🐧 Linux KitOps Install
+## Linux KitOps Install
 
 Install with Homebrew (recommended)
 ```sh
