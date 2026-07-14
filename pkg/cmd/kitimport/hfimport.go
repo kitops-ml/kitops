@@ -18,6 +18,8 @@ package kitimport
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -44,17 +46,6 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 		return nil, fmt.Errorf("could not process repository %s: %w", opts.repo, err)
 	}
 
-	tmpDir, cleanupTmp, err := cache.MkCacheDir("import", "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-	doCleanup := true
-	defer func() {
-		if doCleanup {
-			cleanupTmp()
-		}
-	}()
-
 	// Resolve the user-supplied ref to an immutable commit SHA up front.
 	// HF accepts commit SHAs anywhere a ref is expected, so threading this
 	// SHA through ListFiles and DownloadFiles binds the entire import to one
@@ -62,6 +53,13 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 	commitSHA, err := hf.PinCommit(ctx, repo, opts.repoRef, opts.token, repoType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pin commit for %s@%s: %w", repo, opts.repoRef, err)
+	}
+
+	// Reuse one cache directory per immutable HF snapshot so interrupted
+	// downloads can be resumed. Successful imports clear the import cache below.
+	tmpDir, _, err := cache.MkCacheDir(cache.CacheImportSubdir, hfImportCacheKey(repo, repoType, commitSHA))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
 	dirListing, err := hf.ListFiles(ctx, repo, commitSHA, opts.token, repoType)
@@ -98,7 +96,6 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 			newKitfile, err := promptToEditKitfile(tmpDir, kf)
 			if err != nil {
 				if errors.Is(err, ErrNoEditorFound) {
-					doCleanup = false
 					kfPath := filepath.Join(tmpDir, constants.DefaultKitfileName)
 					output.Logf(output.LogLevelWarn, "Could not determine default editor from $EDITOR environment variable")
 					output.Logf(output.LogLevelWarn, "Please manually edit Kitfile at path")
@@ -185,4 +182,9 @@ func hfSourceURI(repo string, repoType hf.RepositoryType) string {
 		return "hf://datasets/" + repo
 	}
 	return "hf://" + repo
+}
+
+func hfImportCacheKey(repo string, repoType hf.RepositoryType, commitSHA string) string {
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s", repoType, repo, commitSHA)))
+	return "hf_" + hex.EncodeToString(sum[:])
 }

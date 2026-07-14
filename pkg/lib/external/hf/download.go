@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
@@ -116,12 +117,28 @@ func downloadFile(
 	plog *output.ProgressLogger) error {
 
 	plog.Debugf("Downloading from %s", srcURL)
+	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	resumeOffset, complete, err := downloadResumeOffset(destPath, size)
+	if err != nil {
+		return err
+	}
+	if complete {
+		plog.Debugf("Using cached file %s", destPath)
+		return nil
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, srcURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to resolve URL: %w", err)
 	}
 	if token != "" {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
+	if resumeOffset > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", resumeOffset))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -133,22 +150,33 @@ func downloadFile(
 		}
 	}()
 
-	if resp.StatusCode != http.StatusOK {
+	if resumeOffset > 0 && resp.StatusCode == http.StatusOK {
+		plog.Debugf("Server ignored range request for %s; restarting download", filename)
+		resumeOffset = 0
+	}
+	if resumeOffset > 0 && resp.StatusCode == http.StatusPartialContent {
+		expectedPrefix := fmt.Sprintf("bytes %d-", resumeOffset)
+		if contentRange := resp.Header.Get("Content-Range"); contentRange != "" && !strings.HasPrefix(contentRange, expectedPrefix) {
+			return fmt.Errorf("unexpected content range %q when resuming file %s", contentRange, filename)
+		}
+	} else if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("received status code %d when downloading file %s from %s", resp.StatusCode, filename, srcURL)
 	}
 
-	contentRC := progress.TrackDownload(resp.Body, filename, size)
+	contentRC := progress.TrackDownload(resp.Body, filename, remainingDownloadSize(size, resumeOffset, resp.ContentLength))
 	defer func() {
 		if err := contentRC.Close(); err != nil {
-			plog.Logf(output.LogLevelWarn, "TEMP: see if this is an issue: %s", err)
+			plog.Logf(output.LogLevelWarn, "Failed to close download stream for %s: %s", filename, err)
 		}
 	}()
 
-	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+	flags := os.O_CREATE | os.O_WRONLY
+	if resumeOffset > 0 {
+		flags |= os.O_APPEND
+	} else {
+		flags |= os.O_TRUNC
 	}
-
-	f, err := os.OpenFile(destPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(destPath, flags, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
@@ -165,6 +193,62 @@ func downloadFile(
 	if resp.ContentLength > 0 && n != resp.ContentLength {
 		return fmt.Errorf("mismatched file size: expected %d but got %d", resp.ContentLength, n)
 	}
+	if size > 0 {
+		finalSize := n
+		if resumeOffset > 0 {
+			finalSize += resumeOffset
+		}
+		if finalSize != size {
+			return fmt.Errorf("mismatched file size: expected %d but got %d", size, finalSize)
+		}
+	}
 
 	return nil
+}
+
+func downloadResumeOffset(destPath string, size int64) (offset int64, complete bool, err error) {
+	info, err := os.Stat(destPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return 0, false, nil
+		}
+		return 0, false, fmt.Errorf("failed to examine existing file: %w", err)
+	}
+	if info.IsDir() {
+		return 0, false, fmt.Errorf("download destination %s is a directory", destPath)
+	}
+
+	existingSize := info.Size()
+	if size == 0 {
+		if existingSize == 0 {
+			return 0, true, nil
+		}
+		if err := os.Remove(destPath); err != nil {
+			return 0, false, fmt.Errorf("failed to remove oversized cached file: %w", err)
+		}
+		return 0, false, nil
+	}
+	if existingSize == size {
+		return 0, true, nil
+	}
+	if existingSize > size {
+		if err := os.Remove(destPath); err != nil {
+			return 0, false, fmt.Errorf("failed to remove oversized cached file: %w", err)
+		}
+		return 0, false, nil
+	}
+	return existingSize, false, nil
+}
+
+func remainingDownloadSize(size, resumeOffset, contentLength int64) int64 {
+	if size > 0 && resumeOffset > 0 {
+		return size - resumeOffset
+	}
+	if size > 0 {
+		return size
+	}
+	if contentLength > 0 {
+		return contentLength
+	}
+	return 0
 }

@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 )
@@ -53,8 +54,11 @@ func MkCacheDir(subDir CacheSubDir, cacheKey string) (cacheDir string, cleanup f
 		return "", nil, fmt.Errorf("failed to create cache directory %s: %w", cacheSubDir, err)
 	}
 	if cacheKey != "" {
+		if err := validateCacheKey(cacheKey); err != nil {
+			return "", nil, err
+		}
 		cacheDir = filepath.Join(cacheSubDir, cacheKey)
-		if err := os.Mkdir(cacheDir, 0700); err != nil {
+		if err := os.MkdirAll(cacheDir, 0700); err != nil {
 			return "", nil, fmt.Errorf("failed to create cache directory %s: %w", cacheDir, err)
 		}
 	} else {
@@ -71,6 +75,14 @@ func MkCacheDir(subDir CacheSubDir, cacheKey string) (cacheDir string, cleanup f
 		}
 	}
 	return cacheDir, cleanup, nil
+}
+
+func validateCacheKey(cacheKey string) error {
+	if filepath.IsAbs(cacheKey) || cacheKey == "." || cacheKey == ".." ||
+		strings.ContainsAny(cacheKey, `/\`) || filepath.Clean(cacheKey) != cacheKey {
+		return fmt.Errorf("invalid cache key %q: must be a single relative path element", cacheKey)
+	}
+	return nil
 }
 
 func MkCacheFile(subDir CacheSubDir, basename string) (tempFile *os.File, cleanup func(), err error) {
