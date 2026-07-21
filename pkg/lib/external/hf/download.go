@@ -127,20 +127,17 @@ func downloadFile(
 	if err != nil {
 		return fmt.Errorf("error calling API: %w", err)
 	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			plog.Logf(output.LogLevelWarn, "Failed to close response body: %s", err)
-		}
-	}()
-
 	if resp.StatusCode != http.StatusOK {
+		if err := resp.Body.Close(); err != nil {
+			plog.Logf(output.LogLevelWarn, "Failed to close response body for %s: %s", filename, err)
+		}
 		return fmt.Errorf("received status code %d when downloading file %s from %s", resp.StatusCode, filename, srcURL)
 	}
 
 	contentRC := progress.TrackDownload(resp.Body, filename, size)
 	defer func() {
 		if err := contentRC.Close(); err != nil {
-			plog.Logf(output.LogLevelWarn, "TEMP: see if this is an issue: %s", err)
+			plog.Logf(output.LogLevelWarn, "Error closing download stream for %s: %s", filename, err)
 		}
 	}()
 
