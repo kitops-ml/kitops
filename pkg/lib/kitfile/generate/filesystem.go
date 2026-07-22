@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 )
 
 type DirectoryListing struct {
@@ -59,6 +61,10 @@ func genDirListingFromPath(curDir, contextDir string) (*DirectoryListing, error)
 		return nil, fmt.Errorf("failed to read directory %s: %w", fullPath, err)
 	}
 	for _, dirEntry := range ds {
+		// Skip OS-specific files that should not be included in the Kitfile
+		if ignore.ShouldIgnoreFile(dirEntry.Name()) {
+			continue
+		}
 		relPath := filepath.Join(curDir, dirEntry.Name())
 		fullPath := filepath.Join(contextDir, relPath)
 		t := dirEntry.Type()
