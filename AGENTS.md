@@ -52,6 +52,12 @@
    addlicense -s -l apache -c "The KitOps Authors." $(find . -name '*.go')
    ```
 
+4. **Do not update `cli-reference.md` file**
+   The file `docs/src/docs/cli/cli-reference.md` contains the CLI reference documentation for the current release of the
+   Kit CLI, and should only be updated on full releases of the CLI -- not in Pull Requests or regular commits. The
+   script at `docs/src/docs/cli/generate.sh` automatically regenerates this file and is run as part of the release
+   workflow. It should not be used when making changes this repository.
+
 ## Code Review Instructions
 
 ### Pre-Review Check (MANDATORY)
@@ -96,7 +102,7 @@ go test ./...
 # Run specific package tests
 go test ./pkg/cmd/pack -v
 
-# Install locally  
+# Install locally
 go install .
 ```
 
@@ -106,7 +112,7 @@ go install .
 cd frontend/dev-mode
 pnpm install
 pnpm dev          # Development server
-pnpm build        # Production build  
+pnpm build        # Production build
 pnpm type-check   # TypeScript checking
 pnpm lint         # ESLint with auto-fix
 ```
