@@ -133,6 +133,8 @@ func mergeKitfiles(into, from *artifact.KitFile) *artifact.KitFile {
 	result.DataSets = append(result.DataSets, from.DataSets...)
 	result.Docs = into.Docs
 	result.Docs = append(result.Docs, from.Docs...)
+	result.Prompts = into.Prompts
+	result.Prompts = append(result.Prompts, from.Prompts...)
 	return result
 }
 
