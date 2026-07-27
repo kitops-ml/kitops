@@ -17,7 +17,6 @@
 package pack
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -102,7 +101,7 @@ func PackCommand() *cobra.Command {
 
 func runCommand(opts *packOptions) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		err := opts.complete(cmd.Context(), args)
+		err := opts.complete(cmd, args)
 		if err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
@@ -121,7 +120,8 @@ func runCommand(opts *packOptions) func(cmd *cobra.Command, args []string) error
 	}
 }
 
-func (opts *packOptions) complete(ctx context.Context, args []string) error {
+func (opts *packOptions) complete(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
 	contextDir, err := filepath.Abs(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to get context dir %s: %w", args[0], err)
@@ -173,6 +173,8 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 		if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 			return err
 		}
+	} else if networkFlagsChanged(cmd) {
+		output.Infof("Warning: network-related flags are only applicable with --push flag")
 	}
 
 	printConfig(opts)
@@ -192,3 +194,14 @@ func printConfig(opts *packOptions) {
 		output.Debugf("Additional tags: %s", strings.Join(opts.extraRefs, ", "))
 	}
 }
+
+func networkFlagsChanged(cmd *cobra.Command) bool {
+	flags := []string{"plain-http", "tls-verify", "tls-cert", "cert", "key", "concurrency", "proxy"}
+	for _, f := range flags {
+		if cmd.Flags().Changed(f) {
+			return true
+		}
+	}
+	return false
+}
+

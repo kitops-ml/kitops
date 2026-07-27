@@ -750,9 +750,6 @@ at the root of the provided context directory. Any relative paths defined
 within the kitfile are interpreted as being relative to this context
 directory.
 
-If --push is set along with a --tag pointing to a remote registry, the modelkit
-is streamed directly to that registry instead of being stored locally.
-
 ```
 kit pack [flags] DIRECTORY
 ```
@@ -765,9 +762,6 @@ kit pack .
 
 # Pack a modelkit with a specific kitfile and tag
 kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1
-
-# Pack a modelkit and push it directly to a remote registry without storing it locally
-kit pack . -t registry.example.com/my-org/my-model:latest --push
 ```
 
 ### Options
@@ -778,14 +772,6 @@ kit pack . -t registry.example.com/my-org/my-model:latest --push
       --compression string    Compression format to use for layers. Valid options: 'none', 'gzip', 'gzip-fastest', 'zstd' (default "none")
       --layer-format string   Packaging format to use for layers. Valid options: 'tar', 'raw' (default "tar")
       --use-model-pack        Pack model in ModelPack format instead of ModelKit
-      --push                  Stream the packed modelkit directly to the remote registry specified by --tag, without storing it locally
-      --plain-http            Use plain HTTP when connecting to remote registries
-      --tls-verify            Require TLS and verify certificates when connecting to remote registries (default true)
-      --tls-cert strings      Path to TLS cert to add to trust store (flag can be repeated)
-      --cert string           Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string            Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int       Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string          Proxy to use for connections (overrides proxy set by environment)
   -h, --help                  help for pack
 ```
 
