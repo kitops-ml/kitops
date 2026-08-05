@@ -33,7 +33,7 @@ brew install kitops
 Or use ZIP instead...
 
 1. Get the ZIP for your Mac chip type.
-   - MacOS:<a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-arm64.zip"
+   - MacOS:<a href="https://kitops.gateway.scarf.sh/latest/kitops-darwin-arm64.zip"
   v-ga-track="{
     category: 'link',
     label: 'MacOS (Apple Silicon)',
@@ -41,7 +41,7 @@ Or use ZIP instead...
   }">
   Apple Silicon / ARM64
 </a>
-   - MacOS:<a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-x86_64.zip"
+   - MacOS:<a href="https://kitops.gateway.scarf.sh/latest/kitops-darwin-x86_64.zip"
   v-ga-track="{
     category: 'link',
     label: 'MacOS (Intel)',
@@ -56,7 +56,7 @@ Or use ZIP instead...
 ## Windows KitOps Install
 
 1. Get the ZIP for your CPU architecture:
-   - Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-x86_64.zip"
+   - Windows: <a href="https://kitops.gateway.scarf.sh/latest/kitops-windows-x86_64.zip"
   v-ga-track="{
     category: 'link',
     label: 'Windows (AMD64)',
@@ -64,7 +64,7 @@ Or use ZIP instead...
   }">
   Intel / AMD, 64-bit
 </a>
-   - Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-arm64.zip"
+   - Windows: <a href="https://kitops.gateway.scarf.sh/latest/kitops-windows-arm64.zip"
   v-ga-track="{
     category: 'link',
     label: 'Windows (ARM64)',
@@ -72,7 +72,7 @@ Or use ZIP instead...
   }">
   ARM 64-bit
 </a>
-   - Windows: <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-i386.zip"
+   - Windows: <a href="https://kitops.gateway.scarf.sh/latest/kitops-windows-i386.zip"
   v-ga-track="{
     category: 'link',
     label: 'Windows (x86_32)',
@@ -96,7 +96,7 @@ kit version
 Or use TAR instead...
 
 1. Get the tarball for your CPU architecture
-  - Linux:<a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-x86_64.tar.gz"
+  - Linux:<a href="https://kitops.gateway.scarf.sh/latest/kitops-linux-x86_64.tar.gz"
   v-ga-track="{
     category: 'link',
     label: 'Linux (AMD64)',
@@ -104,7 +104,7 @@ Or use TAR instead...
   }">
   Intel / AMD, AMD 64-bit
 </a>
-  - Linux:<a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-arm64.tar.gz"
+  - Linux:<a href="https://kitops.gateway.scarf.sh/latest/kitops-linux-arm64.tar.gz"
   v-ga-track="{
     category: 'link',
     label: 'Linux (ARM64)',
@@ -112,7 +112,7 @@ Or use TAR instead...
   }">
   ARM 64-bit
 </a>
-  - Linux:<a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-i386.tar.gz"
+  - Linux:<a href="https://kitops.gateway.scarf.sh/latest/kitops-linux-i386.tar.gz"
   v-ga-track="{
     category: 'link',
     label: 'Linux (x86_32)',
