@@ -72,15 +72,15 @@ onUnmounted(() => {
       </a>
       <div class="absolute right-0 pt-2 whitespace-nowrap min-w-52 hidden lg:group-hover:block lg:group-focus-within:block">
         <div class="py-1 bg-night border border-off-white mt-2" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-x86_64.zip"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-windows-x86_64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 64-bit
           </a>
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-arm64.zip"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-windows-arm64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             ARM 64-bit
           </a>
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-windows-i386.zip"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-windows-i386.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 32-bit
           </a>
@@ -97,11 +97,11 @@ onUnmounted(() => {
       </a>
       <div class="absolute right-0 pt-2 whitespace-nowrap min-w-52 hidden lg:group-hover:block lg:group-focus-within:block">
         <div class="py-1 bg-night border border-off-white mt-2" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-arm64.zip"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-darwin-arm64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Apple Silicon / ARM64
           </a>
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-darwin-x86_64.zip"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-darwin-x86_64.zip"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / x86_64
           </a>
@@ -118,15 +118,15 @@ onUnmounted(() => {
       </a>
       <div class="absolute right-0 pt-2 whitespace-nowrap min-w-52 hidden lg:group-hover:block lg:group-focus-within:block">
         <div class="py-1 bg-night border border-off-white mt-2" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-x86_64.tar.gz"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-linux-x86_64.tar.gz"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 64-bit
           </a>
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-arm64.tar.gz"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-linux-arm64.tar.gz"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             ARM 64-bit
           </a>
-          <a href="https://github.com/kitops-ml/kitops/releases/latest/download/kitops-linux-i386.tar.gz"
+          <a href="https://kitops.gateway.scarf.sh/latest/kitops-linux-i386.tar.gz"
             target="_blank" class="block px-4 py-2 text-white hocus:text-night font-bold hocus:bg-gold" role="menuitem">
             Intel / AMD, 32-bit
           </a>
