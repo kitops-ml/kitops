@@ -80,11 +80,13 @@ kit pull registry.io/org/mymodel:v1.0
 ### 5. Unpack — extract contents locally
 
 ```bash
-kit unpack registry.io/org/mymodel:v1.0                # unpack everything to current dir
-kit unpack registry.io/org/mymodel:v1.0 -d ./output   # unpack to specific directory
-kit unpack registry.io/org/mymodel:v1.0 --model        # model weights only
-kit unpack registry.io/org/mymodel:v1.0 --datasets     # datasets only
-kit unpack registry.io/org/mymodel:v1.0 --code         # code only
+kit unpack registry.io/org/mymodel:v1.0                          # unpack everything to current dir
+kit unpack registry.io/org/mymodel:v1.0 -d ./output              # unpack to specific directory
+kit unpack registry.io/org/mymodel:v1.0 --filter=model           # model weights only
+kit unpack registry.io/org/mymodel:v1.0 --filter=datasets        # datasets only
+kit unpack registry.io/org/mymodel:v1.0 --filter=code            # code only
+kit unpack registry.io/org/mymodel:v1.0 --filter=model,datasets  # model and datasets
+kit unpack registry.io/org/mymodel:v1.0 --filter=datasets:my-dataset  # specific dataset by name
 ```
 
 ## Other Commands
@@ -130,11 +132,10 @@ kit pack . -t registry.io/org/mymodel:v1.0 && kit push registry.io/org/mymodel:v
 
 # Pull and unpack only the model weights
 kit pull registry.io/org/mymodel:v1.0
-kit unpack registry.io/org/mymodel:v1.0 --model -d ./weights
+kit unpack registry.io/org/mymodel:v1.0 --filter=model -d ./weights
 
 # Retag and push to a second registry
 kit tag registry.io/org/mymodel:v1.0 other-registry.io/org/mymodel:v1.0
 kit push other-registry.io/org/mymodel:v1.0
 ```
 
-<!-- AGENT_MODIFIED: Human review required before merge -->
