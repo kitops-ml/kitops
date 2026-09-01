@@ -116,7 +116,11 @@ func (w *wrappedRepo) Push(ctx context.Context, expected ocispec.Descriptor, con
 		),
 		mpb.BarFillerOnComplete("|"),
 	)
-	proxyReader := bar.ProxyReader(content)
+	proxyReader, err := bar.ProxyReader(content)
+	if err != nil {
+		// Should never happen; ProxyReader only returns error if bar is closed or aborted
+		return err
+	}
 	defer proxyReader.Close()
 
 	return w.Target.Push(ctx, expected, proxyReader)
@@ -194,7 +198,11 @@ func TarProgress(total int64, tw *tar.Writer) (*ProgressTar, *ProgressLogger) {
 
 	// Note: ProxyWriter returns a WriteCloser, but the Close() implementation simply forwards to the underlying writer's
 	// Close() implmentation if it exists. This leads to potential accidental double closes so we have to be careful
-	pw := bar.ProxyWriter(tw)
+	pw, err := bar.ProxyWriter(tw)
+	if err != nil {
+		// Should not happen; ProxyWriter returns error only if the bar is already completed or aborted, but we just created it.
+		SafeLogf(LogLevelWarn, "Error creating progress bar: %s", err)
+	}
 	return &ProgressTar{tw: tw, pw: pw, bar: bar}, &ProgressLogger{p}
 }
 
@@ -222,7 +230,12 @@ func (p *PullProgress) ProxyWriter(w io.Writer, digest string, size, offset int6
 		mpb.BarFillerOnComplete("|"),
 	)
 	bar.IncrInt64(offset)
-	return bar.ProxyWriter(w)
+	pw, err := bar.ProxyWriter(w)
+	if err != nil {
+		// Should not happen; ProxyWriter returns error only if the bar is already completed or aborted, but we just created it.
+		SafeLogf(LogLevelWarn, "Error creating progress bar: %s", err)
+	}
+	return pw
 }
 
 func (p *PullProgress) Done() {
@@ -282,7 +295,11 @@ func (pb *DownloadProgressBar) TrackDownload(rc io.ReadCloser, name string, tota
 		),
 		mpb.BarRemoveOnComplete(),
 	)
-	barRC := bar.ProxyReader(rc)
+	barRC, err := bar.ProxyReader(rc)
+	if err != nil {
+		// Should never happen; ProxyReader only returns error if bar is closed or aborted
+		SafeLogf(LogLevelWarn, "Error creating progress bar: %s", err)
+	}
 	return barRC
 }
 
@@ -323,5 +340,10 @@ func WrapReadCloser(prependText string, size int64, rc io.ReadCloser) (io.ReadCl
 	// forward Close() calls to the underlying ReadCloser via interface assertion. This means closing both the ReadCloser
 	// provided *and* the proxied ReadCloser is a double-close. In case the implementation of ProxyReader() changes
 	// in the future, *only* the proxied reader should be closed.
-	return bar.ProxyReader(rc), &ProgressLogger{p}
+	pr, err := bar.ProxyReader(rc)
+	if err != nil {
+		// Should never happen; ProxyReader only returns error if bar is closed or aborted
+		SafeLogf(LogLevelWarn, "Error creating progress bar: %s", err)
+	}
+	return pr, &ProgressLogger{p}
 }
