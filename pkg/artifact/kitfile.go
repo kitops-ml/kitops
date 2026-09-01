@@ -78,6 +78,7 @@ type (
 	Model struct {
 		Name        string      `json:"name,omitempty" yaml:"name,omitempty"`
 		Path        string      `json:"path,omitempty" yaml:"path,omitempty"`
+		BaseDigest  string      `json:"baseDigest,omitempty" yaml:"baseDigest,omitempty"`
 		License     string      `json:"license,omitempty" yaml:"license,omitempty"`
 		Framework   string      `json:"framework,omitempty" yaml:"framework,omitempty"`
 		Format      string      `json:"format,omitempty" yaml:"format,omitempty"`
