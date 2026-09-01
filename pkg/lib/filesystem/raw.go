@@ -28,14 +28,14 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 	"github.com/klauspost/compress/zstd"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2"
 )
 
-func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, targetPath string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+func saveContentLayerAsRaw(ctx context.Context, target oras.Target, targetPath string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	targetPath = filepath.Clean(targetPath)
 
 	fi, err := os.Lstat(targetPath)
@@ -133,7 +133,7 @@ func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, targe
 		DiffId: diffIdDigester.Digest().String(),
 	}
 
-	if err := saveFileToRepo(ctx, tempFileName, desc, localRepo); err != nil {
+	if err := saveFileToRepo(ctx, tempFileName, desc, target); err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	}
 
