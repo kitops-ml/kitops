@@ -19,7 +19,6 @@ package pack
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -96,12 +95,6 @@ func runCommand(opts *packOptions) func(cmd *cobra.Command, args []string) error
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
 
-		// Change working directory to context path to make sure relative paths within
-		// tarballs are correct. This is the equivalent of using the -C parameter for tar
-		if err := os.Chdir(opts.contextDir); err != nil {
-			return output.Fatalf("Failed to use context path %s: %s", opts.contextDir, err)
-		}
-
 		err = runPack(cmd.Context(), opts)
 		if err != nil {
 			return output.Fatalf("Failed to pack model kit: %s", err)
@@ -123,6 +116,22 @@ func (opts *packOptions) complete(ctx context.Context, args []string) error {
 			return err
 		}
 		opts.modelFile = foundModel
+	} else if opts.modelFile != "-" && !filepath.IsAbs(opts.modelFile) {
+		if _, exists := filesystem.PathExists(opts.modelFile); exists {
+			absModelFile, err := filepath.Abs(opts.modelFile)
+			if err != nil {
+				return fmt.Errorf("failed to resolve model file path %s: %w", opts.modelFile, err)
+			}
+			opts.modelFile = absModelFile
+		} else if _, exists := filesystem.PathExists(filepath.Join(opts.contextDir, opts.modelFile)); exists {
+			opts.modelFile = filepath.Join(opts.contextDir, opts.modelFile)
+		} else {
+			absModelFile, err := filepath.Abs(opts.modelFile)
+			if err != nil {
+				return fmt.Errorf("failed to resolve model file path %s: %w", opts.modelFile, err)
+			}
+			opts.modelFile = absModelFile
+		}
 	}
 
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)

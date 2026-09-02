@@ -109,6 +109,7 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, loc
 		ModelFormat: modelFormat,
 		Compression: compression,
 		LayerFormat: layerFormat,
+		ContextDir:  opts.contextDir,
 	})
 	if err != nil {
 		return nil, err

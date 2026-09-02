@@ -262,3 +262,47 @@ datasets:
 		})
 	}
 }
+
+func TestPackUnpack_PreservesWorkingDir(t *testing.T) {
+	testPreflight(t)
+
+	tmpDir := setupTempDir(t)
+	modelKitPath, unpackPath, contextPath := setupTestDirs(t, tmpDir)
+	t.Setenv(constants.KitopsHomeEnvVar, contextPath)
+
+	testKitfile := `
+manifestVersion: 1.0.0
+package:
+  name: test-cwd
+model:
+  path: model.bin
+`
+	kitfilePath := filepath.Join(modelKitPath, constants.DefaultKitfileName)
+	if err := os.WriteFile(kitfilePath, []byte(testKitfile), 0644); err != nil {
+		t.Fatal(err)
+	}
+	setupFiles(t, modelKitPath, []string{"model.bin"})
+
+	origWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tag := "test:cwd-check"
+	runCommand(t, expectNoError, "pack", modelKitPath, "-t", tag)
+
+	afterPackWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, origWd, afterPackWd, "kit pack should not change working directory")
+
+	runCommand(t, expectNoError, "unpack", tag, "-d", unpackPath)
+
+	afterUnpackWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, origWd, afterUnpackWd, "kit unpack should not change working directory")
+	checkFilesExistWithContent(t, unpackPath, []string{"model.bin"})
+}

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -44,6 +45,7 @@ type SaveModelOptions struct {
 	ModelFormat mediatype.ModelFormat
 	Compression mediatype.CompressionType
 	LayerFormat mediatype.Format
+	ContextDir  string
 }
 
 // Validate checks that the provided set of options is valid (i.e. supported by KitOps and the relevant specs)
@@ -62,6 +64,15 @@ func SaveModel(ctx context.Context, localRepo local.LocalRepo, kitfile *artifact
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
+
+	if opts.ContextDir == "" {
+		opts.ContextDir = "."
+	}
+	absContextDir, err := filepath.Abs(opts.ContextDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve context directory: %w", err)
+	}
+	opts.ContextDir = absContextDir
 
 	layerDescs, diffIDs, err := saveKitfileLayers(ctx, localRepo, kitfile, ignore, opts)
 	if err != nil {
@@ -154,7 +165,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !artifact.IsModelKitReference(kitfile.Model.Path) {
 			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelBaseType, opts.LayerFormat, opts.Compression)
-			layer, layerInfo, err := saveContentLayer(ctx, localRepo, kitfile.Model.Path, mediaType, ignore)
+			layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, kitfile.Model.Path, mediaType, ignore)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -164,7 +175,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 		}
 		for idx, part := range kitfile.Model.Parts {
 			mediaType := mediatype.New(opts.ModelFormat, mediatype.ModelPartBaseType, opts.LayerFormat, opts.Compression)
-			layer, layerInfo, err := saveContentLayer(ctx, localRepo, part.Path, mediaType, ignore)
+			layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, part.Path, mediaType, ignore)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -175,7 +186,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	}
 	for idx, code := range kitfile.Code {
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.CodeBaseType, opts.LayerFormat, opts.Compression)
-		layer, layerInfo, err := saveContentLayer(ctx, localRepo, code.Path, mediaType, ignore)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, code.Path, mediaType, ignore)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -199,7 +210,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 
 		// Otherwise, pack a locally-stored dataset
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.DatasetBaseType, opts.LayerFormat, opts.Compression)
-		layer, layerInfo, err := saveContentLayer(ctx, localRepo, dataset.Path, mediaType, ignore)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, dataset.Path, mediaType, ignore)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -209,7 +220,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	}
 	for idx, docs := range kitfile.Docs {
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.DocsBaseType, opts.LayerFormat, opts.Compression)
-		layer, layerInfo, err := saveContentLayer(ctx, localRepo, docs.Path, mediaType, ignore)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, docs.Path, mediaType, ignore)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -220,7 +231,7 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	for idx, prompt := range kitfile.Prompts {
 		// Prompt layers are saved as `code` layers with an annotation to distinguish them
 		mediaType := mediatype.New(opts.ModelFormat, mediatype.CodeBaseType, opts.LayerFormat, opts.Compression)
-		layer, layerInfo, err := saveContentLayer(ctx, localRepo, prompt.Path, mediaType, ignore)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, prompt.Path, mediaType, ignore)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -239,11 +250,15 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	for idx, server := range kitfile.MCPServers {
 		// MCP Bundles are stored as raw, uncompressed layers so that the .mcpb ZIP archive
 		// round-trips byte-for-byte. Validate it is a well-formed bundle before packing.
-		if err := ValidateMCPB(server.Path); err != nil {
+		mcpbPath := server.Path
+		if !filepath.IsAbs(mcpbPath) {
+			mcpbPath = filepath.Join(opts.ContextDir, server.Path)
+		}
+		if err := ValidateMCPB(mcpbPath); err != nil {
 			return nil, nil, fmt.Errorf("invalid MCP bundle for mcpServer %s: %w", server.Name, err)
 		}
 		mediaType := mediatype.New(mediatype.KitFormat, mediatype.MCPBBaseType, mediatype.RawFormat, mediatype.NoneCompression)
-		layer, layerInfo, err := saveContentLayer(ctx, localRepo, server.Path, mediaType, ignore)
+		layer, layerInfo, err := saveContentLayer(ctx, localRepo, opts.ContextDir, server.Path, mediaType, ignore)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -269,12 +284,12 @@ func saveKitfileLayers(ctx context.Context, localRepo local.LocalRepo, kitfile *
 	return layers, diffIDs, nil
 }
 
-func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+func saveContentLayer(ctx context.Context, localRepo local.LocalRepo, contextDir, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	switch mediaType.Format() {
 	case mediatype.TarFormat:
-		return saveContentLayerAsTar(ctx, localRepo, path, mediaType, ignore)
+		return saveContentLayerAsTar(ctx, localRepo, contextDir, path, mediaType, ignore)
 	case mediatype.RawFormat:
-		return saveContentLayerAsRaw(ctx, localRepo, path, mediaType, ignore)
+		return saveContentLayerAsRaw(ctx, localRepo, contextDir, path, mediaType, ignore)
 	default:
 		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("unknown layer format")
 	}
