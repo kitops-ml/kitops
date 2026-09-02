@@ -85,13 +85,13 @@ func TestUnpackLayer_VerifiesDigest(t *testing.T) {
 
 		t.Run(tt.name+"/valid", func(t *testing.T) {
 			t.Chdir(t.TempDir())
-			err := unpackLayer(t.Context(), &fixedBlobStore{blob: tt.blob}, desc, "", false, false, mt)
+			err := unpackLayer(t.Context(), &fixedBlobStore{blob: tt.blob}, desc, ".", "", false, false, mt)
 			assert.NoError(t, err)
 			assert.FileExists(t, "train.csv")
 		})
 		t.Run(tt.name+"/tampered", func(t *testing.T) {
 			t.Chdir(t.TempDir())
-			err := unpackLayer(t.Context(), &fixedBlobStore{blob: tampered}, desc, "", false, false, mt)
+			err := unpackLayer(t.Context(), &fixedBlobStore{blob: tampered}, desc, ".", "", false, false, mt)
 			assert.ErrorIs(t, err, content.ErrMismatchedDigest)
 			assert.NoFileExists(t, "train.csv")
 		})
