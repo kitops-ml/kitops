@@ -127,9 +127,10 @@ func GenerateKitfile(dir *DirectoryListing, packageOpt *artifact.Package, depth 
 		if err != nil {
 			output.Debugf("Error determining license type: %s", err)
 			output.Logf(output.LogLevelWarn, "Unable to determine license type")
+		} else {
+			detectedLicenseType = licenseType
+			output.Logf(output.LogLevelTrace, "Detected license %s for license file %s", detectedLicenseType, licensePath)
 		}
-		detectedLicenseType = licenseType
-		output.Logf(output.LogLevelTrace, "Detected license %s for license file", detectedLicenseType)
 	}
 
 	if len(unknownFiles) > 5 {
