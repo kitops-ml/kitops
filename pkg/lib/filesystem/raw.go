@@ -35,10 +35,21 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, targetPath string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
-	targetPath = filepath.Clean(targetPath)
+func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, contextDir, targetPath string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+	relPath := targetPath
+	if filepath.IsAbs(relPath) {
+		if rel, err := filepath.Rel(contextDir, relPath); err == nil {
+			relPath = rel
+		}
+	}
+	relPath = filepath.Clean(relPath)
 
-	fi, err := os.Lstat(targetPath)
+	absPath := targetPath
+	if !filepath.IsAbs(absPath) {
+		absPath = filepath.Join(contextDir, targetPath)
+	}
+
+	fi, err := os.Lstat(absPath)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to read file %s: %w", targetPath, err)
 	}
@@ -93,7 +104,7 @@ func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, targe
 		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("unsupported compression format: %s", mediaType.Compression())
 	}
 
-	f, err := os.Open(targetPath)
+	f, err := os.Open(absPath)
 	if err != nil {
 		_ = closeAll(toClose)
 		return ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("failed to open file %s: %w", targetPath, err)
@@ -125,7 +136,7 @@ func saveContentLayerAsRaw(ctx context.Context, localRepo local.LocalRepo, targe
 		Digest:    digester.Digest(),
 		Size:      tempFileInfo.Size(),
 	}
-	if err := fillDescAnnotations(&desc, targetPath, fi); err != nil {
+	if err := fillDescAnnotations(&desc, relPath, fi); err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	}
 	layerInfo := &artifact.LayerInfo{

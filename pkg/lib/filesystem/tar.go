@@ -40,11 +40,11 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-func saveContentLayerAsTar(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+func saveContentLayerAsTar(ctx context.Context, localRepo local.LocalRepo, contextDir, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
 	// to a temporary file. Ideally, we can also add this to the internal store by moving the file to avoid
 	// copying if possible.
-	tempPath, desc, info, err := packLayerToTar(path, mediaType, ignore)
+	tempPath, desc, info, err := packLayerToTar(contextDir, path, mediaType, ignore)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	}
@@ -66,7 +66,7 @@ func saveContentLayerAsTar(ctx context.Context, localRepo local.LocalRepo, path 
 // a descriptor (including hash) for the compressed file, the layer is saved to a temporary file
 // on disk and must be moved to an appropriate location. It is the responsibility of the caller
 // to clean up the temporary file when it is no longer needed.
-func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Paths) (tempFilePath string, desc ocispec.Descriptor, layerInfo *artifact.LayerInfo, err error) {
+func packLayerToTar(contextDir, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (tempFilePath string, desc ocispec.Descriptor, layerInfo *artifact.LayerInfo, err error) {
 	// Clean path to ensure consistent format (./path vs path/ vs path)
 	path = filepath.Clean(path)
 
@@ -76,7 +76,7 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 		output.Errorf("Warning: %s layer path %s ignored by kitignore", mediaType.UserString(), path)
 	}
 
-	totalSize, err := getTotalSize(path, ignore)
+	totalSize, err := getTotalSize(contextDir, path, ignore)
 	if err != nil {
 		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("error processing %s: %w", mediaType.UserString(), err)
 	}
@@ -143,7 +143,7 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 		return "", ocispec.DescriptorEmptyJSON, nil, fmt.Errorf("unsupported compression format: %s", mediaType.Compression())
 	}
 
-	if err := writeLayerToTar(path, ignore, pWriter, pLog); err != nil {
+	if err := writeLayerToTar(contextDir, path, ignore, pWriter, pLog); err != nil {
 		// Don't care about these errors since we'll be deleting the file anyways
 		_ = closeAll(toClose)
 		tempFileCleanup()
@@ -178,9 +178,20 @@ func packLayerToTar(path string, mediaType mediatype.MediaType, ignore ignore.Pa
 	return tempFileName, desc, layerInfo, nil
 }
 
-func writeLayerToTar(basePath string, ignorePaths ignore.Paths, tarWriter *output.ProgressTar, plog *output.ProgressLogger) error {
+func writeLayerToTar(contextDir, basePath string, ignorePaths ignore.Paths, tarWriter *output.ProgressTar, plog *output.ProgressLogger) error {
+	absBasePath := basePath
+	if !filepath.IsAbs(absBasePath) {
+		absBasePath = filepath.Join(contextDir, basePath)
+	}
+	relBasePath := basePath
+	if filepath.IsAbs(relBasePath) {
+		if rel, err := filepath.Rel(contextDir, relBasePath); err == nil {
+			relBasePath = rel
+		}
+	}
+
 	// Make sure target path exists; otherwise we'll miss it while walking below
-	_, err := os.Stat(basePath)
+	_, err := os.Stat(absBasePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("path %s does not exist", basePath)
@@ -202,15 +213,15 @@ func writeLayerToTar(basePath string, ignorePaths ignore.Paths, tarWriter *outpu
 		return true
 	}
 
-	err = filepath.Walk(".", func(file string, fi os.FileInfo, err error) error {
+	err = filepath.Walk(contextDir, func(file string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if file == "." {
+		if file == contextDir {
 			return nil
 		}
 		// Since we're walking from the context directory, we want to skip irrelevant files (e.g. sibling directories)
-		if !sameDirTree(basePath, file) {
+		if !sameDirTree(absBasePath, file) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
@@ -234,19 +245,24 @@ func writeLayerToTar(basePath string, ignorePaths ignore.Paths, tarWriter *outpu
 			return nil
 		}
 
+		relFile, err := filepath.Rel(contextDir, file)
+		if err != nil {
+			return fmt.Errorf("failed to get relative path for %s: %w", file, err)
+		}
+
 		// Check if file should be ignored by the ignorefile/other Kitfile layers
-		if shouldIgnore, err := ignorePaths.Matches(file, basePath); err != nil {
-			return fmt.Errorf("failed to match %s against ignore file: %w", file, err)
+		if shouldIgnore, err := ignorePaths.Matches(relFile, relBasePath); err != nil {
+			return fmt.Errorf("failed to match %s against ignore file: %w", relFile, err)
 		} else if shouldIgnore {
 			if !ignorePaths.HasExclusions() && fi.IsDir() {
-				plog.Debugf("Skipping directory %s: ignored", file)
+				plog.Debugf("Skipping directory %s: ignored", relFile)
 				return filepath.SkipDir
 			}
-			plog.Debugf("Skipping file %s: ignored", file)
+			plog.Debugf("Skipping file %s: ignored", relFile)
 			return nil
 		}
 
-		if err := writeHeaderToTar(file, fi, tarWriter, plog); err != nil {
+		if err := writeHeaderToTar(relFile, fi, tarWriter, plog); err != nil {
 			return err
 		}
 		if fi.IsDir() {
