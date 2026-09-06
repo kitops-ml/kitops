@@ -39,6 +39,7 @@ If you think there's something else you can help with please contact us in the [
 
 * Go (Golang): The latest version of Go, as the project is written in this language. Go's installation guide can be found at https://golang.org/doc/install.
 * Git: Version control system for cloning the repository and managing code changes. Installation instructions are available at https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.
+* pnpm: Package manager used for building the dev mode harness UI and documentation. Installation instructions are available at https://pnpm.io/installation.
 
 ### Setting up the project
 
