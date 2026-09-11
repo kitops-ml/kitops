@@ -100,7 +100,7 @@ func pack(ctx context.Context, opts *packOptions, kitfile *artifact.KitFile, tar
 		baseRef := artifact.FormatRepositoryForDisplay(opts.modelRef.String())
 		parentKitfile, err := kfutils.ResolveKitfile(ctx, opts.configHome, kitfile.Model.Path, baseRef)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to resolve referenced modelkit %s: %w", kitfile.Model.Path, err)
+			return nil, fmt.Errorf("failed to resolve referenced modelkit %s: %w", kitfile.Model.Path, err)
 		}
 		extraLayerPaths = util.LayerPathsFromKitfile(parentKitfile)
 	}
@@ -159,7 +159,7 @@ func readerForKitfile(modelFile string) (io.ReadCloser, error) {
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
 			modelfile = os.Stdin
 		} else {
-			return nil, fmt.Errorf("No input file specified and no data piped")
+			return nil, fmt.Errorf("no input file specified and no data piped")
 		}
 	} else {
 		var err error
