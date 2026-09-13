@@ -82,6 +82,22 @@ func TestIgnoreMatches(t *testing.T) {
 			shouldIgnore: false,
 		},
 		{
+			name:         "Test sibling file sharing a prefix with a layer path",
+			kitIgnore:    []string{},
+			layerPaths:   []string{".", "data"},
+			curPath:      "database.txt",
+			curLayerPath: ".",
+			shouldIgnore: false,
+		},
+		{
+			name:         "Test sibling directory sharing a prefix with a layer path",
+			kitIgnore:    []string{},
+			layerPaths:   []string{"a", "a/data"},
+			curPath:      "a/data-v2/file.txt",
+			curLayerPath: "a",
+			shouldIgnore: false,
+		},
+		{
 			name:         "Test intersecting layers inclusion with kitignore",
 			kitIgnore:    []string{"**/testfile.txt"},
 			layerPaths:   []string{"main", "main/subdir"},

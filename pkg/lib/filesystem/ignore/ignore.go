@@ -79,12 +79,12 @@ func (pm *ignorePaths) Matches(path, layerPath string) (bool, error) {
 	// since it's included in another layer
 	for _, layer := range pm.layers {
 		layer = cleanPath(layer)
-		if strings.HasPrefix(layerPath, layer) {
+		if isWithin(layerPath, layer) {
 			// ignore other layer paths if they are parents of the current layer's path,
 			// e.g. ignore ./main-dir when current layer is ./main-dir/sub-dir
 			continue
 		}
-		if strings.HasPrefix(path, layer) {
+		if isWithin(path, layer) {
 			// The current path is included in another layer that is a subdirectory of the current layer
 			return true, nil
 		}
@@ -111,6 +111,14 @@ func readIgnoreFile(contextDir string) ([]string, error) {
 		return nil, fmt.Errorf("failed to read %s file: %w", constants.IgnoreFileName, err)
 	}
 	return patterns, nil
+}
+
+// isWithin reports whether path is dir or nested within it; "data-v2" is not within "data".
+func isWithin(path, dir string) bool {
+	if dir == "." {
+		return true
+	}
+	return path == dir || strings.HasPrefix(path, dir+string(filepath.Separator))
 }
 
 func cleanPath(path string) string {
