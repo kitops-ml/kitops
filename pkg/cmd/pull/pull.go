@@ -26,6 +26,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -128,12 +129,20 @@ func referenceIsModel(ctx context.Context, ref *registry.Reference, repo registr
 	}
 	defer rc.Close()
 
-	if desc.MediaType != ocispec.MediaTypeImageManifest {
-		return fmt.Errorf("reference %s is not an image manifest", ref.String())
-	}
 	manifestBytes, err := io.ReadAll(rc)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest: %w", err)
+	}
+	if desc.MediaType == ocispec.MediaTypeImageIndex {
+		// Registries do not include artifactType in the descriptors they return, so the index
+		// itself is the only thing that can say whether this is a ModelKit index.
+		if _, err := index.ParseIndex(manifestBytes); err == nil {
+			return fmt.Errorf("reference %s is a ModelKit index; use 'kit index' to work with it",
+				artifact.FormatRepositoryForDisplay(ref.String()))
+		}
+	}
+	if desc.MediaType != ocispec.MediaTypeImageManifest {
+		return fmt.Errorf("reference %s is not an image manifest", ref.String())
 	}
 	manifest := &ocispec.Manifest{}
 	if err := json.Unmarshal(manifestBytes, manifest); err != nil {

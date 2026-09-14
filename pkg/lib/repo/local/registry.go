@@ -62,10 +62,25 @@ type localRepo struct {
 
 func NewLocalRepo(storagePath string, ref *registry.Reference) (LocalRepo, error) {
 	nameRef := path.Join(ref.Registry, ref.Repository)
-	return newLocalRepoForName(storagePath, nameRef)
+	return newRepoForName(storagePath, storagePath, nameRef)
 }
 
-func newLocalRepoForName(storagePath, name string) (LocalRepo, error) {
+// NewLocalIndexRepo returns local storage for the ModelKit indexes in a repository. Indexes
+// share blob storage with ModelKits but have their own tags, so an index and a ModelKit in the
+// same repository never shadow one another.
+func NewLocalIndexRepo(storagePath string, ref *registry.Reference) (LocalRepo, error) {
+	indexBase := constants.IndexStoragePath(storagePath)
+	if err := os.MkdirAll(indexBase, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create index storage: %w", err)
+	}
+	nameRef := path.Join(ref.Registry, ref.Repository)
+	return newRepoForName(storagePath, indexBase, nameRef)
+}
+
+// newRepoForName returns local storage for a repository, reading its repo-specific index.json
+// and tags from indexBase. Blobs are always shared, so indexBase is all that separates ModelKit
+// storage from index storage.
+func newRepoForName(storagePath, indexBase, name string) (LocalRepo, error) {
 	repo := &localRepo{}
 	repo.storagePath = storagePath
 	repo.nameRef = name
@@ -77,7 +92,7 @@ func newLocalRepoForName(storagePath, name string) (LocalRepo, error) {
 	repo.Store = store
 
 	// Initialize repo-specific index.json
-	localIndex, err := newLocalIndex(storagePath, name)
+	localIndex, err := newLocalIndex(indexBase, name)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +102,16 @@ func newLocalRepoForName(storagePath, name string) (LocalRepo, error) {
 }
 
 func GetAllLocalRepos(storagePath string) ([]LocalRepo, error) {
-	entries, err := os.ReadDir(storagePath)
+	return getAllRepos(storagePath, storagePath)
+}
+
+// GetAllLocalIndexRepos returns local storage for every repository that holds a ModelKit index.
+func GetAllLocalIndexRepos(storagePath string) ([]LocalRepo, error) {
+	return getAllRepos(storagePath, constants.IndexStoragePath(storagePath))
+}
+
+func getAllRepos(storagePath, indexBase string) ([]LocalRepo, error) {
+	entries, err := os.ReadDir(indexBase)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
@@ -107,7 +131,7 @@ func GetAllLocalRepos(storagePath string) ([]LocalRepo, error) {
 		if err != nil {
 			return nil, err
 		}
-		repo, err := newLocalRepoForName(storagePath, repoName)
+		repo, err := newRepoForName(storagePath, indexBase, repoName)
 		if err != nil {
 			return nil, err
 		}
@@ -131,9 +155,16 @@ func (lr *localRepo) BlobPath(desc ocispec.Descriptor) string {
 	return filepath.Join(lr.storagePath, ocispec.ImageBlobsDir, desc.Digest.Algorithm().String(), desc.Digest.Encoded())
 }
 
+// isManifestMediaType returns whether the media type describes a manifest, which in OCI terms
+// covers both image manifests and image indexes. These are tracked in the repository-scoped
+// index; everything else is a plain blob.
+func isManifestMediaType(mediaType string) bool {
+	return mediaType == ocispec.MediaTypeImageManifest || mediaType == ocispec.MediaTypeImageIndex
+}
+
 func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) error {
 	output.SafeLogf(output.LogLevelTrace, "Deleting digest %s in local repository %s", target.Digest.String(), lr.nameRef)
-	if target.MediaType != ocispec.MediaTypeImageManifest {
+	if !isManifestMediaType(target.MediaType) {
 		return lr.Store.Delete(ctx, target)
 	}
 
@@ -142,6 +173,14 @@ func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) erro
 		return fmt.Errorf("failed to check if manifest can be deleted: %w", err)
 	}
 	if canDelete {
+		if target.MediaType == ocispec.MediaTypeImageIndex {
+			// The oras store considers a manifest tagged only by its own digest to be untagged, and
+			// KitOps records tags in the repository-scoped index rather than the store's tag resolver,
+			// so garbage collecting after deleting an index would delete the ModelKits it references.
+			autoGC := lr.Store.AutoGC
+			lr.Store.AutoGC = false
+			defer func() { lr.Store.AutoGC = autoGC }()
+		}
 		// Delete the manifest and its now-dangling blobs. If some referenced content is already
 		// gone from storage (e.g. left over from an interrupted delete or external cleanup), treat
 		// it as already-deleted so we can still remove the manifest from the local index below and
@@ -154,7 +193,7 @@ func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) erro
 }
 
 func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (exists bool, err error) {
-	if target.MediaType == ocispec.MediaTypeImageManifest {
+	if isManifestMediaType(target.MediaType) {
 		exists, err = lr.localIndex.exists(target), nil
 	} else {
 		exists, err = lr.Store.Exists(ctx, target)
@@ -172,7 +211,7 @@ func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (exi
 
 func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
 	output.SafeLogf(output.LogLevelTrace, "Fetching digest %s in local repository %s", target.Digest.String(), lr.nameRef)
-	if target.MediaType == ocispec.MediaTypeImageManifest {
+	if isManifestMediaType(target.MediaType) {
 		if exists := lr.localIndex.exists(target); !exists {
 			return nil, errdef.ErrNotFound
 		}
@@ -187,7 +226,7 @@ func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.R
 
 func (lr *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
 	output.SafeLogf(output.LogLevelTrace, "Pushing digest %s to local repository %s", expected.Digest.String(), lr.nameRef)
-	if expected.MediaType == ocispec.MediaTypeImageManifest {
+	if isManifestMediaType(expected.MediaType) {
 		// Attempting to push a manifest to oci.Store will return an error if it already exists.
 		// Normally, clients check before pushing, but in our case, the manifest may exist in the
 		// oci.Store but not the local index. As a result, we have to check if it exists before pushing.
