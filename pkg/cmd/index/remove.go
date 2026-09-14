@@ -18,15 +18,19 @@ package index
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	"github.com/opencontainers/go-digest"
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -59,10 +63,13 @@ func indexRemoveCommand() *cobra.Command {
 		RunE:    runRemoveCommand(opts),
 		Args:    cobra.ExactArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 1 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
+			switch len(args) {
+			case 0:
+				return completion.GetLocalIndexesCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+			case 1:
+				return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 			}
-			return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 	cmd.Flags().SortFlags = false
@@ -75,8 +82,62 @@ func runRemoveCommand(opts *removeOptions) func(*cobra.Command, []string) error 
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index remove")
+		if err := runRemove(cmd.Context(), opts); err != nil {
+			return output.Fatalf("Failed to remove ModelKit from index: %s", err)
+		}
+		return nil
 	}
+}
+
+func runRemove(ctx context.Context, opts *removeOptions) error {
+	repo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+	if err != nil {
+		return err
+	}
+
+	prevIndexDesc, idx, err := resolveIndex(ctx, repo, opts.indexRef.Reference)
+	if err != nil {
+		if errors.Is(err, errdef.ErrNotFound) {
+			return fmt.Errorf("could not find index %s in local storage", displayRef(opts.indexRef))
+		}
+		return fmt.Errorf("failed to read index %s: %w", displayRef(opts.indexRef), err)
+	}
+
+	entryDigest, err := resolveEntryDigest(ctx, opts)
+	if err != nil {
+		return err
+	}
+	if !idx.RemoveEntry(entryDigest) {
+		return fmt.Errorf("index %s does not contain %s", displayRef(opts.indexRef), entryDigest)
+	}
+
+	desc, err := writeIndex(ctx, repo, idx, opts.indexRef, prevIndexDesc)
+	if err != nil {
+		return err
+	}
+	removed := entryDigest.String()
+	if !artifact.ReferenceIsDigest(opts.modelRef.Reference) {
+		removed = displayRef(opts.modelRef)
+	}
+	output.Infof("Removed %s from index %s (digest %s)", removed, displayRef(opts.indexRef), desc.Digest)
+	return nil
+}
+
+// resolveEntryDigest returns the digest of the entry to remove. A tag is resolved in the
+// repository it names, since an entry may refer to a ModelKit that is not in local storage.
+func resolveEntryDigest(ctx context.Context, opts *removeOptions) (digest.Digest, error) {
+	if artifact.ReferenceIsDigest(opts.modelRef.Reference) {
+		return digest.Parse(opts.modelRef.Reference)
+	}
+	modelRepo, err := local.NewLocalRepo(constants.StoragePath(opts.configHome), opts.modelRef)
+	if err != nil {
+		return "", err
+	}
+	desc, err := modelRepo.Resolve(ctx, opts.modelRef.Reference)
+	if err != nil {
+		return "", fmt.Errorf("could not resolve %s in local storage: %w; specify the entry by digest instead", displayRef(opts.modelRef), err)
+	}
+	return desc.Digest, nil
 }
 
 func (opts *removeOptions) complete(ctx context.Context, args []string) error {

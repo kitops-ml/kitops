@@ -18,14 +18,19 @@ package index
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -66,8 +71,32 @@ func runCreateCommand(opts *createOptions) func(*cobra.Command, []string) error 
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index create")
+		if err := runCreate(cmd.Context(), opts); err != nil {
+			return output.Fatalf("Failed to create index: %s", err)
+		}
+		return nil
 	}
+}
+
+func runCreate(ctx context.Context, opts *createOptions) error {
+	repo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+	if err != nil {
+		return err
+	}
+
+	existing, err := repo.Resolve(ctx, opts.indexRef.Reference)
+	if err == nil && existing.MediaType == ocispec.MediaTypeImageIndex {
+		return fmt.Errorf("index %s already exists", displayRef(opts.indexRef))
+	} else if err != nil && !errors.Is(err, errdef.ErrNotFound) {
+		return err
+	}
+
+	desc, err := writeIndex(ctx, repo, libindex.CreateIndex(nil), opts.indexRef, ocispec.Descriptor{})
+	if err != nil {
+		return err
+	}
+	output.Infof("Created index %s (digest %s)", displayRef(opts.indexRef), desc.Digest)
+	return nil
 }
 
 func (opts *createOptions) complete(ctx context.Context, args []string) error {

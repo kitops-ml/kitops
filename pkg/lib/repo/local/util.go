@@ -63,12 +63,18 @@ func parseTagsIndex(tagsIndexPath string) (*tagsIndex, error) {
 
 // canSafelyDeleteManifest returns true if a manifest can be safely deleted, i.e. if
 // at most one local repository refers to it. Otherwise, deleting the manifest will
-// delete it from all repositories, which is not what's intended.
+// delete it from all repositories, which is not what's intended. ModelKit and index
+// repositories share blob storage, so both are counted.
 func canSafelyDeleteManifest(ctx context.Context, storagePath string, desc ocispec.Descriptor) (bool, error) {
-	allRepos, err := GetAllLocalRepos(storagePath)
+	modelKitRepos, err := GetAllLocalRepos(storagePath)
 	if err != nil {
 		return false, err
 	}
+	indexRepos, err := GetAllLocalIndexRepos(storagePath)
+	if err != nil {
+		return false, err
+	}
+	allRepos := append(modelKitRepos, indexRepos...)
 	refCount := 0
 	for _, repo := range allRepos {
 		if exists, err := repo.Exists(ctx, desc); err != nil {

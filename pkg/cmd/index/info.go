@@ -18,15 +18,28 @@ package index
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"maps"
+	"slices"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -61,6 +74,12 @@ func indexInfoCommand() *cobra.Command {
 		Example: infoExample,
 		RunE:    runInfoCommand(opts),
 		Args:    cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) >= 1 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return completion.GetLocalIndexesCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+		},
 	}
 
 	cmd.Flags().BoolVarP(&opts.checkRemote, "remote", "r", false, "Check remote registry instead of local storage")
@@ -75,8 +94,93 @@ func runInfoCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index info")
+		if err := runInfo(cmd.Context(), cmd.OutOrStdout(), opts); err != nil {
+			return output.Fatalf("Failed to read index: %s", err)
+		}
+		return nil
 	}
+}
+
+func runInfo(ctx context.Context, out io.Writer, opts *infoOptions) error {
+	var store oras.Target
+	var localRepo local.LocalRepo
+	if opts.checkRemote {
+		remoteRepo, err := remote.NewRepository(ctx, opts.indexRef.Registry, opts.indexRef.Repository, &opts.NetworkOptions)
+		if err != nil {
+			return err
+		}
+		store = remoteRepo
+	} else {
+		indexRepo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+		if err != nil {
+			return err
+		}
+		modelKitRepo, err := local.NewLocalRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+		if err != nil {
+			return err
+		}
+		store, localRepo = indexRepo, modelKitRepo
+	}
+
+	desc, idx, err := resolveIndex(ctx, store, opts.indexRef.Reference)
+	if err != nil {
+		if errors.Is(err, errdef.ErrNotFound) && !opts.checkRemote {
+			return fmt.Errorf("could not find index %s in local storage; use 'kit index pull' to download it, or --remote to read it from its registry", displayRef(opts.indexRef))
+		}
+		return err
+	}
+	printIndexInfo(ctx, out, desc, idx, localRepo, opts.indexRef)
+	return nil
+}
+
+func printIndexInfo(ctx context.Context, out io.Writer, desc ocispec.Descriptor, idx *libindex.ModelKitIndex, localRepo local.LocalRepo, ref *registry.Reference) {
+	fmt.Fprintf(out, "Index %s (%s)\n", displayRef(ref), desc.Digest)
+	if len(idx.Manifests) == 0 {
+		fmt.Fprintln(out, "Index contains no ModelKits")
+		return
+	}
+	if len(idx.Manifests) == 1 {
+		fmt.Fprintln(out, "1 ModelKit:")
+	} else {
+		fmt.Fprintf(out, "%d ModelKits:\n", len(idx.Manifests))
+	}
+
+	tw := tabwriter.NewWriter(out, 0, 2, 4, ' ', 0)
+	for _, entry := range idx.Manifests {
+		status := ""
+		if localRepo != nil {
+			if exists, err := localRepo.Exists(ctx, entry.Descriptor); err == nil && !exists {
+				status = "missing from local storage"
+			}
+		}
+		fmt.Fprintf(tw, "  %s\t%s\t%s\n", entry.Digest, output.FormatBytes(entry.Size), status)
+	}
+	tw.Flush()
+
+	for _, entry := range idx.Manifests {
+		if len(entry.ModelMeta) == 0 {
+			continue
+		}
+		fmt.Fprintf(out, "\n  %s\n", entry.Digest)
+		printModelMetadata(out, entry.ModelMeta)
+	}
+}
+
+func printModelMetadata(out io.Writer, meta libindex.ModelMetadata) {
+	tw := tabwriter.NewWriter(out, 0, 2, 4, ' ', 0)
+	for _, key := range slices.Sorted(maps.Keys(meta)) {
+		fmt.Fprintf(tw, "      %s:\t%s\n", key, formatMetadataValue(meta[key]))
+	}
+	tw.Flush()
+}
+
+// formatMetadataValue prints string values unquoted, leaving other JSON as-is.
+func formatMetadataValue(value json.RawMessage) string {
+	var str string
+	if err := json.Unmarshal(value, &str); err == nil {
+		return str
+	}
+	return string(value)
 }
 
 func (opts *infoOptions) complete(ctx context.Context, args []string) error {

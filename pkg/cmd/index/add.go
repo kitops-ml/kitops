@@ -18,6 +18,7 @@ package index
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,9 +26,15 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -61,10 +68,13 @@ func indexAddCommand() *cobra.Command {
 		RunE:    runAddCommand(opts),
 		Args:    cobra.ExactArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 1 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
+			switch len(args) {
+			case 0:
+				return completion.GetLocalIndexesCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+			case 1:
+				return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 			}
-			return completion.GetLocalModelKitsCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
@@ -80,8 +90,56 @@ func runAddCommand(opts *addOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index add")
+		if err := runAdd(cmd.Context(), opts); err != nil {
+			return output.Fatalf("Failed to add ModelKit to index: %s", err)
+		}
+		return nil
 	}
+}
+
+func runAdd(ctx context.Context, opts *addOptions) error {
+	repo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+	if err != nil {
+		return err
+	}
+
+	var src oras.Target
+	if opts.checkRemote {
+		remoteRepo, err := remote.NewRepository(ctx, opts.modelRef.Registry, opts.modelRef.Repository, &opts.NetworkOptions)
+		if err != nil {
+			return err
+		}
+		src = remoteRepo
+	} else {
+		modelRepo, err := local.NewLocalRepo(constants.StoragePath(opts.configHome), opts.modelRef)
+		if err != nil {
+			return err
+		}
+		src = modelRepo
+	}
+	modelDesc, _, err := util.ResolveManifest(ctx, src, opts.modelRef.Reference)
+	if err != nil {
+		if errors.Is(err, errdef.ErrNotFound) && !opts.checkRemote {
+			return fmt.Errorf("could not find ModelKit %s in local storage; use --remote to resolve it in its registry", displayRef(opts.modelRef))
+		}
+		return err
+	}
+
+	prevIndexDesc, idx, err := resolveIndex(ctx, repo, opts.indexRef.Reference)
+	if err != nil {
+		if errors.Is(err, errdef.ErrNotFound) {
+			return fmt.Errorf("could not find index %s in local storage; use 'kit index create' to create it", displayRef(opts.indexRef))
+		}
+		return fmt.Errorf("failed to read index %s: %w", displayRef(opts.indexRef), err)
+	}
+
+	idx.AddEntry(libindex.ModelKitIndexDescriptor{Descriptor: modelDesc})
+	desc, err := writeIndex(ctx, repo, idx, opts.indexRef, prevIndexDesc)
+	if err != nil {
+		return err
+	}
+	output.Infof("Added %s to index %s (digest %s)", displayRef(opts.modelRef), displayRef(opts.indexRef), desc.Digest)
+	return nil
 }
 
 func (opts *addOptions) complete(ctx context.Context, args []string) error {
@@ -120,6 +178,11 @@ func (opts *addOptions) complete(ctx context.Context, args []string) error {
 	opts.modelRef = modelRef
 	if opts.modelRef.Registry == artifact.DefaultRegistry && opts.checkRemote {
 		return fmt.Errorf("can not check remote: %s does not contain registry", artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
+	}
+
+	if opts.indexRef.Registry != opts.modelRef.Registry || opts.indexRef.Repository != opts.modelRef.Repository {
+		return fmt.Errorf("ModelKit %s is not in the same repository as index %s; an index may only reference ModelKits in its own repository",
+			displayRef(opts.modelRef), displayRef(opts.indexRef))
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {

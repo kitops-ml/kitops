@@ -17,16 +17,23 @@
 package index
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -64,6 +71,12 @@ func indexInspectCommand() *cobra.Command {
 		Example: inspectExample,
 		RunE:    runInspectCommand(opts),
 		Args:    cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) >= 1 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return completion.GetLocalIndexesCompletion(cmd.Context(), toComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+		},
 	}
 
 	cmd.Flags().BoolVarP(&opts.checkRemote, "remote", "r", false, "Check remote registry instead of local storage")
@@ -78,8 +91,43 @@ func runInspectCommand(opts *inspectOptions) func(*cobra.Command, []string) erro
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index inspect")
+		if err := runInspect(cmd.Context(), opts); err != nil {
+			return output.Fatalf("Failed to inspect index: %s", err)
+		}
+		return nil
 	}
+}
+
+func runInspect(ctx context.Context, opts *inspectOptions) error {
+	var store oras.Target
+	if opts.checkRemote {
+		remoteRepo, err := remote.NewRepository(ctx, opts.indexRef.Registry, opts.indexRef.Repository, &opts.NetworkOptions)
+		if err != nil {
+			return err
+		}
+		store = remoteRepo
+	} else {
+		repo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+		if err != nil {
+			return err
+		}
+		store = repo
+	}
+
+	_, indexBytes, err := fetchIndexBytes(ctx, store, opts.indexRef.Reference)
+	if err != nil {
+		return err
+	}
+	if _, err := libindex.ParseIndex(indexBytes); err != nil {
+		return err
+	}
+
+	var pretty bytes.Buffer
+	if err := json.Indent(&pretty, indexBytes, "", "  "); err != nil {
+		return fmt.Errorf("failed to format index: %w", err)
+	}
+	output.Infoln(pretty.String())
+	return nil
 }
 
 func (opts *inspectOptions) complete(ctx context.Context, args []string) error {

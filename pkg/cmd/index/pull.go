@@ -24,8 +24,12 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
 )
@@ -71,8 +75,38 @@ func runPullCommand(opts *pullOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index pull")
+		if err := runPull(cmd.Context(), opts); err != nil {
+			return output.Fatalf("Failed to pull index: %s", err)
+		}
+		return nil
 	}
+}
+
+func runPull(ctx context.Context, opts *pullOptions) error {
+	remoteRepo, err := remote.NewRepository(ctx, opts.indexRef.Registry, opts.indexRef.Repository, &opts.NetworkOptions)
+	if err != nil {
+		return err
+	}
+
+	output.Infof("Pulling index %s", opts.indexRef.String())
+	desc, indexBytes, err := fetchIndexBytes(ctx, remoteRepo, opts.indexRef.Reference)
+	if err != nil {
+		return err
+	}
+	if _, err := libindex.ParseIndex(indexBytes); err != nil {
+		return err
+	}
+
+	repo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
+	if err != nil {
+		return err
+	}
+
+	if _, err := writeIndexBytes(ctx, repo, desc, indexBytes, opts.indexRef, ocispec.Descriptor{}); err != nil {
+		return err
+	}
+	output.Infof("Pulled index %s", desc.Digest)
+	return nil
 }
 
 func (opts *pullOptions) complete(ctx context.Context, args []string) error {

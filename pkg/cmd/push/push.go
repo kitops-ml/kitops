@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -27,6 +29,23 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
 )
+
+// checkNotAnIndex reports an error pointing at 'kit index push' when the source reference is
+// not a ModelKit in local storage but is a ModelKit index there.
+func checkNotAnIndex(ctx context.Context, localRepo local.LocalRepo, opts *pushOptions) error {
+	if _, err := localRepo.Resolve(ctx, opts.srcModelRef.Reference); err == nil {
+		return nil
+	}
+	indexRepo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.srcModelRef)
+	if err != nil {
+		return nil
+	}
+	if _, err := indexRepo.Resolve(ctx, opts.srcModelRef.Reference); err != nil {
+		return nil
+	}
+	return fmt.Errorf("reference %s is a ModelKit index; use 'kit index push' to push it",
+		artifact.FormatRepositoryForDisplay(opts.srcModelRef.String()))
+}
 
 func PushModel(ctx context.Context, localRepo local.LocalRepo, repo registry.Repository, opts *pushOptions) (ocispec.Descriptor, error) {
 	trackedRepo, logger := output.WrapTarget(repo)

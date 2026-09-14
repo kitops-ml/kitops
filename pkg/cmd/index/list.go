@@ -19,11 +19,20 @@ package index
 import (
 	"context"
 	"fmt"
+	"io"
+	"sort"
+	"strconv"
+	"text/tabwriter"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2/content"
 )
 
 const (
@@ -35,8 +44,17 @@ references.`
 kit index list`
 )
 
+const listTableFmt = "%s\t%s\t%s\t%s\n"
+
 type listOptions struct {
 	configHome string
+}
+
+type indexListing struct {
+	repo      string
+	tags      []string
+	modelKits string
+	digest    string
 }
 
 func indexListCommand() *cobra.Command {
@@ -60,8 +78,66 @@ func runListCommand(opts *listOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context()); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
-		return output.Fatalf("Not implemented: kit index list")
+		listings, err := listLocalIndexes(cmd.Context(), opts)
+		if err != nil {
+			return output.Fatalf("Failed to list indexes: %s", err)
+		}
+		printIndexList(cmd.OutOrStdout(), listings)
+		return nil
 	}
+}
+
+func listLocalIndexes(ctx context.Context, opts *listOptions) ([]indexListing, error) {
+	indexRepos, err := local.GetAllLocalIndexRepos(constants.StoragePath(opts.configHome))
+	if err != nil {
+		return nil, err
+	}
+	var listings []indexListing
+	for _, repo := range indexRepos {
+		repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
+		for _, desc := range repo.GetAllModels() {
+			listings = append(listings, indexListing{
+				repo:      repository,
+				tags:      repo.GetTags(desc),
+				modelKits: countEntries(ctx, repo, desc),
+				digest:    desc.Digest.String(),
+			})
+		}
+	}
+	sort.Slice(listings, func(i, j int) bool {
+		return (listings[i].repo < listings[j].repo) ||
+			((listings[i].repo == listings[j].repo) && (listings[i].digest < listings[j].digest))
+	})
+	return listings, nil
+}
+
+// countEntries reports how many ModelKits an index references, or that it is unknown when
+// the index cannot be read.
+func countEntries(ctx context.Context, repo local.LocalRepo, desc ocispec.Descriptor) string {
+	indexBytes, err := content.FetchAll(ctx, repo, desc)
+	if err != nil {
+		return noneValue
+	}
+	idx, err := libindex.ParseIndex(indexBytes)
+	if err != nil {
+		return noneValue
+	}
+	return strconv.Itoa(len(idx.Manifests))
+}
+
+func printIndexList(out io.Writer, listings []indexListing) {
+	tw := tabwriter.NewWriter(out, 0, 2, 3, ' ', 0)
+	fmt.Fprintf(tw, listTableFmt, "REPOSITORY", "TAG", "MODELKITS", "DIGEST")
+	for _, listing := range listings {
+		tags := listing.tags
+		if len(tags) == 0 {
+			tags = []string{noneValue}
+		}
+		for _, tag := range tags {
+			fmt.Fprintf(tw, listTableFmt, listing.repo, tag, listing.modelKits, listing.digest)
+		}
+	}
+	tw.Flush()
 }
 
 func (opts *listOptions) complete(ctx context.Context) error {

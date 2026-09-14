@@ -38,6 +38,7 @@ const (
 	// credentials are stored in $KITOPS_HOME/credentials.json
 	DefaultConfigSubdir               = "kitops"
 	StorageSubpath                    = "storage"
+	IndexStorageSubpath               = "indexes"
 	CacheSubpath                      = "cache"
 	CredentialsSubpath                = "credentials.json"
 	UpdateNotificationsConfigFilename = "disable-update-notifications"
@@ -130,6 +131,12 @@ func DefaultConfigPath() (string, error) {
 
 func StoragePath(configBase string) string {
 	return filepath.Join(configBase, StorageSubpath)
+}
+
+// IndexStoragePath returns the directory within storageBase that holds the repository-scoped
+// indexes and tags for ModelKit indexes, which are kept apart from those for ModelKits.
+func IndexStoragePath(storageBase string) string {
+	return filepath.Join(storageBase, IndexStorageSubpath)
 }
 
 func IngestPath(storageBase string) string {
