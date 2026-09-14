@@ -29,15 +29,24 @@ import (
 )
 
 func GetLocalModelKitsCompletion(ctx context.Context, toComplete string) []string {
+	return getLocalCompletion(ctx, toComplete, local.GetAllLocalRepos, "ModelKits")
+}
+
+// GetLocalIndexesCompletion completes references to the ModelKit indexes in local storage.
+func GetLocalIndexesCompletion(ctx context.Context, toComplete string) []string {
+	return getLocalCompletion(ctx, toComplete, local.GetAllLocalIndexRepos, "ModelKit indexes")
+}
+
+func getLocalCompletion(ctx context.Context, toComplete string, listRepos func(string) ([]local.LocalRepo, error), kind string) []string {
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
 		cobra.CompErrorln("Failed to get KitOps config directory")
 		return nil
 	}
 	storageRoot := constants.StoragePath(configHome)
-	localRepos, err := local.GetAllLocalRepos(storageRoot)
+	localRepos, err := listRepos(storageRoot)
 	if err != nil {
-		cobra.CompErrorln("Failed to list local ModelKits")
+		cobra.CompErrorln(fmt.Sprintf("Failed to list local %s", kind))
 		return nil
 	}
 	hasColon := strings.Contains(toComplete, ":")

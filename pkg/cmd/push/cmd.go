@@ -150,6 +150,10 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 			return output.Fatalln(err)
 		}
 
+		if err := checkNotAnIndex(cmd.Context(), localRepo, opts); err != nil {
+			return output.Fatalf("Cannot push: %s", err)
+		}
+
 		if opts.srcModelRef.String() != opts.destModelRef.String() {
 			output.Infof("Pushing %s to %s", opts.srcModelRef.String(), opts.destModelRef.String())
 		} else {
