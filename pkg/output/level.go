@@ -50,6 +50,7 @@ func init() {
 		colorNone = ""
 		colorError = ""
 		colorWarn = ""
+		colorInfo = ""
 		colorDebug = ""
 		colorTrace = ""
 	}
