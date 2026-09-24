@@ -17,7 +17,6 @@
 package output
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"runtime"
@@ -36,24 +35,31 @@ const (
 	LogLevelSystem // always printed, routed to stderr
 )
 
-var (
-	colorNone  = "\033[0m"
-	colorTrace = "\033[0m"    // No color
-	colorDebug = "\033[0;34m" // Blue
-	colorInfo  = "\033[0;32m" // Green
-	colorWarn  = "\033[0;93m" // Yellow
-	colorError = "\033[0;31m" // Red
-)
+const colorNone = "\033[0m"
 
-func init() {
-	if runtime.GOOS == "windows" || !term.IsTerminal(int(os.Stdout.Fd())) {
-		colorNone = ""
-		colorError = ""
-		colorWarn = ""
-		colorInfo = ""
-		colorDebug = ""
-		colorTrace = ""
+var levelPrefixes = map[LogLevel]struct {
+	label string
+	color string
+}{
+	LogLevelTrace:  {"[TRACE]", "\033[0m"},    // No color
+	LogLevelDebug:  {"[DEBUG]", "\033[0;34m"}, // Blue
+	LogLevelInfo:   {"[INFO ]", "\033[0;32m"}, // Green
+	LogLevelWarn:   {"[WARN ]", "\033[0;93m"}, // Yellow
+	LogLevelError:  {"[ERROR]", "\033[0;31m"}, // Red
+	LogLevelSystem: {"[INFO ]", "\033[0;32m"}, // Green
+}
+
+// shouldUseColor reports whether color codes can be written to w. Writers that
+// are not an *os.File (e.g. those set via SetOut) are never a terminal.
+func shouldUseColor(w io.Writer) bool {
+	if runtime.GOOS == "windows" {
+		return false
 	}
+	file, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(int(file.Fd()))
 }
 
 func (l LogLevel) shouldPrint(atLevel LogLevel) bool {
@@ -70,28 +76,16 @@ func (l LogLevel) getOutput() io.Writer {
 }
 
 func (l LogLevel) getPrefix() string {
-	if logLevel == LogLevelInfo {
-		switch l {
-		case LogLevelInfo, LogLevelSystem:
-			return ""
-		case LogLevelWarn:
-			return fmt.Sprintf("%s[WARN ] %s", colorWarn, colorNone)
-		case LogLevelError:
-			return fmt.Sprintf("%s[ERROR] %s", colorError, colorNone)
-		}
-	} else {
-		switch l {
-		case LogLevelTrace:
-			return fmt.Sprintf("%s[TRACE] %s", colorTrace, colorNone)
-		case LogLevelDebug:
-			return fmt.Sprintf("%s[DEBUG] %s", colorDebug, colorNone)
-		case LogLevelInfo, LogLevelSystem:
-			return fmt.Sprintf("%s[INFO ] %s", colorInfo, colorNone)
-		case LogLevelWarn:
-			return fmt.Sprintf("%s[WARN ] %s", colorWarn, colorNone)
-		case LogLevelError:
-			return fmt.Sprintf("%s[ERROR] %s", colorError, colorNone)
-		}
+	// At the default log level, only warnings and errors are prefixed.
+	if logLevel == LogLevelInfo && l != LogLevelWarn && l != LogLevelError {
+		return ""
 	}
-	return ""
+	prefix, ok := levelPrefixes[l]
+	if !ok {
+		return ""
+	}
+	if !shouldUseColor(l.getOutput()) {
+		return prefix.label + " "
+	}
+	return prefix.color + prefix.label + " " + colorNone
 }
