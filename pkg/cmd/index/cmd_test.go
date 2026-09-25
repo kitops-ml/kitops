@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 
@@ -34,6 +35,7 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote/errcode"
 )
@@ -123,20 +125,71 @@ func TestDeleteAll(t *testing.T) {
 	assert.False(t, exists, "tagged index should be deleted with --force")
 }
 
-func TestPrintModelMetadataFormatsValues(t *testing.T) {
-	var buf bytes.Buffer
-	printModelMetadata(&buf, libindex.ModelMetadata{
-		"quantization":      json.RawMessage(`"q4_0"`),
-		"activeParameters":  json.RawMessage(`7000000000`),
-		"targetAccelerator": json.RawMessage(`["cuda","metal"]`),
-	})
+const testDigestB = "sha256:b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c"
 
-	out := buf.String()
-	assert.Contains(t, out, "quantization:")
-	assert.Contains(t, out, "q4_0")
-	assert.NotContains(t, out, `"q4_0"`, "string values are printed unquoted")
-	assert.Contains(t, out, "7000000000")
-	assert.Contains(t, out, `["cuda","metal"]`)
-	assert.Less(t, strings.Index(out, "activeParameters"), strings.Index(out, "quantization"),
-		"keys are printed in sorted order")
+func testIndexEntry(dgst string, labels libindex.ModelMetadata) libindex.ModelKitIndexDescriptor {
+	return libindex.ModelKitIndexDescriptor{
+		Descriptor: ocispec.Descriptor{MediaType: ocispec.MediaTypeImageManifest, Digest: digest.Digest(dgst), Size: 649},
+		ModelMeta:  labels,
+	}
+}
+
+// pushTestModelKit stores a ModelKit manifest whose layers total layerSize bytes, returning
+// its descriptor.
+func pushTestModelKit(t *testing.T, store *memory.Store, layerSize int64) ocispec.Descriptor {
+	t.Helper()
+	manifest := ocispec.Manifest{
+		MediaType:    ocispec.MediaTypeImageManifest,
+		ArtifactType: mediatype.ArtifactTypeKitManifest,
+		Config:       ocispec.Descriptor{Digest: digest.Digest(testDigest), Size: 100},
+		Layers: []ocispec.Descriptor{
+			{Digest: digest.Digest(testDigestB), Size: layerSize / 2},
+			{Digest: digest.Digest(testDigest), Size: layerSize / 2},
+		},
+	}
+	manifestBytes, err := json.Marshal(manifest)
+	require.NoError(t, err)
+	desc := ocispec.Descriptor{
+		MediaType: ocispec.MediaTypeImageManifest,
+		Digest:    digest.FromBytes(manifestBytes),
+		Size:      int64(len(manifestBytes)),
+	}
+	require.NoError(t, store.Push(context.Background(), desc, bytes.NewReader(manifestBytes)))
+	return desc
+}
+
+func TestPrintIndexInfoTable(t *testing.T) {
+	store := memory.New()
+	modelDesc := pushTestModelKit(t, store, 4096)
+
+	entry := libindex.ModelKitIndexDescriptor{
+		Descriptor: modelDesc,
+		ModelMeta: libindex.ModelMetadata{
+			"quantization": json.RawMessage(`"q4_0"`),
+			"vram":         json.RawMessage(`"6GB"`),
+		},
+	}
+	entry.Annotations = map[string]string{
+		constants.OriginalTagAnnotation: "q4_0",
+		"org.example.tested":            "true",
+	}
+	idx := libindex.CreateIndex([]libindex.ModelKitIndexDescriptor{
+		entry,
+		testIndexEntry(testDigestB, nil),
+	})
+	ref := &registry.Reference{Registry: "registry.example.com", Repository: "my-org/my-model", Reference: "all"}
+
+	var buf bytes.Buffer
+	printIndexInfo(context.Background(), &buf, store, ocispec.Descriptor{Digest: digest.Digest(testDigest)}, idx, ref)
+	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+
+	require.Len(t, lines, 6, "header, two rows for the labelled entry, one for the other")
+	assert.Equal(t, "2 ModelKits:", lines[1])
+	assert.Regexp(t, `^ORIGINAL REFERENCE\s+SIZE\s+LABELS\s+ANNOTATIONS\s+DIGEST$`, lines[2])
+	assert.Regexp(t, `^registry\.example\.com/my-org/my-model:q4_0\s+4.0 KiB\s+quantization=q4_0\s+org\.example\.tested=true\s+`+modelDesc.Digest.String()+`$`, lines[3],
+		"the original tag is shown in the index's repository; size is the ModelKit's layers, not the manifest blob")
+	assert.Regexp(t, `^\s+vram=6GB$`, lines[4], "extra labels continue on their own row, with no trailing padding")
+	assert.Regexp(t, `^<none>\s+<none>\s+<none>\s+<none>\s+`+testDigestB+`$`, lines[5],
+		"a ModelKit that is not available has an unknown size")
+	assert.NotContains(t, buf.String(), constants.OriginalTagAnnotation, "the original tag annotation has its own column")
 }

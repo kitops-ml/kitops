@@ -112,6 +112,20 @@ func TestRoundTripPreservesMetadata(t *testing.T) {
 		"numbers must survive verbatim; decoding into any would rewrite this as 7e+09")
 }
 
+func TestLabelPairsFormatsValues(t *testing.T) {
+	pairs := LabelPairs(ModelMetadata{
+		"quantization":      json.RawMessage(`"q4_0"`),
+		"activeParameters":  json.RawMessage(`7000000000`),
+		"targetAccelerator": json.RawMessage(`["cuda","metal"]`),
+	})
+
+	assert.Equal(t, []string{
+		"activeParameters=7000000000",
+		`quantization=q4_0`,
+		`targetAccelerator=["cuda","metal"]`,
+	}, pairs, "keys are sorted and string values are unquoted")
+}
+
 func TestParseIndexRejectsOtherArtifacts(t *testing.T) {
 	kitManifest := []byte(`{"schemaVersion":2,"mediaType":"application/vnd.oci.image.manifest.v1+json",` +
 		`"artifactType":"application/vnd.kitops.modelkit.manifest.v1+json","layers":[]}`)

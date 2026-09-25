@@ -54,6 +54,15 @@ const (
 	LayerSubtypeAnnotation = "ml.kitops.modelkit.layer-subtype"
 	LayerSubtypePrompt     = "prompt"
 
+	// OriginalTagAnnotation records, on a ModelKit index entry, the tag the ModelKit was added
+	// to the index under. Only the tag is stored, since an index may only reference ModelKits
+	// in its own repository.
+	OriginalTagAnnotation = "ml.kitops.modelkit.original-tag"
+
+	// ModelKitSizeAnnotation records, on a ModelKit index entry, the total size in bytes of the
+	// ModelKit's layers, so that it is known without the ModelKit itself.
+	ModelKitSizeAnnotation = "ml.kitops.modelkit.size"
+
 	// MaxModelRefChain is the maximum number of "parent" modelkits a modelkit may have
 	// by e.g. referring to another modelkit in its .model.path
 	MaxModelRefChain = 10

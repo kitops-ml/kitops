@@ -81,6 +81,43 @@ func TestIndexRoundTrip(t *testing.T) {
 	runCommand(t, expectError, "index", "info", "test/model:all")
 }
 
+func TestIndexLabelsAndAnnotations(t *testing.T) {
+	_, q8Digest := setupIndexTest(t)
+
+	runCommand(t, expectNoError, "index", "create", "test/model:all")
+	runCommand(t, expectNoError, "index", "add", "test/model:all", "test/model:q4_0",
+		"-l", "quantization=q4_0", "-l", "vram=6GB", "-l", `gpuArchs:=["sm_80", "sm_90"]`, "--annotate", "org.example.tested=true")
+
+	infoOut := runCommand(t, expectNoError, "index", "info", "test/model:all")
+	assert.Contains(t, infoOut, "quantization=q4_0")
+	assert.Contains(t, infoOut, "vram=6GB")
+	assert.Contains(t, infoOut, `gpuArchs=["sm_80","sm_90"]`)
+	assert.Contains(t, infoOut, "org.example.tested=true")
+	// The tag the ModelKit was added by is recorded and shown in its own column.
+	assert.Contains(t, infoOut, "test/model:q4_0")
+	assert.NotContains(t, infoOut, "ml.kitops.modelkit.original-tag")
+
+	inspectOut := runCommand(t, expectNoError, "index", "inspect", "test/model:all")
+	assert.Contains(t, inspectOut, `"quantization": "q4_0"`)
+	assert.Contains(t, inspectOut, `"org.example.tested": "true"`)
+	assert.Contains(t, inspectOut, `"ml.kitops.modelkit.original-tag": "q4_0"`)
+
+	// Re-adding merges: the untouched label survives, the removed one is gone.
+	runCommand(t, expectNoError, "index", "add", "test/model:all", "test/model:q4_0", "-l", "vram-")
+	infoOut = runCommand(t, expectNoError, "index", "info", "test/model:all")
+	assert.Contains(t, infoOut, "quantization=q4_0")
+	assert.NotContains(t, infoOut, "vram=")
+	assert.Contains(t, infoOut, "org.example.tested=true")
+
+	// Adding by digest records no reference.
+	runCommand(t, expectNoError, "index", "add", "test/model:all", "test/model@"+q8Digest)
+	infoOut = runCommand(t, expectNoError, "index", "info", "test/model:all")
+	assert.Contains(t, infoOut, "<none>")
+
+	out := runCommand(t, expectError, "index", "add", "test/model:all", "test/model:q8_0", "-l", "bad")
+	assert.Contains(t, out, "expected key=value to set, or key- to remove")
+}
+
 // TestIndexDeletePreservesModelKits guards the oras AutoGC cascade end to end: the ModelKits
 // an index refers to must survive deleting that index.
 func TestIndexDeletePreservesModelKits(t *testing.T) {

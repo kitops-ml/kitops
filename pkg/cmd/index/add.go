@@ -18,8 +18,11 @@ package index
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"strconv"
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -32,6 +35,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/errdef"
@@ -40,21 +44,50 @@ import (
 
 const (
 	addShortDesc = `Add a ModelKit to a ModelKit index`
-	addLongDesc  = `Add a ModelKit to a ModelKit index.`
+	addLongDesc  = `Add a ModelKit to a ModelKit index, or update the labels and annotations of
+a ModelKit already in it. Labels and annotations are merged into what the entry
+already has.`
 
 	addExample = `# Add a ModelKit to an index
 kit index add my-org/my-model:all my-org/my-model:q4_0
 
 # Add a ModelKit to an index by digest
-kit index add my-org/my-model:all my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a`
+kit index add my-org/my-model:all my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+
+# Add a ModelKit, labelling the entry
+kit index add my-org/my-model:all my-org/my-model:q4_0 -l quantization=q4_0 -l vram=6GB
+
+# Add a ModelKit with a JSON label value
+kit index add my-org/my-model:all my-org/my-model:q4_0 -l 'gpuArchs:=["sm_80","sm_90"]'
+
+# Annotate an entry already in the index, and drop one of its labels
+kit index add my-org/my-model:all my-org/my-model:q4_0 --annotate org.example.tested=true -l vram-`
 )
 
 type addOptions struct {
 	options.NetworkOptions
-	configHome  string
-	checkRemote bool
-	indexRef    *registry.Reference
-	modelRef    *registry.Reference
+	configHome   string
+	checkRemote  bool
+	labelArgs    []string
+	annotateArgs []string
+	labels       libindex.KeyValueEdits[json.RawMessage]
+	annotations  libindex.KeyValueEdits[string]
+	indexRef     *registry.Reference
+	modelRef     *registry.Reference
+}
+
+// withRecordedAnnotations records the tag the ModelKit was named by and the total size of its
+// layers, so that 'kit index info' can show them. A ModelKit named by digest has no tag to record.
+func withRecordedAnnotations(annotations map[string]string, modelRef *registry.Reference, manifest *ocispec.Manifest) map[string]string {
+	recorded := maps.Clone(annotations)
+	if recorded == nil {
+		recorded = map[string]string{}
+	}
+	if !artifact.ReferenceIsDigest(modelRef.Reference) {
+		recorded[constants.OriginalTagAnnotation] = modelRef.Reference
+	}
+	recorded[constants.ModelKitSizeAnnotation] = strconv.FormatInt(util.ModelKitSize(manifest), 10)
+	return recorded
 }
 
 func indexAddCommand() *cobra.Command {
@@ -79,6 +112,8 @@ func indexAddCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&opts.checkRemote, "remote", "r", false, "Resolve the ModelKit in its remote registry instead of local storage")
+	cmd.Flags().StringArrayVarP(&opts.labelArgs, "label", "l", nil, "Set a label on the entry as key=value, or as key:=<json> for a JSON value, or remove one as key-. Can be specified multiple times")
+	cmd.Flags().StringArrayVar(&opts.annotateArgs, "annotate", nil, "Set an annotation on the entry as key=value, or remove one as key-. Can be specified multiple times")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
@@ -117,7 +152,7 @@ func runAdd(ctx context.Context, opts *addOptions) error {
 		}
 		src = modelRepo
 	}
-	modelDesc, _, err := util.ResolveManifest(ctx, src, opts.modelRef.Reference)
+	modelDesc, manifest, err := util.ResolveManifest(ctx, src, opts.modelRef.Reference)
 	if err != nil {
 		if errors.Is(err, errdef.ErrNotFound) && !opts.checkRemote {
 			return fmt.Errorf("could not find ModelKit %s in local storage; use --remote to resolve it in its registry", displayRef(opts.modelRef))
@@ -133,7 +168,14 @@ func runAdd(ctx context.Context, opts *addOptions) error {
 		return fmt.Errorf("failed to read index %s: %w", displayRef(opts.indexRef), err)
 	}
 
-	idx.AddEntry(libindex.ModelKitIndexDescriptor{Descriptor: modelDesc})
+	entry := libindex.ModelKitIndexDescriptor{Descriptor: modelDesc}
+	if existing, found := idx.GetEntry(modelDesc.Digest); found {
+		entry.Annotations = existing.Annotations
+		entry.ModelMeta = existing.ModelMeta
+	}
+	entry.Annotations = libindex.ApplyEdits(withRecordedAnnotations(entry.Annotations, opts.modelRef, manifest), opts.annotations)
+	entry.ModelMeta = libindex.ApplyEdits(entry.ModelMeta, opts.labels)
+	idx.AddEntry(entry)
 	desc, err := writeIndex(ctx, repo, idx, opts.indexRef, prevIndexDesc)
 	if err != nil {
 		return err
@@ -183,6 +225,15 @@ func (opts *addOptions) complete(ctx context.Context, args []string) error {
 	if opts.indexRef.Registry != opts.modelRef.Registry || opts.indexRef.Repository != opts.modelRef.Repository {
 		return fmt.Errorf("ModelKit %s is not in the same repository as index %s; an index may only reference ModelKits in its own repository",
 			displayRef(opts.modelRef), displayRef(opts.indexRef))
+	}
+
+	opts.labels, err = libindex.ParseLabelEdits(opts.labelArgs)
+	if err != nil {
+		return err
+	}
+	opts.annotations, err = libindex.ParseAnnotationEdits(opts.annotateArgs)
+	if err != nil {
+		return err
 	}
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
