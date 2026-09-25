@@ -20,12 +20,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"path"
+	"slices"
 
+	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2/registry"
 )
 
 var ErrNotAKitIndex = errors.New("artifact is not a ModelKit index")
@@ -117,4 +123,43 @@ func ParseIndex(indexBytes []byte) (*ModelKitIndex, error) {
 		return nil, ErrNotAKitIndex
 	}
 	return idx, nil
+}
+
+// EntryReference returns the reference the ModelKit was added to the index under, in the
+// repository of the index at indexRef, or an empty string when the entry records no tag.
+func EntryReference(entry ModelKitIndexDescriptor, indexRef *registry.Reference) string {
+	tag := entry.Annotations[constants.OriginalTagAnnotation]
+	if tag == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s:%s", artifact.FormatRepositoryForDisplay(path.Join(indexRef.Registry, indexRef.Repository)), tag)
+}
+
+// LabelPairs renders an entry's labels as sorted key=value strings.
+func LabelPairs(labels ModelMetadata) []string {
+	var pairs []string
+	for _, key := range slices.Sorted(maps.Keys(labels)) {
+		pairs = append(pairs, fmt.Sprintf("%s=%s", key, FormatLabelValue(labels[key])))
+	}
+	return pairs
+}
+
+// FormatLabelValue renders a label value for display, unquoting strings and leaving other
+// JSON as it was written.
+func FormatLabelValue(value json.RawMessage) string {
+	var str string
+	if err := json.Unmarshal(value, &str); err == nil {
+		return str
+	}
+	return string(value)
+}
+
+// KeyValuePairs renders a string map, such as an entry's annotations, as sorted key=value
+// strings.
+func KeyValuePairs(values map[string]string) []string {
+	var pairs []string
+	for _, key := range slices.Sorted(maps.Keys(values)) {
+		pairs = append(pairs, fmt.Sprintf("%s=%s", key, values[key]))
+	}
+	return pairs
 }
