@@ -17,13 +17,13 @@
 package index
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"maps"
-	"slices"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -34,6 +34,7 @@ import (
 	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -45,7 +46,7 @@ import (
 
 const (
 	infoShortDesc = `Show the ModelKits contained in an index`
-	infoLongDesc  = `List the ModelKits in a ModelKit index.`
+	infoLongDesc  = `List the ModelKits in a ModelKit index, with their labels and annotations.`
 
 	infoExample = `# See the contents of a local index:
 kit index info my-org/my-model:all
@@ -56,6 +57,8 @@ kit index info my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21f
 # See the contents of a remote index:
 kit index info --remote registry.example.com/my-org/my-model:all`
 )
+
+const indexTableFmt = "%s\t%s\t%s\t%s\t%s\n"
 
 type infoOptions struct {
 	options.NetworkOptions
@@ -102,14 +105,13 @@ func runInfoCommand(opts *infoOptions) func(*cobra.Command, []string) error {
 }
 
 func runInfo(ctx context.Context, out io.Writer, opts *infoOptions) error {
-	var store oras.Target
-	var localRepo local.LocalRepo
+	var indexStore, modelKitStore oras.Target
 	if opts.checkRemote {
 		remoteRepo, err := remote.NewRepository(ctx, opts.indexRef.Registry, opts.indexRef.Repository, &opts.NetworkOptions)
 		if err != nil {
 			return err
 		}
-		store = remoteRepo
+		indexStore, modelKitStore = remoteRepo, remoteRepo
 	} else {
 		indexRepo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.configHome), opts.indexRef)
 		if err != nil {
@@ -119,21 +121,21 @@ func runInfo(ctx context.Context, out io.Writer, opts *infoOptions) error {
 		if err != nil {
 			return err
 		}
-		store, localRepo = indexRepo, modelKitRepo
+		indexStore, modelKitStore = indexRepo, modelKitRepo
 	}
 
-	desc, idx, err := resolveIndex(ctx, store, opts.indexRef.Reference)
+	desc, idx, err := resolveIndex(ctx, indexStore, opts.indexRef.Reference)
 	if err != nil {
 		if errors.Is(err, errdef.ErrNotFound) && !opts.checkRemote {
 			return fmt.Errorf("could not find index %s in local storage; use 'kit index pull' to download it, or --remote to read it from its registry", displayRef(opts.indexRef))
 		}
 		return err
 	}
-	printIndexInfo(ctx, out, desc, idx, localRepo, opts.indexRef)
+	printIndexInfo(ctx, out, modelKitStore, desc, idx, opts.indexRef)
 	return nil
 }
 
-func printIndexInfo(ctx context.Context, out io.Writer, desc ocispec.Descriptor, idx *libindex.ModelKitIndex, localRepo local.LocalRepo, ref *registry.Reference) {
+func printIndexInfo(ctx context.Context, out io.Writer, store oras.ReadOnlyTarget, desc ocispec.Descriptor, idx *libindex.ModelKitIndex, ref *registry.Reference) {
 	fmt.Fprintf(out, "Index %s (%s)\n", displayRef(ref), desc.Digest)
 	if len(idx.Manifests) == 0 {
 		fmt.Fprintln(out, "Index contains no ModelKits")
@@ -145,42 +147,72 @@ func printIndexInfo(ctx context.Context, out io.Writer, desc ocispec.Descriptor,
 		fmt.Fprintf(out, "%d ModelKits:\n", len(idx.Manifests))
 	}
 
-	tw := tabwriter.NewWriter(out, 0, 2, 4, ' ', 0)
+	var table bytes.Buffer
+	tw := tabwriter.NewWriter(&table, 0, 2, 3, ' ', 0)
+	fmt.Fprintf(tw, indexTableFmt, "ORIGINAL REFERENCE", "SIZE", "LABELS", "ANNOTATIONS", "DIGEST")
 	for _, entry := range idx.Manifests {
-		status := ""
-		if localRepo != nil {
-			if exists, err := localRepo.Exists(ctx, entry.Descriptor); err == nil && !exists {
-				status = "missing from local storage"
+		labels := libindex.LabelPairs(entry.ModelMeta)
+		annotations := libindex.KeyValuePairs(omitRecordedAnnotations(entry.Annotations))
+		for row := range max(1, len(labels), len(annotations)) {
+			reference, size, dgst := "", "", ""
+			if row == 0 {
+				reference, size, dgst = entryReference(entry, ref), entrySize(ctx, store, entry), entry.Digest.String()
 			}
+			fmt.Fprintf(tw, indexTableFmt, reference, size, cellAt(labels, row), cellAt(annotations, row), dgst)
 		}
-		fmt.Fprintf(tw, "  %s\t%s\t%s\n", entry.Digest, output.FormatBytes(entry.Size), status)
 	}
 	tw.Flush()
 
-	for _, entry := range idx.Manifests {
-		if len(entry.ModelMeta) == 0 {
-			continue
-		}
-		fmt.Fprintf(out, "\n  %s\n", entry.Digest)
-		printModelMetadata(out, entry.ModelMeta)
+	// tabwriter aligns runs of lines holding the same number of cells, so every row carries
+	// all five; trimming happens afterwards to keep continuation rows free of padding.
+	for _, line := range strings.Split(strings.TrimRight(table.String(), "\n"), "\n") {
+		fmt.Fprintln(out, strings.TrimRight(line, " "))
 	}
 }
 
-func printModelMetadata(out io.Writer, meta libindex.ModelMetadata) {
-	tw := tabwriter.NewWriter(out, 0, 2, 4, ' ', 0)
-	for _, key := range slices.Sorted(maps.Keys(meta)) {
-		fmt.Fprintf(tw, "      %s:\t%s\n", key, formatMetadataValue(meta[key]))
+func cellAt(values []string, row int) string {
+	if row < len(values) {
+		return values[row]
 	}
-	tw.Flush()
+	if row == 0 {
+		return noneValue
+	}
+	return ""
 }
 
-// formatMetadataValue prints string values unquoted, leaving other JSON as-is.
-func formatMetadataValue(value json.RawMessage) string {
-	var str string
-	if err := json.Unmarshal(value, &str); err == nil {
-		return str
+// entrySize reports the total size of the layers of the ModelKit an entry refers to, matching
+// what 'kit list' reports. It is read from the size recorded on the entry, or for entries
+// without one, from the ModelKit itself; if neither is available, the size is unknown.
+func entrySize(ctx context.Context, store oras.ReadOnlyTarget, entry libindex.ModelKitIndexDescriptor) string {
+	if recorded, err := strconv.ParseInt(entry.Annotations[constants.ModelKitSizeAnnotation], 10, 64); err == nil {
+		return output.FormatBytes(recorded)
 	}
-	return string(value)
+	manifest, err := util.GetManifest(ctx, store, entry.Descriptor)
+	if err != nil {
+		return noneValue
+	}
+	return output.FormatBytes(util.ModelKitSize(manifest))
+}
+
+func entryReference(entry libindex.ModelKitIndexDescriptor, indexRef *registry.Reference) string {
+	if reference := libindex.EntryReference(entry, indexRef); reference != "" {
+		return reference
+	}
+	return noneValue
+}
+
+// omitRecordedAnnotations drops the original tag and size annotations, which have their own
+// columns.
+func omitRecordedAnnotations(annotations map[string]string) map[string]string {
+	_, hasTag := annotations[constants.OriginalTagAnnotation]
+	_, hasSize := annotations[constants.ModelKitSizeAnnotation]
+	if !hasTag && !hasSize {
+		return annotations
+	}
+	remaining := maps.Clone(annotations)
+	delete(remaining, constants.OriginalTagAnnotation)
+	delete(remaining, constants.ModelKitSizeAnnotation)
+	return remaining
 }
 
 func (opts *infoOptions) complete(ctx context.Context, args []string) error {

@@ -46,6 +46,11 @@ const (
 
 	// Kitops-specific annotations for modelkit artifacts
 	// TODO: update these to use the newer kitops.org domain
+
+	// AnnotationPrefix is the namespace kit records its own annotations in, and is reserved:
+	// annotations a user sets may not use it.
+	AnnotationPrefix = "ml.kitops.modelkit."
+
 	CliVersionAnnotation  = "ml.kitops.modelkit.cli-version"
 	KitfileJsonAnnotation = "ml.kitops.modelkit.kitfile"
 
@@ -53,6 +58,15 @@ const (
 	// layer within its annotations (e.g. storing prompts within code-type layers)
 	LayerSubtypeAnnotation = "ml.kitops.modelkit.layer-subtype"
 	LayerSubtypePrompt     = "prompt"
+
+	// OriginalTagAnnotation records, on a ModelKit index entry, the tag the ModelKit was added
+	// to the index under. Only the tag is stored, since an index may only reference ModelKits
+	// in its own repository.
+	OriginalTagAnnotation = "ml.kitops.modelkit.original-tag"
+
+	// ModelKitSizeAnnotation records, on a ModelKit index entry, the total size in bytes of the
+	// ModelKit's layers, so that it is known without the ModelKit itself.
+	ModelKitSizeAnnotation = "ml.kitops.modelkit.size"
 
 	// MaxModelRefChain is the maximum number of "parent" modelkits a modelkit may have
 	// by e.g. referring to another modelkit in its .model.path
