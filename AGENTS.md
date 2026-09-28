@@ -106,17 +106,6 @@ go test ./pkg/cmd/pack -v
 go install .
 ```
 
-### Frontend Dev Mode UI
-
-```bash
-cd frontend/dev-mode
-pnpm install
-pnpm dev          # Development server
-pnpm build        # Production build
-pnpm type-check   # TypeScript checking
-pnpm lint         # ESLint with auto-fix
-```
-
 ### Documentation Site
 
 ```bash
@@ -136,7 +125,6 @@ pnpm docs:preview # Preview built docs
 - **Libraries**: Core functionality in `pkg/lib/`:
   - `kitfile/`: Kitfile manifest parsing, validation, and generation
   - `repo/local/` & `repo/remote/`: Repository management for local storage and OCI registries
-  - `harness/`: LLM integration with llamafile for local inference
   - `filesystem/`: File operations, caching, and ignore patterns
   - `network/`: Authentication and network operations
 
@@ -146,9 +134,8 @@ pnpm docs:preview # Preview built docs
 - **Kitfile**: YAML manifest format defining ModelKit contents (spec in `pkg/artifact/kitfile.md`)
 - **Repository Management**: Uses OCI layout for local storage, compatible with container registries
 
-### Frontend Components
+### Documentation
 
-- **Dev Mode UI**: Vue 3 + TypeScript SPA for local LLM interaction in `frontend/dev-mode/`
 - **Documentation**: VitePress-based site in `docs/` with comprehensive guides and API reference
 
 ### CLI Command Pattern

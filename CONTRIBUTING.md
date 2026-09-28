@@ -55,12 +55,6 @@ If you think there's something else you can help with please contact us in the [
     go mod tidy
     ```
 
-1. Generate the dev mode harness and ui
-
-    ```shell
-    go generate ./...
-    ```
-
 1. Build the Kit CLI: Compile the source code into an executable named kit:
 
     ```shell

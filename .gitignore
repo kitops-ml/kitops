@@ -3,8 +3,3 @@
 kit
 kit.exe
 dist/
-pkg/lib/harness/generated/downloads/
-pkg/lib/harness/ui.tar.gz
-pkg/lib/harness/llamafile
-pkg/lib/harness/checksums.txt
-pkg/lib/harness/llamafile.tar.gz
