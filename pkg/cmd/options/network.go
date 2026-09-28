@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 
@@ -51,6 +52,18 @@ func (o *NetworkOptions) AddNetworkFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Proxy, "proxy", "", "Proxy to use for connections (overrides proxy set by environment)")
 }
 
+var networkFlagNames = []string{"plain-http", "tls-verify", "tls-cert", "cert", "key", "concurrency", "proxy"}
+
+// NetworkFlagsChanged reports whether any flag added by AddNetworkFlags was set
+func NetworkFlagsChanged(cmd *cobra.Command) bool {
+	for _, f := range networkFlagNames {
+		if cmd.Flags().Changed(f) {
+			return true
+		}
+	}
+	return false
+}
+
 func (o *NetworkOptions) Complete(ctx context.Context, args []string) error {
 	configHome, ok := ctx.Value(constants.ConfigKey{}).(string)
 	if !ok {
@@ -63,6 +76,21 @@ func (o *NetworkOptions) Complete(ctx context.Context, args []string) error {
 	}
 	if certKeyPath := os.Getenv(constants.ClientCertKeyEnvVar); certKeyPath != "" {
 		o.ClientCertKeyPath = certKeyPath
+	}
+	// Commands such as pack and unpack change the working directory, so relative paths must be resolved first
+	certPaths := []*string{&o.ClientCertPath, &o.ClientCertKeyPath}
+	for i := range o.TLSTrustCertPaths {
+		certPaths = append(certPaths, &o.TLSTrustCertPaths[i])
+	}
+	for _, path := range certPaths {
+		if *path == "" {
+			continue
+		}
+		absPath, err := filepath.Abs(*path)
+		if err != nil {
+			return fmt.Errorf("failed to resolve path %s: %w", *path, err)
+		}
+		*path = absPath
 	}
 	if o.Concurrency < 1 {
 		return fmt.Errorf("invalid argument for concurrency (%d): must be at least 1", o.Concurrency)

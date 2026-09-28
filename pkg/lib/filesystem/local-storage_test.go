@@ -24,6 +24,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 
 	"github.com/stretchr/testify/require"
@@ -36,14 +37,13 @@ import (
 // to local storage first.
 func TestSaveModelToNonLocalTarget(t *testing.T) {
 	tmpDir := t.TempDir()
+	cache.SetCacheHome(t.TempDir())
+	t.Cleanup(func() { cache.SetCacheHome(os.TempDir()) })
 	codeDir := filepath.Join(tmpDir, "code")
 	require.NoError(t, os.Mkdir(codeDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(codeDir, "main.py"), []byte("print('hi')"), 0644))
 
-	curDir, err := os.Getwd()
-	require.NoError(t, err)
-	defer func() { _ = os.Chdir(curDir) }()
-	require.NoError(t, os.Chdir(tmpDir))
+	t.Chdir(tmpDir)
 
 	kitfile := &artifact.KitFile{
 		ManifestVersion: "1.0.0",

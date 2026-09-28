@@ -23,7 +23,6 @@ import (
 	"os"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
-	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
@@ -61,8 +60,7 @@ func runPack(ctx context.Context, options *packOptions) error {
 		}
 		target = remoteRepo
 	} else {
-		storageHome := constants.StoragePath(options.configHome)
-		localRepo, err := local.NewLocalRepo(storageHome, options.modelRef)
+		localRepo, err := local.NewLocalRepo(options.storageHome, options.modelRef)
 		if err != nil {
 			return fmt.Errorf("failed to open local storage: %w", err)
 		}

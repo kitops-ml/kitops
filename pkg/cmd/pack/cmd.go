@@ -173,8 +173,8 @@ func (opts *packOptions) complete(cmd *cobra.Command, args []string) error {
 		if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 			return err
 		}
-	} else if networkFlagsChanged(cmd) {
-		output.Infof("Warning: network-related flags are only applicable with --push flag")
+	} else if options.NetworkFlagsChanged(cmd) {
+		output.Logf(output.LogLevelWarn, "Network-related flags are only applicable with --push flag")
 	}
 
 	printConfig(opts)
@@ -194,14 +194,3 @@ func printConfig(opts *packOptions) {
 		output.Debugf("Additional tags: %s", strings.Join(opts.extraRefs, ", "))
 	}
 }
-
-func networkFlagsChanged(cmd *cobra.Command) bool {
-	flags := []string{"plain-http", "tls-verify", "tls-cert", "cert", "key", "concurrency", "proxy"}
-	for _, f := range flags {
-		if cmd.Flags().Changed(f) {
-			return true
-		}
-	}
-	return false
-}
-
