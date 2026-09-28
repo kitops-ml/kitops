@@ -169,5 +169,3 @@ docs:
 ---
 
 **Questions or suggestions?** Drop an [issue in our GitHub repository](https://github.com/kitops-ml/kitops/issues) or join [our Discord server](https://discord.gg/Tapeh8agYy) to get support or share your feedback.
-
-<!-- AGENT_MODIFIED: Human review required before merge -->
