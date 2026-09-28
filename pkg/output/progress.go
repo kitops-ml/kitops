@@ -130,7 +130,7 @@ func (w *wrappedRepo) Push(ctx context.Context, expected ocispec.Descriptor, con
 // If output is configured to not print progress bars, this is a no-op.
 func WrapTarget(wrap oras.Target) (oras.Target, *ProgressLogger) {
 	if !progressEnabled {
-		return wrap, &ProgressLogger{stdout}
+		return wrap, &ProgressLogger{}
 	}
 	p := mpb.New(
 		mpb.WithWidth(60),
@@ -176,7 +176,7 @@ func (t *ProgressTar) Close() error {
 // *should not* be closed independently.
 func TarProgress(total int64, tw *tar.Writer) (*ProgressTar, *ProgressLogger) {
 	if !progressEnabled || total == 0 {
-		return &ProgressTar{tw: tw}, &ProgressLogger{stdout}
+		return &ProgressTar{tw: tw}, &ProgressLogger{}
 	}
 
 	p := mpb.New(
@@ -247,7 +247,7 @@ func (p *PullProgress) Done() {
 func NewPullProgress(ctx context.Context) *PullProgress {
 	if !progressEnabled {
 		return &PullProgress{
-			ProgressLogger: ProgressLogger{stdout},
+			ProgressLogger: ProgressLogger{},
 		}
 	}
 	p := mpb.NewWithContext(ctx,
@@ -266,7 +266,7 @@ type DownloadProgressBar struct {
 
 func NewDownloadProgress() (*DownloadProgressBar, *ProgressLogger) {
 	if !progressEnabled {
-		return &DownloadProgressBar{}, &ProgressLogger{stdout}
+		return &DownloadProgressBar{}, &ProgressLogger{}
 	}
 	p := mpb.New(
 		mpb.WithWidth(30),
@@ -317,7 +317,7 @@ func (pb *DownloadProgressBar) Done() {
 // ensure any progress bars are marked as completed.
 func WrapReadCloser(prependText string, size int64, rc io.ReadCloser) (io.ReadCloser, *ProgressLogger) {
 	if !progressEnabled {
-		return rc, &ProgressLogger{stdout}
+		return rc, &ProgressLogger{}
 	}
 	p := mpb.New(
 		mpb.WithWidth(60),

@@ -134,8 +134,16 @@ func SafeLogf(level LogLevel, s string, args ...any) {
 // Note: ProgressLogger writes directly to its underlying writer (typically an
 // mpb.Progress instance) and does not route through a custom Logger set via
 // SetLogger. This is necessary to coordinate output with active progress bars.
+// If there is no underlying writer, each level is written to its default output.
 type ProgressLogger struct {
 	output io.Writer
+}
+
+func (pw *ProgressLogger) out(level LogLevel) io.Writer {
+	if pw.output == nil {
+		return level.getOutput()
+	}
+	return pw.output
 }
 
 // Wait will call Wait() on the underlying mpb.Progress, if present. Otherwise,
@@ -147,25 +155,25 @@ func (pw *ProgressLogger) Wait() {
 }
 
 func (pw *ProgressLogger) Infoln(s ...any) {
-	formatAndWrite(pw.output, LogLevelInfo, "%s", fmt.Sprintln(s...))
+	formatAndWrite(pw.out(LogLevelInfo), LogLevelInfo, "%s", fmt.Sprintln(s...))
 }
 
 func (pw *ProgressLogger) Infof(s string, args ...any) {
-	formatAndWrite(pw.output, LogLevelInfo, s, args...)
+	formatAndWrite(pw.out(LogLevelInfo), LogLevelInfo, s, args...)
 }
 
 func (pw *ProgressLogger) Debugln(s ...any) {
-	formatAndWrite(pw.output, LogLevelDebug, "%s", fmt.Sprintln(s...))
+	formatAndWrite(pw.out(LogLevelDebug), LogLevelDebug, "%s", fmt.Sprintln(s...))
 }
 
 func (pw *ProgressLogger) Debugf(s string, args ...any) {
-	formatAndWrite(pw.output, LogLevelDebug, s, args...)
+	formatAndWrite(pw.out(LogLevelDebug), LogLevelDebug, s, args...)
 }
 
 func (pw *ProgressLogger) Logln(level LogLevel, s ...any) {
-	formatAndWrite(pw.output, level, "%s", fmt.Sprintln(s...))
+	formatAndWrite(pw.out(level), level, "%s", fmt.Sprintln(s...))
 }
 
 func (pw *ProgressLogger) Logf(level LogLevel, s string, args ...any) {
-	formatAndWrite(pw.output, level, s, args...)
+	formatAndWrite(pw.out(level), level, s, args...)
 }
