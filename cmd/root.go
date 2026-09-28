@@ -83,13 +83,13 @@ func RunCommand() *cobra.Command {
 			case 0:
 				break
 			case 1:
-				output.Debugf("Setting verbosity to %s", output.LogLevelDebug)
+				output.Debugln("Setting verbosity to 'debug'")
 				output.SetLogLevel(output.LogLevelDebug)
 			case 2:
-				output.Debugf("Setting verbosity to %s", output.LogLevelTrace)
+				output.Debugln("Setting verbosity to 'trace'")
 				output.SetLogLevel(output.LogLevelTrace)
 			default:
-				output.Debugf("Setting verbosity to %s and disabling progress bars", output.LogLevelTrace)
+				output.Debugln("Setting verbosity to 'trace' and disabling progress bars")
 				output.SetLogLevel(output.LogLevelTrace)
 				output.SetProgressBars("none")
 			}
