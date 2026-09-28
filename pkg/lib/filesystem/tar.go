@@ -32,15 +32,15 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/output"
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2"
 )
 
-func saveContentLayerAsTar(ctx context.Context, localRepo local.LocalRepo, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
+func saveContentLayerAsTar(ctx context.Context, target oras.Target, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {
 	// We want to store a gzipped tar file in store, but to do so we need a descriptor, so we have to compress
 	// to a temporary file. Ideally, we can also add this to the internal store by moving the file to avoid
 	// copying if possible.
@@ -55,7 +55,7 @@ func saveContentLayerAsTar(ctx context.Context, localRepo local.LocalRepo, path 
 		}
 	}()
 
-	if err := saveFileToRepo(ctx, tempPath, desc, localRepo); err != nil {
+	if err := saveFileToRepo(ctx, tempPath, desc, target); err != nil {
 		return ocispec.DescriptorEmptyJSON, nil, err
 	}
 
