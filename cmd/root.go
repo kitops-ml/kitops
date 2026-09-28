@@ -23,7 +23,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kitops-ml/kitops/pkg/cmd/dev"
 	"github.com/kitops-ml/kitops/pkg/cmd/diff"
 	"github.com/kitops-ml/kitops/pkg/cmd/info"
 	"github.com/kitops-ml/kitops/pkg/cmd/inspect"
@@ -163,7 +162,6 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(login.LoginCommand())
 	rootCmd.AddCommand(logout.LogoutCommand())
 	rootCmd.AddCommand(version.VersionCommand())
-	rootCmd.AddCommand(dev.DevCommand())
 	rootCmd.AddCommand(kitinit.InitCommand())
 	rootCmd.AddCommand(diff.DiffCommand())
 	rootCmd.AddCommand(kitimport.ImportCommand())
