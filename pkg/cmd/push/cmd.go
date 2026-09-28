@@ -164,7 +164,7 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 			case http.StatusUnauthorized:
 				errMsg = fmt.Sprintf("%s. Ensure the repository exists and you have push access to it.", errMsg)
 			}
-			return output.Fatalf(errMsg)
+			return output.Fatalln(errMsg)
 		} else if err != nil {
 			return output.Fatalf("Failed to push: %s.", err)
 		}

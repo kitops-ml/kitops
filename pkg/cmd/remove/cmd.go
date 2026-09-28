@@ -179,7 +179,7 @@ func runCommand(opts *removeOptions) func(*cobra.Command, []string) error {
 			err = removeAllModels(cmd.Context(), opts)
 		}
 		if err != nil {
-			return output.Fatalf(err.Error())
+			return output.Fatalln(err.Error())
 		}
 		return nil
 	}
