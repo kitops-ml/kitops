@@ -51,8 +51,30 @@ func NewRegistry(hostname string, opts *options.NetworkOptions) (*remote.Registr
 	return reg, nil
 }
 
-func NewRepository(ctx context.Context, hostname, repository string, opts *options.NetworkOptions) (registry.Repository, error) {
-	reg, err := NewRegistry(hostname, opts)
+// RepositoryOption configures a Repository created by NewRepository.
+type RepositoryOption func(*Repository) error
+
+// WithUploadChunkSize sets the maximum size of each chunked blob upload request.
+func WithUploadChunkSize(size int64) RepositoryOption {
+	return func(repo *Repository) error {
+		if size < 1 {
+			return fmt.Errorf("upload chunk size must be at least 1 byte")
+		}
+
+		repo.uploadChunkSize = size
+
+		return nil
+	}
+}
+
+// NewRepository returns a registry repository configured for KitOps operations.
+func NewRepository(
+	ctx context.Context,
+	hostname, repository string,
+	networkOpts *options.NetworkOptions,
+	repositoryOpts ...RepositoryOption,
+) (registry.Repository, error) {
+	reg, err := NewRegistry(hostname, networkOpts)
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve registry: %w", err)
 	}
@@ -65,11 +87,20 @@ func NewRepository(ctx context.Context, hostname, repository string, opts *optio
 		Repository: repository,
 	}
 
-	return &Repository{
+	configuredRepo := &Repository{
 		Repository:      repo,
 		Reference:       ref,
-		PlainHttp:       opts.PlainHTTP,
+		PlainHttp:       networkOpts.PlainHTTP,
 		Client:          reg.Client,
 		uploadChunkSize: uploadChunkDefaultSize,
-	}, nil
+	}
+	for _, repositoryOpt := range repositoryOpts {
+		if err := repositoryOpt(configuredRepo); err != nil {
+			return nil, err
+		}
+	}
+
+	return configuredRepo, nil
 }
+
+// AGENT_MODIFIED: Human review required before merge

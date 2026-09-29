@@ -49,14 +49,23 @@ kit push registry.example.com/my-org/my-model:latest
 kit push registry.example.com/my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
 
 # Push local modelkit 'mymodel:1.0.0' to a remote registry
-kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest`
+kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest
+
+# Use smaller chunks on a high-latency or unreliable network
+kit push --chunk-size 16 mymodel:1.0.0 registry.example.com/my-org/my-model:latest`
+
+	bytesPerMiB     int64 = 1 << 20
+	minChunkSizeMiB int64 = 16
+	maxChunkSizeMiB int64 = 32
 )
 
 type pushOptions struct {
 	options.NetworkOptions
-	configHome   string
-	srcModelRef  *registry.Reference
-	destModelRef *registry.Reference
+	configHome      string
+	chunkSizeMiB    int64
+	uploadChunkSize int64
+	srcModelRef     *registry.Reference
+	destModelRef    *registry.Reference
 }
 
 func (opts *pushOptions) complete(ctx context.Context, args []string) error {
@@ -98,6 +107,11 @@ func (opts *pushOptions) complete(ctx context.Context, args []string) error {
 	if opts.destModelRef.Registry == "localhost" {
 		return fmt.Errorf("registry is required when pushing")
 	}
+	uploadChunkSize, err := uploadChunkSizeBytes(opts.chunkSizeMiB)
+	if err != nil {
+		return err
+	}
+	opts.uploadChunkSize = uploadChunkSize
 
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 		return err
@@ -124,6 +138,12 @@ func PushCommand() *cobra.Command {
 	}
 
 	opts.AddNetworkFlags(cmd)
+	cmd.Flags().Int64Var(
+		&opts.chunkSizeMiB,
+		"chunk-size",
+		remote.DefaultUploadChunkSize/bytesPerMiB,
+		"Maximum size of each blob upload chunk in MiB (16-32)",
+	)
 	cmd.Flags().SortFlags = false
 
 	return cmd
@@ -140,6 +160,7 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 			opts.destModelRef.Registry,
 			opts.destModelRef.Repository,
 			&opts.NetworkOptions,
+			remote.WithUploadChunkSize(opts.uploadChunkSize),
 		)
 		if err != nil {
 			return output.Fatalln(err)
@@ -172,3 +193,18 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		return nil
 	}
 }
+
+func uploadChunkSizeBytes(sizeMiB int64) (int64, error) {
+	if sizeMiB < minChunkSizeMiB || sizeMiB > maxChunkSizeMiB {
+		return 0, fmt.Errorf(
+			"invalid argument for chunk-size (%d): must be between %d and %d MiB",
+			sizeMiB,
+			minChunkSizeMiB,
+			maxChunkSizeMiB,
+		)
+	}
+
+	return sizeMiB * bytesPerMiB, nil
+}
+
+// AGENT_MODIFIED: Human review required before merge
