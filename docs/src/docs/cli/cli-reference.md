@@ -104,156 +104,6 @@ kit cache info [flags]
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
 
-## kit dev
-
-Run models locally (experimental)
-
-### Synopsis
-
-Start a local server and interact with a model in the browser
-
-### Examples
-
-```
-kit dev start
-```
-
-### Options
-
-```
-  -h, --help   help for dev
-```
-
-### Options inherited from parent commands
-
-```
-      --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
-      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
-  -v, --verbose count      Increase verbosity of output (use -vv for more)
-```
-
-## kit dev logs
-
-View logs for development server
-
-### Synopsis
-
-Print any logs output by the development server.
-
-If the development server is currently running, the logs for this server will
-be printed. If it is stopped, the logs for the previous run of the server, if
-available, will be printed instead.
-
-```
-kit dev logs [flags]
-```
-
-### Options
-
-```
-  -f, --follow   Stream the log file
-  -h, --help     help for logs
-```
-
-### Options inherited from parent commands
-
-```
-      --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
-      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
-  -v, --verbose count      Increase verbosity of output (use -vv for more)
-```
-
-## kit dev start
-
-Start development server (experimental)
-
-### Synopsis
-
-Start development server (experimental) from a modelkit
-
-Start a development server for a modelkit. You can provide either:
-- A directory path containing an unpacked modelkit with a Kitfile
-- A ModelKit reference in the format registry/repository[:tag|@digest] 
-  (e.g., myrepo/my-model:latest) which will be automatically extracted 
-  to a temporary directory
-
-When using a ModelKit reference, only the model components are extracted
-to optimize startup time.
-
-```
-kit dev start [directory|registry/repository[:tag|@digest]] [flags]
-```
-
-### Examples
-
-```
-# Serve the model located in the current directory
-kit dev start
-
-# Serve the modelkit in ./my-model on port 8080
-kit dev start ./my-model --port 8080
-
-# Serve a ModelKit reference from local storage or registry
-kit dev start myrepo/my-model:latest
-
-# Serve a specific model with custom host and port
-kit dev start registry.example.com/models/llama2:7b --host 0.0.0.0 --port 8080
-```
-
-### Options
-
-```
-  -f, --file string        Path to the kitfile
-      --host string        Host for the development server (default "127.0.0.1")
-      --port int           Port for development server to listen on
-      --plain-http         Use plain HTTP when connecting to remote registries
-      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
-      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
-      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string       Proxy to use for connections (overrides proxy set by environment)
-  -h, --help               help for start
-```
-
-### Options inherited from parent commands
-
-```
-      --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
-      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
-  -v, --verbose count      Increase verbosity of output (use -vv for more)
-```
-
-## kit dev stop
-
-Stop development server
-
-### Synopsis
-
-Stop the development server if it is running
-
-```
-kit dev stop [flags]
-```
-
-### Options
-
-```
-  -h, --help   help for stop
-```
-
-### Options inherited from parent commands
-
-```
-      --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
-      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
-  -v, --verbose count      Increase verbosity of output (use -vv for more)
-```
-
 ## kit diff
 
 Compare two ModelKits
@@ -750,6 +600,9 @@ at the root of the provided context directory. Any relative paths defined
 within the kitfile are interpreted as being relative to this context
 directory.
 
+If --push is set along with a --tag pointing to a remote registry, the modelkit
+is streamed directly to that registry instead of being stored locally.
+
 ```
 kit pack [flags] DIRECTORY
 ```
@@ -762,6 +615,9 @@ kit pack .
 
 # Pack a modelkit with a specific kitfile and tag
 kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1
+
+# Pack a modelkit and push it directly to a remote registry without storing it locally
+kit pack . -t registry.example.com/my-org/my-model:latest --push
 ```
 
 ### Options
@@ -772,6 +628,14 @@ kit pack . -f /path/to/your/Kitfile -t registry/repository:modelv1
       --compression string    Compression format to use for layers. Valid options: 'none', 'gzip', 'gzip-fastest', 'zstd' (default "none")
       --layer-format string   Packaging format to use for layers. Valid options: 'tar', 'raw' (default "tar")
       --use-model-pack        Pack model in ModelPack format instead of ModelKit
+      --push                  Stream the packed modelkit directly to the remote registry specified by --tag, without storing it locally
+      --plain-http            Use plain HTTP when connecting to remote registries
+      --tls-verify            Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings      Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string           Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string            Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int       Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string          Proxy to use for connections (overrides proxy set by environment)
   -h, --help                  help for pack
 ```
 
@@ -944,6 +808,65 @@ kit remove --remote --force my-registry.com/my-org/my-repo:my-tag
       --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
       --proxy string       Proxy to use for connections (overrides proxy set by environment)
   -h, --help               help for remove
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit skill
+
+Install the kit agent skill so AI agents can use the kit CLI
+
+### Synopsis
+
+Install a SKILL.md that teaches an AI agent how to use the kit CLI.
+
+The skill documents Kitfile authoring and the pack, tag, login, push, pull, and
+unpack workflow. It is embedded in the kit binary, so it always matches the
+installed kit version and works without network access.
+
+The skill is written into each agent's skills directory (for example
+'.claude/skills' or the shared '.agents/skills'). Without --agents, kit
+auto-discovers installed agents by checking their global config directories.
+With --agents, specify agents as a comma-separated list (e.g.
+--agents=claude-code,cursor). By default the skill is installed globally
+(user-scoped); when -d is specified it is installed into that project
+directory instead.
+
+```
+kit skill [flags]
+```
+
+### Examples
+
+```
+# Install the kit skill for auto-detected agents (user-scoped)
+kit skill
+
+# Install for specific agents
+kit skill --agents=claude-code,cursor
+
+# Install into a project directory
+kit skill -d /path/to/project
+
+# Overwrite an existing installation
+kit skill -o
+```
+
+### Options
+
+```
+  -d, --dir string        Install the skill into this project directory instead of globally (user-scoped)
+      --agents string     Agents to install the skill for, as a comma-separated list (e.g. claude-code,cursor). Without a value, auto-discovers installed agents
+  -o, --overwrite         Overwrite the skill if it already exists
+  -i, --ignore-existing   Skip installation if the skill already exists
+  -h, --help              help for skill
 ```
 
 ### Options inherited from parent commands
