@@ -101,8 +101,19 @@ func FindKitfileInPath(contextDir string) (string, error) {
 }
 
 // Return the total size of all files in a basepath, given a set of ignores
-func getTotalSize(basePath string, ignore ignore.Paths) (int64, error) {
-	pathInfo, err := os.Stat(basePath)
+func getTotalSize(contextDir, basePath string, ignore ignore.Paths) (int64, error) {
+	absBasePath := basePath
+	if !filepath.IsAbs(absBasePath) {
+		absBasePath = filepath.Join(contextDir, basePath)
+	}
+	relBasePath := basePath
+	if filepath.IsAbs(relBasePath) {
+		if rel, err := filepath.Rel(contextDir, relBasePath); err == nil {
+			relBasePath = rel
+		}
+	}
+
+	pathInfo, err := os.Stat(absBasePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return 0, fmt.Errorf("path %s does not exist", basePath)
@@ -114,12 +125,16 @@ func getTotalSize(basePath string, ignore ignore.Paths) (int64, error) {
 		return pathInfo.Size(), nil
 	} else if pathInfo.IsDir() {
 		var total int64
-		err := filepath.WalkDir(basePath, func(file string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(absBasePath, func(file string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
-			if shouldIgnore, err := ignore.Matches(file, basePath); err != nil {
-				return fmt.Errorf("failed to match %s against ignore file: %w", file, err)
+			relFile, err := filepath.Rel(contextDir, file)
+			if err != nil {
+				return fmt.Errorf("failed to get relative path for %s: %w", file, err)
+			}
+			if shouldIgnore, err := ignore.Matches(relFile, relBasePath); err != nil {
+				return fmt.Errorf("failed to match %s against ignore file: %w", relFile, err)
 			} else if shouldIgnore {
 				if !ignore.HasExclusions() && d.IsDir() {
 					return filepath.SkipDir
