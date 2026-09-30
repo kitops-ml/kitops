@@ -36,11 +36,8 @@ import (
 
 const (
 	pullShortDesc = `Download a ModelKit index from a registry`
-	pullLongDesc  = `Download a ModelKit index from a remote registry into local storage.
-
-Only the index itself is downloaded; the ModelKits it references are left in
-the registry. Use 'kit index info' to see which of them are present locally,
-and 'kit pull' to download one.`
+	pullLongDesc  = `Pull a ModelKit index from a remote registry. Only the index is pulled; use
+'kit pull -l' or 'kit unpack -l' to pull one of its ModelKits.`
 
 	pullExample = `# Pull an index from a remote registry
 kit index pull registry.example.com/my-org/my-model:all`

@@ -24,12 +24,16 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/index"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	"github.com/kitops-ml/kitops/pkg/output"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
+	"oras.land/oras-go/v2/registry"
 )
 
 type unpackStep struct {
@@ -128,8 +132,33 @@ func generateUnpackPlan(manifest *ocispec.Manifest, kitfile *artifact.KitFile, f
 
 // getStoreForRef returns the appropriate store (local or remote) for a ModelKit reference.
 func getStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, error) {
+	return getStore(ctx, opts, local.NewLocalRepo)
+}
+
+// getIndexStoreForRef finds a ModelKit index for the reference, in local index storage or
+// the registry; a local ModelKit with the same name is not considered.
+func getIndexStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, error) {
+	return getStore(ctx, opts, local.NewLocalIndexRepo)
+}
+
+// localIndexExists reports whether the reference names a ModelKit index in local storage.
+func localIndexExists(ctx context.Context, opts *UnpackOptions) bool {
+	indexRepo, err := local.NewLocalIndexRepo(constants.StoragePath(opts.ConfigHome), opts.ModelRef)
+	if err != nil {
+		return false
+	}
+	_, err = indexRepo.Resolve(ctx, opts.ModelRef.Reference)
+	return err == nil
+}
+
+func errIndexNeedsLabels(ref *registry.Reference) error {
+	return fmt.Errorf("reference %s is a ModelKit index; select the ModelKit to unpack with --label (-l). 'kit index info' lists its ModelKits and their labels",
+		artifact.FormatRepositoryForDisplay(ref.String()))
+}
+
+func getStore(ctx context.Context, opts *UnpackOptions, openLocal func(string, *registry.Reference) (local.LocalRepo, error)) (oras.Target, error) {
 	storageHome := constants.StoragePath(opts.ConfigHome)
-	localRepo, err := local.NewLocalRepo(storageHome, opts.ModelRef)
+	localRepo, err := openLocal(storageHome, opts.ModelRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read local storage: %w", err)
 	}
@@ -155,6 +184,57 @@ func getStoreForRef(ctx context.Context, opts *UnpackOptions) (oras.Target, erro
 	}
 
 	return repo, nil
+}
+
+// resolveIndexEntry swaps a reference to a ModelKit index for the entry its labels select,
+// returning options and a store for the ModelKit to unpack. Anything that is not a ModelKit
+// index is returned untouched, with a warning when labels were given for it.
+func resolveIndexEntry(ctx context.Context, opts *UnpackOptions, store oras.Target) (*UnpackOptions, oras.Target, error) {
+	desc, err := store.Resolve(ctx, opts.ModelRef.Reference)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to resolve %s: %w", opts.ModelRef.String(), err)
+	}
+	if desc.MediaType != ocispec.MediaTypeImageIndex {
+		if len(opts.Labels) > 0 {
+			output.Logf(output.LogLevelWarn, "Labels are ignored: %s is a ModelKit, not a ModelKit index",
+				artifact.FormatRepositoryForDisplay(opts.ModelRef.String()))
+		}
+		return opts, store, nil
+	}
+
+	indexBytes, err := content.FetchAll(ctx, store, desc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read index %s: %w", opts.ModelRef.String(), err)
+	}
+	idx, err := index.ParseIndex(indexBytes)
+	if errors.Is(err, index.ErrNotAKitIndex) {
+		return nil, nil, fmt.Errorf("reference %s is not a ModelKit", opts.ModelRef.String())
+	} else if err != nil {
+		return nil, nil, err
+	}
+	if len(opts.Labels) == 0 {
+		return nil, nil, errIndexNeedsLabels(opts.ModelRef)
+	}
+	entry, err := index.SelectEntry(idx, opts.Labels, opts.ModelRef)
+	if err != nil {
+		return nil, nil, err
+	}
+	named := index.EntryReference(entry, opts.ModelRef)
+	if named == "" {
+		named = entry.Digest.String()
+	}
+	output.Infof("Index %s refers to ModelKit %s", artifact.FormatRepositoryForDisplay(opts.ModelRef.String()), named)
+
+	entryRef := *opts.ModelRef
+	entryRef.Reference = entry.Digest.String()
+	entryOpts := *opts
+	entryOpts.ModelRef = &entryRef
+
+	entryStore, err := getStoreForRef(ctx, &entryOpts)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to find ModelKit %s: %w", entry.Digest, err)
+	}
+	return &entryOpts, entryStore, nil
 }
 
 func getIndex(list []string, s string) int {
