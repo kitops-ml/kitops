@@ -58,9 +58,7 @@ const (
 	MaxModelRefChain = 10
 )
 
-var (
-	localIndexNameRegexp = regexp.MustCompile(`^([-A-Za-z0-9_-]*={0,3})-index.json$`)
-)
+var localIndexNameRegexp = regexp.MustCompile(`^([-A-Za-z0-9_-]*={0,3})-index.json$`)
 
 func DefaultKitfileNames() []string {
 	return []string{"Kitfile", "kitfile", ".kitfile"}
@@ -144,12 +142,6 @@ func CredentialsPath(configBase string) string {
 
 func CachePath(configBase string) string {
 	return filepath.Join(configBase, CacheSubpath)
-}
-
-// IndexJsonPath is a wrapper for getting the index.json path for a local OCI index,
-// based off the base path of the index.
-func IndexJsonPath(storageBase string) string {
-	return filepath.Join(storageBase, "index.json")
 }
 
 // IndexJsonPathForRepo returns the path to an index.json that is scoped for a specific repo (org/name)
