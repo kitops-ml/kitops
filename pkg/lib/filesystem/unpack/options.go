@@ -28,11 +28,13 @@ import (
 // This is the main options structure used by both command and library interfaces.
 type UnpackOptions struct {
 	options.NetworkOptions
-	ConfigHome     string
-	UnpackDir      string
-	Filters        []string
-	FilterConfs    []kitfile.FilterConf
-	ModelRef       *registry.Reference
+	ConfigHome  string
+	UnpackDir   string
+	Filters     []string
+	FilterConfs []kitfile.FilterConf
+	ModelRef    *registry.Reference
+	// Labels selects which ModelKit to unpack when ModelRef names a ModelKit index.
+	Labels         map[string]string
 	Overwrite      bool
 	IgnoreExisting bool
 	IncludeRemote  bool
