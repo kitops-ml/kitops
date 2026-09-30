@@ -84,11 +84,30 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	}
 
 	ref := opts.ModelRef
-	store, err := getStoreForRef(ctx, opts)
-	if err != nil {
+	var store oras.Target
+	var err error
+	if len(opts.Labels) > 0 {
+		// Labels select a ModelKit from an index, so a local ModelKit of the same name is not
+		// what is being asked for.
+		if store, err = getIndexStoreForRef(ctx, opts); err != nil {
+			ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
+			return fmt.Errorf("failed to find ModelKit index %s: %w", ref, err)
+		}
+	} else if store, err = getStoreForRef(ctx, opts); err != nil {
+		if localIndexExists(ctx, opts) {
+			return errIndexNeedsLabels(opts.ModelRef)
+		}
 		ref := artifact.FormatRepositoryForDisplay(opts.ModelRef.String())
 		return fmt.Errorf("failed to find reference %s: %w", ref, err)
 	}
+
+	// Unpacking a ModelKit index unpacks the ModelKit its labels select. The store is chosen
+	// again for that ModelKit, since an index may be in local storage while the ModelKit it
+	// refers to is only in the registry.
+	if opts, store, err = resolveIndexEntry(ctx, opts, store); err != nil {
+		return err
+	}
+	ref = opts.ModelRef
 
 	_, manifest, kitfile, err := util.ResolveManifestAndConfig(ctx, store, ref.Reference)
 	// If error is ErrNoKitfile, the manifest has been retrieved
@@ -239,6 +258,7 @@ func unpackRemote(ctx context.Context, ref *registry.Reference, basePath string,
 
 	opts := *optsIn
 	opts.ModelRef = ref
+	opts.Labels = nil
 	// Restrict unpack to the requested base type from the referenced ModelKit.
 	if len(opts.FilterConfs) == 0 {
 		filter := kfutils.FilterConf{

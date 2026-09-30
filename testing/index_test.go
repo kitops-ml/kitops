@@ -118,6 +118,32 @@ func TestIndexLabelsAndAnnotations(t *testing.T) {
 	assert.Contains(t, out, "expected key=value to set, or key- to remove")
 }
 
+// TestUnpackIndexSelectsByLabel covers 'kit unpack' against an index: unpacking always produces
+// a ModelKit, chosen by label, the way docker pull resolves a multi-architecture image.
+func TestUnpackIndexSelectsByLabel(t *testing.T) {
+	setupIndexTest(t)
+
+	runCommand(t, expectNoError, "index", "create", "test/model:all")
+	runCommand(t, expectNoError, "index", "add", "test/model:all", "test/model:q4_0", "-l", "quantization=q4_0")
+	runCommand(t, expectNoError, "index", "add", "test/model:all", "test/model:q8_0", "-l", "quantization=q8_0")
+
+	unpackDir := filepath.Join(t.TempDir(), "unpacked")
+	runCommand(t, expectNoError, "unpack", "test/model:all", "-l", "quantization=q8_0", "-d", unpackDir)
+	modelBytes, err := os.ReadFile(filepath.Join(unpackDir, "model.bin"))
+	require.NoError(t, err)
+	assert.Equal(t, "weights-q8", string(modelBytes))
+
+	out := runCommand(t, expectError, "unpack", "test/model:all", "-l", "quantization=q2_k", "-d", t.TempDir())
+	assert.Contains(t, out, "ModelKit in the index has quantization=q2_k")
+
+	out = runCommand(t, expectError, "unpack", "test/model:all", "-d", t.TempDir())
+	assert.Contains(t, out, "select the ModelKit to unpack with --label")
+
+	// Labels select from an index, so a local ModelKit is not used for them.
+	out = runCommand(t, expectError, "unpack", "test/model:q4_0", "-l", "quantization=q8_0", "-d", t.TempDir())
+	assert.Contains(t, out, "find ModelKit index")
+}
+
 // TestIndexDeletePreservesModelKits guards the oras AutoGC cascade end to end: the ModelKits
 // an index refers to must survive deleting that index.
 func TestIndexDeletePreservesModelKits(t *testing.T) {
