@@ -193,3 +193,64 @@ func TestPrintIndexInfoTable(t *testing.T) {
 		"a ModelKit that is not available has an unknown size")
 	assert.NotContains(t, buf.String(), constants.OriginalTagAnnotation, "the original tag annotation has its own column")
 }
+
+func TestPrintIndexInfoJSON(t *testing.T) {
+	store := memory.New()
+	modelDesc := pushTestModelKit(t, store, 4096)
+
+	entry := libindex.ModelKitIndexDescriptor{
+		Descriptor: modelDesc,
+		ModelMeta: libindex.ModelMetadata{
+			"quantization": json.RawMessage(`"q4_0"`),
+			"vramBytes":    json.RawMessage(`6442450944`),
+		},
+	}
+	entry.Annotations = map[string]string{
+		constants.OriginalTagAnnotation: "q4_0",
+		"org.example.tested":            "true",
+	}
+	idx := libindex.CreateIndex([]libindex.ModelKitIndexDescriptor{
+		entry,
+		testIndexEntry(testDigestB, nil),
+	})
+	ref := &registry.Reference{Registry: "registry.example.com", Repository: "my-org/my-model", Reference: "all"}
+
+	var buf bytes.Buffer
+	require.NoError(t, printIndexInfoJSON(context.Background(), &buf, store, ocispec.Descriptor{Digest: digest.Digest(testDigest)}, idx, ref))
+
+	assert.JSONEq(t, `{
+		"reference": "registry.example.com/my-org/my-model:all",
+		"digest": "`+testDigest+`",
+		"modelKits": [
+			{
+				"reference": "registry.example.com/my-org/my-model:q4_0",
+				"digest": "`+modelDesc.Digest.String()+`",
+				"size": 4096,
+				"labels": {"quantization": "q4_0", "vramBytes": 6442450944},
+				"annotations": {"org.example.tested": "true"}
+			},
+			{
+				"digest": "`+testDigestB+`",
+				"size": null,
+				"labels": {},
+				"annotations": {}
+			}
+		]
+	}`, buf.String())
+}
+
+func TestPrintIndexListJSON(t *testing.T) {
+	count := 3
+	listings := []indexListing{
+		{Repo: "registry.example.com/my-org/my-model", Digest: testDigest, Tags: []string{"all", "latest"}, ModelKits: &count},
+		{Repo: "registry.example.com/my-org/my-model", Digest: testDigestB, Tags: []string{}},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, printIndexListJSON(&buf, listings))
+
+	assert.JSONEq(t, `[
+		{"repo": "registry.example.com/my-org/my-model", "digest": "`+testDigest+`", "tags": ["all", "latest"], "modelKits": 3},
+		{"repo": "registry.example.com/my-org/my-model", "digest": "`+testDigestB+`", "tags": [], "modelKits": null}
+	]`, buf.String())
+}

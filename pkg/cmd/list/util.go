@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -35,18 +36,18 @@ type modelInfo struct {
 	Digest    string   `json:"digest"`
 	Tags      []string `json:"tags"`
 	ModelName string   `json:"modelName"`
-	Size      string   `json:"size"`
+	Size      int64    `json:"size"`
 	Author    string   `json:"author"`
 }
 
 func (m *modelInfo) format() []string {
 	if len(m.Tags) == 0 {
-		line := fmt.Sprintf(listTableFmt, m.Repo, "<none>", m.Author, m.ModelName, m.Size, m.Digest)
+		line := fmt.Sprintf(listTableFmt, m.Repo, "<none>", m.Author, m.ModelName, output.FormatBytes(m.Size), m.Digest)
 		return []string{line}
 	}
 	var lines []string
 	for _, tag := range m.Tags {
-		line := fmt.Sprintf(listTableFmt, m.Repo, tag, m.Author, m.ModelName, m.Size, m.Digest)
+		line := fmt.Sprintf(listTableFmt, m.Repo, tag, m.Author, m.ModelName, output.FormatBytes(m.Size), m.Digest)
 		lines = append(lines, line)
 	}
 	return lines
@@ -55,17 +56,9 @@ func (m *modelInfo) format() []string {
 // fill adds information pulled from a manifest and kitfile into the modelInfo. Handles
 // cases where the Kitfile is nil
 func (m *modelInfo) fill(manifest *ocispec.Manifest, kitfile *artifact.KitFile) {
-	m.Size = getModelSize(manifest)
+	m.Size = util.ModelKitSize(manifest)
 	m.Author = getModelAuthor(kitfile)
 	m.ModelName = getModelName(kitfile)
-}
-
-func getModelSize(manifest *ocispec.Manifest) string {
-	var size int64
-	for _, layer := range manifest.Layers {
-		size += layer.Size
-	}
-	return output.FormatBytes(size)
 }
 
 func getModelAuthor(kitfile *artifact.KitFile) string {

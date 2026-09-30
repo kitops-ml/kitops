@@ -19,6 +19,7 @@ package index
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -55,7 +56,10 @@ kit index info my-org/my-model:all
 kit index info my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
 
 # See the contents of a remote index:
-kit index info --remote registry.example.com/my-org/my-model:all`
+kit index info --remote registry.example.com/my-org/my-model:all
+
+# Print the contents of an index as JSON:
+kit index info --format json my-org/my-model:all`
 )
 
 const indexTableFmt = "%s\t%s\t%s\t%s\t%s\n"
@@ -64,7 +68,22 @@ type infoOptions struct {
 	options.NetworkOptions
 	configHome  string
 	checkRemote bool
+	format      string
 	indexRef    *registry.Reference
+}
+
+type indexInfo struct {
+	Reference string         `json:"reference"`
+	Digest    string         `json:"digest"`
+	ModelKits []modelKitInfo `json:"modelKits"`
+}
+
+type modelKitInfo struct {
+	Reference   string                 `json:"reference,omitempty"`
+	Digest      string                 `json:"digest"`
+	Size        *int64                 `json:"size"`
+	Labels      libindex.ModelMetadata `json:"labels"`
+	Annotations map[string]string      `json:"annotations"`
 }
 
 func indexInfoCommand() *cobra.Command {
@@ -86,6 +105,7 @@ func indexInfoCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&opts.checkRemote, "remote", "r", false, "Check remote registry instead of local storage")
+	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table or json")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 
@@ -131,7 +151,41 @@ func runInfo(ctx context.Context, out io.Writer, opts *infoOptions) error {
 		}
 		return err
 	}
+	if opts.format == "json" {
+		return printIndexInfoJSON(ctx, out, modelKitStore, desc, idx, opts.indexRef)
+	}
 	printIndexInfo(ctx, out, modelKitStore, desc, idx, opts.indexRef)
+	return nil
+}
+
+func printIndexInfoJSON(ctx context.Context, out io.Writer, store oras.ReadOnlyTarget, desc ocispec.Descriptor, idx *libindex.ModelKitIndex, ref *registry.Reference) error {
+	info := indexInfo{
+		Reference: displayRef(ref),
+		Digest:    desc.Digest.String(),
+		ModelKits: []modelKitInfo{},
+	}
+	for _, entry := range idx.Manifests {
+		labels := entry.ModelMeta
+		if labels == nil {
+			labels = libindex.ModelMetadata{}
+		}
+		annotations := omitRecordedAnnotations(entry.Annotations)
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		info.ModelKits = append(info.ModelKits, modelKitInfo{
+			Reference:   libindex.EntryReference(entry, ref),
+			Digest:      entry.Digest.String(),
+			Size:        entrySize(ctx, store, entry),
+			Labels:      labels,
+			Annotations: annotations,
+		})
+	}
+	jsonBytes, err := json.MarshalIndent(info, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(out, string(jsonBytes))
 	return nil
 }
 
@@ -156,7 +210,10 @@ func printIndexInfo(ctx context.Context, out io.Writer, store oras.ReadOnlyTarge
 		for row := range max(1, len(labels), len(annotations)) {
 			reference, size, dgst := "", "", ""
 			if row == 0 {
-				reference, size, dgst = entryReference(entry, ref), entrySize(ctx, store, entry), entry.Digest.String()
+				reference, size, dgst = entryReference(entry, ref), noneValue, entry.Digest.String()
+				if layerSize := entrySize(ctx, store, entry); layerSize != nil {
+					size = output.FormatBytes(*layerSize)
+				}
 			}
 			fmt.Fprintf(tw, indexTableFmt, reference, size, cellAt(labels, row), cellAt(annotations, row), dgst)
 		}
@@ -183,15 +240,16 @@ func cellAt(values []string, row int) string {
 // entrySize reports the total size of the layers of the ModelKit an entry refers to, matching
 // what 'kit list' reports. It is read from the size recorded on the entry, or for entries
 // without one, from the ModelKit itself; if neither is available, the size is unknown.
-func entrySize(ctx context.Context, store oras.ReadOnlyTarget, entry libindex.ModelKitIndexDescriptor) string {
+func entrySize(ctx context.Context, store oras.ReadOnlyTarget, entry libindex.ModelKitIndexDescriptor) *int64 {
 	if recorded, err := strconv.ParseInt(entry.Annotations[constants.ModelKitSizeAnnotation], 10, 64); err == nil {
-		return output.FormatBytes(recorded)
+		return &recorded
 	}
 	manifest, err := util.GetManifest(ctx, store, entry.Descriptor)
 	if err != nil {
-		return noneValue
+		return nil
 	}
-	return output.FormatBytes(util.ModelKitSize(manifest))
+	size := util.ModelKitSize(manifest)
+	return &size
 }
 
 func entryReference(entry libindex.ModelKitIndexDescriptor, indexRef *registry.Reference) string {
@@ -233,6 +291,10 @@ func (opts *infoOptions) complete(ctx context.Context, args []string) error {
 		return fmt.Errorf("missing tag or digest from index reference '%s'", args[0])
 	}
 	opts.indexRef = indexRef
+
+	if opts.format != "table" && opts.format != "json" {
+		return fmt.Errorf("unsupported format %q: must be table or json", opts.format)
+	}
 
 	if opts.indexRef.Registry == artifact.DefaultRegistry && opts.checkRemote {
 		return fmt.Errorf("can not check remote: %s does not contain registry", artifact.FormatRepositoryForDisplay(opts.indexRef.String()))
