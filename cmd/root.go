@@ -42,7 +42,6 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/version"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/update"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -112,16 +111,6 @@ func RunCommand() *cobra.Command {
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			storagePath := constants.StoragePath(configHome)
-			needsMigration, err := local.NeedsMigrate(storagePath)
-			if err != nil {
-				return output.Fatalf("Failed to determine if local modelkit needs to be migrated")
-			} else if needsMigration {
-				output.Infof("Migrating local storage to new format")
-				if err := local.MigrateStorage(ctx, storagePath); err != nil {
-					return output.Fatalf("Error migrating storage: %s", err)
-				}
-			}
 			return nil
 		},
 	}

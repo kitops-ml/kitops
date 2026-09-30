@@ -59,19 +59,10 @@ func newLocalIndex(storagePath, repoName string) (*localIndex, error) {
 }
 
 func (li *localIndex) addManifest(manifestDesc ocispec.Descriptor) error {
-	curTag := manifestDesc.Annotations[ocispec.AnnotationRefName]
-	delete(manifestDesc.Annotations, ocispec.AnnotationRefName)
 	if !li.exists(manifestDesc) {
 		li.Manifests = append(li.Manifests, manifestDesc)
 	}
-	if err := li.save(); err != nil {
-		return err
-	}
-	if curTag != "" {
-		li.modelTags.tagToDigest[curTag] = manifestDesc
-		return li.modelTags.save()
-	}
-	return nil
+	return li.save()
 }
 
 func (li *localIndex) save() error {
