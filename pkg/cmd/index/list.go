@@ -18,6 +18,7 @@ package index
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -41,20 +42,24 @@ const (
 references.`
 
 	listExample = `# List local indexes
-kit index list`
+kit index list
+
+# List local indexes as JSON
+kit index list --format json`
 )
 
 const listTableFmt = "%s\t%s\t%s\t%s\n"
 
 type listOptions struct {
 	configHome string
+	format     string
 }
 
 type indexListing struct {
-	repo      string
-	tags      []string
-	modelKits string
-	digest    string
+	Repo      string   `json:"repo"`
+	Digest    string   `json:"digest"`
+	Tags      []string `json:"tags"`
+	ModelKits *int     `json:"modelKits"`
 }
 
 func indexListCommand() *cobra.Command {
@@ -68,6 +73,7 @@ func indexListCommand() *cobra.Command {
 		RunE:    runListCommand(opts),
 		Args:    cobra.NoArgs,
 	}
+	cmd.Flags().StringVar(&opts.format, "format", "table", "Output format: table or json")
 	cmd.Flags().SortFlags = false
 
 	return cmd
@@ -82,6 +88,12 @@ func runListCommand(opts *listOptions) func(*cobra.Command, []string) error {
 		if err != nil {
 			return output.Fatalf("Failed to list indexes: %s", err)
 		}
+		if opts.format == "json" {
+			if err := printIndexListJSON(cmd.OutOrStdout(), listings); err != nil {
+				return output.Fatalf("Failed to print indexes: %s", err)
+			}
+			return nil
+		}
 		printIndexList(cmd.OutOrStdout(), listings)
 		return nil
 	}
@@ -92,52 +104,70 @@ func listLocalIndexes(ctx context.Context, opts *listOptions) ([]indexListing, e
 	if err != nil {
 		return nil, err
 	}
-	var listings []indexListing
+	listings := []indexListing{}
 	for _, repo := range indexRepos {
 		repository := artifact.FormatRepositoryForDisplay(repo.GetRepoName())
 		for _, desc := range repo.GetAllModels() {
+			tags := repo.GetTags(desc)
+			if tags == nil {
+				tags = []string{}
+			}
 			listings = append(listings, indexListing{
-				repo:      repository,
-				tags:      repo.GetTags(desc),
-				modelKits: countEntries(ctx, repo, desc),
-				digest:    desc.Digest.String(),
+				Repo:      repository,
+				Digest:    desc.Digest.String(),
+				Tags:      tags,
+				ModelKits: countEntries(ctx, repo, desc),
 			})
 		}
 	}
 	sort.Slice(listings, func(i, j int) bool {
-		return (listings[i].repo < listings[j].repo) ||
-			((listings[i].repo == listings[j].repo) && (listings[i].digest < listings[j].digest))
+		return (listings[i].Repo < listings[j].Repo) ||
+			((listings[i].Repo == listings[j].Repo) && (listings[i].Digest < listings[j].Digest))
 	})
 	return listings, nil
 }
 
-// countEntries reports how many ModelKits an index references, or that it is unknown when
-// the index cannot be read.
-func countEntries(ctx context.Context, repo local.LocalRepo, desc ocispec.Descriptor) string {
+// countEntries reports how many ModelKits an index references, or nil when the index cannot
+// be read.
+func countEntries(ctx context.Context, repo local.LocalRepo, desc ocispec.Descriptor) *int {
 	indexBytes, err := content.FetchAll(ctx, repo, desc)
 	if err != nil {
-		return noneValue
+		return nil
 	}
 	idx, err := libindex.ParseIndex(indexBytes)
 	if err != nil {
-		return noneValue
+		return nil
 	}
-	return strconv.Itoa(len(idx.Manifests))
+	count := len(idx.Manifests)
+	return &count
 }
 
 func printIndexList(out io.Writer, listings []indexListing) {
 	tw := tabwriter.NewWriter(out, 0, 2, 3, ' ', 0)
 	fmt.Fprintf(tw, listTableFmt, "REPOSITORY", "TAG", "MODELKITS", "DIGEST")
 	for _, listing := range listings {
-		tags := listing.tags
+		tags := listing.Tags
 		if len(tags) == 0 {
 			tags = []string{noneValue}
 		}
+		modelKits := noneValue
+		if listing.ModelKits != nil {
+			modelKits = strconv.Itoa(*listing.ModelKits)
+		}
 		for _, tag := range tags {
-			fmt.Fprintf(tw, listTableFmt, listing.repo, tag, listing.modelKits, listing.digest)
+			fmt.Fprintf(tw, listTableFmt, listing.Repo, tag, modelKits, listing.Digest)
 		}
 	}
 	tw.Flush()
+}
+
+func printIndexListJSON(out io.Writer, listings []indexListing) error {
+	jsonBytes, err := json.MarshalIndent(listings, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(out, string(jsonBytes))
+	return nil
 }
 
 func (opts *listOptions) complete(ctx context.Context) error {
@@ -146,5 +176,8 @@ func (opts *listOptions) complete(ctx context.Context) error {
 		return fmt.Errorf("default config path not set on command context")
 	}
 	opts.configHome = configHome
+	if opts.format != "table" && opts.format != "json" {
+		return fmt.Errorf("unsupported format %q: must be table or json", opts.format)
+	}
 	return nil
 }
