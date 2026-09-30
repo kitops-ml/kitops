@@ -18,6 +18,7 @@ package filesystem
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,7 +28,9 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/require"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/memory"
 )
 
@@ -64,4 +67,31 @@ func TestSaveModelToNonLocalTarget(t *testing.T) {
 	exists, err := target.Exists(ctx, *manifestDesc)
 	require.NoError(t, err)
 	require.True(t, exists, "manifest should be pushed directly to the target")
+}
+
+func TestSaveModelWithNoLayers(t *testing.T) {
+	tmpDir := t.TempDir()
+	cache.SetCacheHome(t.TempDir())
+	t.Cleanup(func() { cache.SetCacheHome(os.TempDir()) })
+	t.Chdir(tmpDir)
+
+	kitfile := &artifact.KitFile{ManifestVersion: "1.0.0"}
+	ignorePaths, err := ignore.NewFromContext(tmpDir, kitfile)
+	require.NoError(t, err)
+
+	target := memory.New()
+	ctx := context.Background()
+	manifestDesc, err := SaveModel(ctx, target, kitfile, ignorePaths, &SaveModelOptions{
+		ModelFormat: mediatype.KitFormat,
+		Compression: mediatype.NoneCompression,
+		LayerFormat: mediatype.TarFormat,
+	})
+	require.NoError(t, err)
+
+	manifestBytes, err := content.FetchAll(ctx, target, *manifestDesc)
+	require.NoError(t, err)
+	var manifest ocispec.Manifest
+	require.NoError(t, json.Unmarshal(manifestBytes, &manifest))
+	require.NotNil(t, manifest.Layers)
+	require.Empty(t, manifest.Layers)
 }

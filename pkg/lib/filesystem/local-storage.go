@@ -150,6 +150,8 @@ func saveConfig(ctx context.Context, target oras.Target, kitfile *artifact.KitFi
 }
 
 func saveKitfileLayers(ctx context.Context, target oras.Target, kitfile *artifact.KitFile, ignore ignore.Paths, opts *SaveModelOptions) (layers []ocispec.Descriptor, diffIDs []digest.Digest, err error) {
+	layers = []ocispec.Descriptor{}
+	diffIDs = []digest.Digest{}
 	toVerifyRemote := map[string]s3api.S3ObjectReference{}
 	if kitfile.Model != nil {
 		if kitfile.Model.Path != "" && !artifact.IsModelKitReference(kitfile.Model.Path) {
@@ -264,6 +266,11 @@ func saveKitfileLayers(ctx context.Context, target oras.Target, kitfile *artifac
 			}
 			output.Infof("Verified remote S3 dataset for path %s", path)
 		}
+	}
+
+	// If ModelKit is actually empty (i.e. no remote datasets or Model references), warn the user
+	if len(layers) == 0 && len(kitfile.DataSets) == 0 && (kitfile.Model == nil || !artifact.IsModelKitReference(kitfile.Model.Path)) {
+		output.Logf(output.LogLevelWarn, "ModelKit contains no layers")
 	}
 
 	return layers, diffIDs, nil
