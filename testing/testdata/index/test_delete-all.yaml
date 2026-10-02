@@ -1,0 +1,32 @@
+description: "index delete --all keeps tagged indexes unless forced, and never removes ModelKits"
+modelkits:
+  - tag: other/model:q4_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q4_0.bin
+    files:
+      - q4_0.bin
+steps:
+  - args: [index, create, test/model:all]
+  - args: [index, create, other/model:all]
+  - args: [index, add, other/model:all, other/model:q4_0]
+  - args: [index, delete, --all, test/model:all]
+    expectError: true
+  - args: [index, delete]
+    expectError: true
+  - args: [index, delete, --all]
+  - args: [index, list]
+    outputRegexps:
+      - '^test/model\s+all\s'
+      - '^other/model\s+all\s'
+  - args: [index, delete, --all, --force]
+  - args: [index, list]
+    noOutputRegexps:
+      - '^test/model\s'
+      - '^other/model\s'
+  - args: [list]
+    outputRegexps:
+      - '^other/model\s+q4_0\s'

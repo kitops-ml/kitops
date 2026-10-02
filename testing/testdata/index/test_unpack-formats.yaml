@@ -1,0 +1,53 @@
+description: "entries record the format of the ModelKit they refer to, and unpack -l selects one of any format, matching every label given"
+modelkits:
+  - tag: test/model:q4_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q4_0.bin
+    files:
+      - q4_0.bin
+  - tag: test/model:modelpack
+    packArgs: [--use-model-pack]
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: modelpack.bin
+    files:
+      - modelpack.bin
+  - tag: test/model:zstd
+    packArgs: [--compression, zstd]
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: zstd.bin
+    files:
+      - zstd.bin
+steps:
+  - args: [index, create, test/model:all]
+  - args: [index, add, test/model:all, test/model:q4_0, -l, quantization=q4_0, -l, gpu=cuda]
+  - args: [index, add, test/model:all, test/model:modelpack, -l, quantization=q8_0, -l, gpu=cuda]
+  - args: [index, add, test/model:all, test/model:zstd, -l, quantization=q8_0, -l, gpu=metal]
+  # Each entry records its artifact type, so a reader can tell a ModelKit from a ModelPack
+  # without fetching its manifest
+  - args: [index, inspect, test/model:all]
+    outputRegexps:
+      - '"artifactType": "application/vnd\.kitops\.modelkit\.manifest\.v1\+json"'
+      - '"artifactType": "application/vnd\.cncf\.model\.manifest\.v1\+json"'
+  - args: [unpack, test/model:all, -l, quantization=q8_0, -l, gpu=cuda, -d, '{{unpackDir}}']
+    unpacked: [Kitfile, modelpack.bin]
+  - args: [unpack, test/model:all, -l, gpu=metal, -d, '{{unpackDir}}']
+    unpacked: [Kitfile, zstd.bin]
+  - args: [unpack, test/model:all, -l, gpu=cuda, -d, '{{unpackDir}}']
+    expectError: true
+    outputRegexps:
+      - '2 ModelKits in the index match'
+  - args: [unpack, test/model:all, -l, quantization=q4_0, --filter=kitfile, -d, '{{unpackDir}}']
+    unpacked: [Kitfile]
+    notUnpacked: [q4_0.bin]

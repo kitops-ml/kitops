@@ -1,0 +1,37 @@
+description: "index remove takes a digest for ModelKits that are no longer in local storage"
+modelkits:
+  - tag: test/model:q4_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q4_0.bin
+    files:
+      - q4_0.bin
+    saveDigest: q4
+  - tag: test/model:q8_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q8_0.bin
+    files:
+      - q8_0.bin
+    saveDigest: q8
+steps:
+  - args: [index, create, test/model:all]
+  - args: [index, add, test/model:all, test/model:q4_0]
+  - args: [index, add, test/model:all, test/model:q8_0]
+  - args: [remove, test/model:q8_0]
+  - args: [index, remove, test/model:all, test/model:q8_0]
+    expectError: true
+  - args: [index, remove, test/model:all, 'test/model@{{q8}}']
+  - args: [index, info, test/model:all]
+    outputRegexps:
+      - '{{q4}}$'
+    noOutputRegexps:
+      - '{{q8}}'
+  - args: [index, remove, test/model:all, 'test/model@{{q8}}']
+    expectError: true
