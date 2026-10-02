@@ -1,0 +1,34 @@
+description: "deleting or replacing an index keeps content still referenced by another tag or repository"
+modelkits:
+  - tag: other/model:q4_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q4_0.bin
+    files:
+      - q4_0.bin
+steps:
+  # Empty indexes are identical, so these all share one digest
+  - args: [index, create, test/model:a]
+    saveDigest: empty
+  - args: [index, create, test/model:b]
+  - args: [index, create, other/model:all]
+  - args: [index, delete, test/model:a]
+    outputRegexps:
+      - 'Untagged index test/model:a '
+  - args: [index, info, test/model:b]
+  # Adding to other/model:all replaces its empty index, which test/model:b still uses
+  - args: [index, add, other/model:all, other/model:q4_0]
+  - args: [index, info, test/model:b]
+  - args: [index, delete, 'test/model@{{empty}}']
+    outputRegexps:
+      - 'Deleted index test/model@'
+  - args: [index, info, test/model:b]
+    expectError: true
+  - args: [index, list]
+    outputRegexps:
+      - '^other/model\s+all\s+1\s'
+    noOutputRegexps:
+      - '^test/model\s'
