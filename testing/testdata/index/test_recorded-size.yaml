@@ -1,0 +1,29 @@
+description: "index info reports the size recorded when a ModelKit was added, even once it is gone from local storage"
+modelkits:
+  - tag: test/model:q4_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q4_0.bin
+    files:
+      - q4_0.bin
+steps:
+  - args: [index, create, test/model:all]
+  - args: [index, add, test/model:all, test/model:q4_0, -l, quantization=q4_0]
+  - args: [remove, test/model:q4_0]
+  - args: [list]
+    noOutputRegexps:
+      - '^test/model\s+q4_0\s'
+  - args: [index, info, test/model:all]
+    outputRegexps:
+      - '^test/model:q4_0\s+[0-9.]+ (B|KiB)\s+quantization=q4_0\s+<none>\s+sha256:'
+    noOutputRegexps:
+      - 'ml\.kitops\.modelkit\.size'
+  - args: [index, info, test/model:all, --format, json]
+    outputRegexps:
+      - '^\s+"size": [0-9]+,$'
+    noOutputRegexps:
+      - '"size": null'
+      - 'ml\.kitops\.modelkit\.size'

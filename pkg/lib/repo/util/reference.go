@@ -72,6 +72,16 @@ func GetManifest(ctx context.Context, store oras.ReadOnlyTarget, manifestDesc oc
 	return manifest, nil
 }
 
+// ModelKitSize returns the total size of a ModelKit's layers, which is the size KitOps reports
+// for a ModelKit.
+func ModelKitSize(manifest *ocispec.Manifest) int64 {
+	var size int64
+	for _, layer := range manifest.Layers {
+		size += layer.Size
+	}
+	return size
+}
+
 // GetKitfileForManifest returns the Kitfile for a given manifest, either by retrieving it from an
 // OCI store or by reading it from manifest annotations. If manifest type is unrecognized, returns
 // ErrNotAModelKit. If the manifest is recognized but does not contain a Kitfile (e.g. it was not

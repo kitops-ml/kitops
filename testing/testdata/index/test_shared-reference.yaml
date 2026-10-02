@@ -1,0 +1,43 @@
+description: "an index and a ModelKit can share a reference, and each command works on its own kind"
+modelkits:
+  - tag: test/model:q4_0
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: q4_0.bin
+    files:
+      - q4_0.bin
+  - tag: test/model:all
+    kitfile: |
+      manifestVersion: 1.0.0
+      package:
+        name: index-testing
+      model:
+        path: all.bin
+    files:
+      - all.bin
+steps:
+  - args: [index, create, test/model:all]
+  - args: [index, add, test/model:all, test/model:q4_0]
+  - args: [inspect, test/model:all]
+    outputRegexps:
+      - '"mediaType": "application/vnd\.oci\.image\.manifest\.v1\+json"'
+  - args: [index, inspect, test/model:all]
+    outputRegexps:
+      - '"artifactType": "application/vnd\.kitops\.modelkit\.index\.v1\+json"'
+  - args: [list]
+    outputRegexps:
+      - '^test/model\s+all\s'
+  - args: [index, info, test/model:q4_0]
+    expectError: true
+  # Deleting the index leaves the ModelKit with the same reference
+  - args: [index, delete, test/model:all]
+  - args: [inspect, test/model:all]
+  # Removing the ModelKit leaves the index with the same reference
+  - args: [index, create, test/model:all]
+  - args: [remove, test/model:all]
+  - args: [index, info, test/model:all]
+  - args: [inspect, test/model:all]
+    expectError: true
