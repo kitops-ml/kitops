@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -166,6 +168,97 @@ func TestIndexDeletePreservesModelKits(t *testing.T) {
 
 		infoOut := runCommand(t, expectNoError, "info", tag)
 		assert.Contains(t, infoOut, "index-testing")
+	}
+}
+
+// indexTestcase packs ModelKits and then runs kit commands in order. Step arguments and output
+// regexps may refer to saved digests as {{name}}, and to the step's unpack directory as
+// {{unpackDir}}.
+type indexTestcase struct {
+	Name        string
+	Description string `yaml:"description"`
+	Modelkits   []struct {
+		Tag        string   `yaml:"tag"`
+		PackArgs   []string `yaml:"packArgs"`
+		Kitfile    string   `yaml:"kitfile"`
+		Files      []string `yaml:"files"`
+		SaveDigest string   `yaml:"saveDigest"`
+	} `yaml:"modelkits"`
+	Steps []struct {
+		Args            []string `yaml:"args"`
+		ExpectError     bool     `yaml:"expectError"`
+		SaveDigest      string   `yaml:"saveDigest"`
+		OutputRegexps   []string `yaml:"outputRegexps"`
+		NoOutputRegexps []string `yaml:"noOutputRegexps"`
+		Unpacked        []string `yaml:"unpacked"`
+		NotUnpacked     []string `yaml:"notUnpacked"`
+	} `yaml:"steps"`
+}
+
+func (t indexTestcase) withName(name string) indexTestcase {
+	t.Name = name
+	return t
+}
+
+var indexDigestRegexp = regexp.MustCompile(`\(digest (sha256:[0-9a-f]{64})\)`)
+
+func TestIndexScenarios(t *testing.T) {
+	testPreflight(t)
+
+	tests := loadAllTestCasesOrPanic[indexTestcase](t, filepath.Join("testdata", "index"))
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s (%s)", tt.Name, tt.Description), func(t *testing.T) {
+			tmpDir := setupTempDir(t)
+			contextPath := filepath.Join(tmpDir, ".kitops")
+			require.NoError(t, os.MkdirAll(contextPath, 0755))
+			t.Setenv(constants.KitopsHomeEnvVar, contextPath)
+
+			vars := map[string]string{}
+			for idx, modelkit := range tt.Modelkits {
+				modelKitPath := filepath.Join(tmpDir, fmt.Sprintf("modelkit-%d", idx))
+				require.NoError(t, os.MkdirAll(modelKitPath, 0755))
+				setupKitfileAndKitignore(t, modelKitPath, modelkit.Kitfile, "")
+				setupFiles(t, modelKitPath, modelkit.Files)
+				args := append([]string{"pack", modelKitPath, "-t", modelkit.Tag}, modelkit.PackArgs...)
+				packOut := runCommand(t, expectNoError, args...)
+				if modelkit.SaveDigest != "" {
+					vars[modelkit.SaveDigest] = digestFromPack(t, packOut)
+				}
+			}
+
+			for idx, step := range tt.Steps {
+				vars["unpackDir"] = filepath.Join(tmpDir, fmt.Sprintf("unpack-%d", idx))
+				var pairs []string
+				for name, value := range vars {
+					pairs = append(pairs, "{{"+name+"}}", value)
+				}
+				expand := strings.NewReplacer(pairs...).Replace
+
+				var args []string
+				for _, arg := range step.Args {
+					args = append(args, expand(arg))
+				}
+				expectErr := expectNoError
+				if step.ExpectError {
+					expectErr = expectError
+				}
+				out := runCommand(t, expectErr, args...)
+
+				for _, re := range step.OutputRegexps {
+					assertContainsLineRegexp(t, out, expand(re), true)
+				}
+				for _, re := range step.NoOutputRegexps {
+					assertContainsLineRegexp(t, out, expand(re), false)
+				}
+				checkFilesExist(t, vars["unpackDir"], step.Unpacked)
+				checkFilesDoNotExist(t, vars["unpackDir"], step.NotUnpacked)
+				if step.SaveDigest != "" {
+					matches := indexDigestRegexp.FindStringSubmatch(out)
+					require.Len(t, matches, 2, "output of 'kit %s' should include a digest", strings.Join(args, " "))
+					vars[step.SaveDigest] = matches[1]
+				}
+			}
+		})
 	}
 }
 
