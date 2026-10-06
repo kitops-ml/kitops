@@ -18,4 +18,3 @@ import Adopters from '@theme/components/Adopters.vue'
 }
 </style>
 
-<!-- AGENT_MODIFIED: Human review required before merge -->
