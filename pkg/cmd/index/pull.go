@@ -40,7 +40,10 @@ const (
 'kit pull -l' or 'kit unpack -l' to pull one of its ModelKits.`
 
 	pullExample = `# Pull an index from a remote registry
-kit index pull registry.example.com/my-org/my-model:all`
+kit index pull registry.example.com/my-org/my-model:all
+
+# Pull a specific version of an index, which is stored untagged
+kit index pull registry.example.com/my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a`
 )
 
 type pullOptions struct {
@@ -119,9 +122,6 @@ func (opts *pullOptions) complete(ctx context.Context, args []string) error {
 	}
 	if len(extraTags) > 0 {
 		return fmt.Errorf("invalid reference format: extra tags are not supported: %s", strings.Join(extraTags, ", "))
-	}
-	if artifact.ReferenceIsDigest(indexRef.Reference) {
-		return fmt.Errorf("index reference must be a tag, not a digest: %s", args[0])
 	}
 	if indexRef.Reference == "" {
 		output.Infof("No tag specified for pull. Using 'latest' as default ('%s:latest')", args[0])
