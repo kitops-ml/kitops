@@ -200,8 +200,8 @@ func (r *Repository) uploadBlobMonolithic(ctx context.Context, location *url.URL
 	return blobLocation.String(), nil
 }
 
-// uploadBlobChunked performs a chunked blob upload as per the distribution spec. The blob is divided into chunks of maximum 100MiB
-// in size and uploaded sequentially through PATCH requests. Once entire blob is uploaded, a PUT request marks the upload as complete.
+// uploadBlobChunked performs a chunked blob upload as per the distribution spec. The blob is divided into configured-size chunks and
+// uploaded sequentially through PATCH requests. Once entire blob is uploaded, a PUT request marks the upload as complete.
 // Note that the distribution spec 1) requires blobs to uploaded in-order, and 2) does not have a way of specifying maximum blob
 // size.
 func (r *Repository) uploadBlobChunked(ctx context.Context, location *url.URL, authHeader string, expected ocispec.Descriptor, content io.Reader) (string, error) {
@@ -492,3 +492,5 @@ func (r *Repository) copyAuth(req *http.Request, authHeader string) {
 		req.Header.Set("Authorization", authHeader)
 	}
 }
+
+// AGENT_MODIFIED: Human review required before merge
