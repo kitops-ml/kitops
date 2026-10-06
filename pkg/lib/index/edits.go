@@ -23,6 +23,8 @@ import (
 	"maps"
 	"regexp"
 	"strings"
+
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 )
 
 // KeyValueEdits is a set of values to set and keys to remove on an index entry's labels or
@@ -113,6 +115,8 @@ func ParseAnnotationEdits(args []string) (KeyValueEdits[string], error) {
 	edits := KeyValueEdits[string]{Set: map[string]string{}}
 	for _, kv := range parsed {
 		switch {
+		case strings.HasPrefix(kv.key, constants.AnnotationPrefix):
+			return KeyValueEdits[string]{}, fmt.Errorf("invalid annotation %q: the %s namespace is reserved for annotations kit records itself", kv.key, constants.AnnotationPrefix)
 		case kv.remove:
 			edits.Remove = append(edits.Remove, kv.key)
 		case kv.isJSON:

@@ -29,6 +29,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	libindex "github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
@@ -168,7 +169,15 @@ func runAdd(ctx context.Context, opts *addOptions) error {
 		return fmt.Errorf("failed to read index %s: %w", displayRef(opts.indexRef), err)
 	}
 
+	format, err := mediatype.ModelFormatForManifest(manifest)
+	if err != nil {
+		return err
+	}
+
 	entry := libindex.ModelKitIndexDescriptor{Descriptor: modelDesc}
+	// Local storage and registries both return descriptors carrying only mediaType, digest, and
+	// size, so the artifact type comes from the manifest.
+	entry.ArtifactType = mediatype.ArtifactTypeForModelFormat(format)
 	if existing, found := idx.GetEntry(modelDesc.Digest); found {
 		entry.Annotations = existing.Annotations
 		entry.ModelMeta = existing.ModelMeta

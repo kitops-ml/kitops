@@ -1,4 +1,4 @@
-description: "unpack -l selects ModelKits of any format from an index, matching every label given"
+description: "entries record the format of the ModelKit they refer to, and unpack -l selects one of any format, matching every label given"
 modelkits:
   - tag: test/model:q4_0
     kitfile: |
@@ -34,6 +34,12 @@ steps:
   - args: [index, add, test/model:all, test/model:q4_0, -l, quantization=q4_0, -l, gpu=cuda]
   - args: [index, add, test/model:all, test/model:modelpack, -l, quantization=q8_0, -l, gpu=cuda]
   - args: [index, add, test/model:all, test/model:zstd, -l, quantization=q8_0, -l, gpu=metal]
+  # Each entry records its artifact type, so a reader can tell a ModelKit from a ModelPack
+  # without fetching its manifest
+  - args: [index, inspect, test/model:all]
+    outputRegexps:
+      - '"artifactType": "application/vnd\.kitops\.modelkit\.manifest\.v1\+json"'
+      - '"artifactType": "application/vnd\.cncf\.model\.manifest\.v1\+json"'
   - args: [unpack, test/model:all, -l, quantization=q8_0, -l, gpu=cuda, -d, '{{unpackDir}}']
     unpacked: [Kitfile, modelpack.bin]
   - args: [unpack, test/model:all, -l, gpu=metal, -d, '{{unpackDir}}']

@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -67,6 +69,15 @@ func TestParseAnnotationEdits(t *testing.T) {
 
 	_, err = ParseAnnotationEdits([]string{"org.example.count:=1"})
 	assert.ErrorContains(t, err, "annotation values are strings")
+
+	for _, arg := range []string{
+		constants.ModelKitSizeAnnotation + "=1",
+		constants.OriginalTagAnnotation + "-",
+		constants.AnnotationPrefix + "anything=1",
+	} {
+		_, err = ParseAnnotationEdits([]string{arg})
+		assert.ErrorContains(t, err, "is reserved for annotations kit records itself", arg)
+	}
 }
 
 func TestApplyEdits(t *testing.T) {

@@ -46,6 +46,11 @@ const (
 
 	// Kitops-specific annotations for modelkit artifacts
 	// TODO: update these to use the newer kitops.org domain
+
+	// AnnotationPrefix is the namespace kit records its own annotations in, and is reserved:
+	// annotations a user sets may not use it.
+	AnnotationPrefix = "ml.kitops.modelkit."
+
 	CliVersionAnnotation  = "ml.kitops.modelkit.cli-version"
 	KitfileJsonAnnotation = "ml.kitops.modelkit.kitfile"
 
