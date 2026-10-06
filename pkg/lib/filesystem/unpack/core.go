@@ -51,26 +51,16 @@ func UnpackModelKit(ctx context.Context, opts *UnpackOptions) error {
 	if opts == nil {
 		return fmt.Errorf("unpack options must not be nil")
 	}
-	// If an unpack directory is provided, temporarily change the working directory
-	// so that unpack operations that are relative to CWD behave as expected.
-	// This centralizes tar -C semantics inside the unpack library.
-	if opts.UnpackDir != "" {
-		// Ensure the directory exists
-		if err := os.MkdirAll(opts.UnpackDir, 0o755); err != nil {
-			return fmt.Errorf("failed to create unpack directory %s: %w", opts.UnpackDir, err)
-		}
-		originalWd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current working directory: %w", err)
-		}
-		if err := os.Chdir(opts.UnpackDir); err != nil {
-			return fmt.Errorf("failed to change working directory to %s: %w", opts.UnpackDir, err)
-		}
-		defer func() {
-			if err := os.Chdir(originalWd); err != nil {
-				output.Debugf("Failed to restore working directory: %v", err)
-			}
-		}()
+	if opts.UnpackDir == "" {
+		opts.UnpackDir = "."
+	}
+	absUnpackDir, err := filepath.Abs(opts.UnpackDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve unpack directory %s: %w", opts.UnpackDir, err)
+	}
+	opts.UnpackDir = absUnpackDir
+	if err := os.MkdirAll(opts.UnpackDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create unpack directory %s: %w", opts.UnpackDir, err)
 	}
 	if opts.SkillOptions != nil {
 		return unpackSkill(ctx, opts)
@@ -133,7 +123,7 @@ func unpackRecursive(ctx context.Context, opts *UnpackOptions, visitedRefs []str
 	}
 	for _, step := range steps {
 		output.Infoln(step.userMessage)
-		if err := unpackLayer(ctx, store, step.desc, "", opts.Overwrite, opts.IgnoreExisting, step.mediatype); err != nil {
+		if err := unpackLayer(ctx, store, step.desc, opts.UnpackDir, "", opts.Overwrite, opts.IgnoreExisting, step.mediatype); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
@@ -194,13 +184,13 @@ func handleRemoteData(ctx context.Context, config *artifact.KitFile, opts *Unpac
 			return err
 		}
 		for path, s3Ref := range remoteS3Datasets {
-			_, relPath, err := filesystem.VerifySubpath(opts.UnpackDir, path)
+			targetPath, _, err := filesystem.VerifySubpath(opts.UnpackDir, path)
 			if err != nil {
 				return fmt.Errorf("error verifying path %s for remote reference: %w", path, err)
 			}
 
 			output.Debugf("Downloading remote dataset: Bucket: %s, Key: %s", s3Ref.Bucket, s3Ref.Key)
-			if fi, exists := filesystem.PathExists(relPath); exists {
+			if fi, exists := filesystem.PathExists(targetPath); exists {
 				if opts.IgnoreExisting {
 					output.Debugf("File %s already exists; skipping", path)
 					continue
@@ -213,11 +203,11 @@ func handleRemoteData(ctx context.Context, config *artifact.KitFile, opts *Unpac
 				}
 			}
 
-			pathDir := filepath.Dir(relPath)
+			pathDir := filepath.Dir(targetPath)
 			if err := os.MkdirAll(pathDir, 0755); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", pathDir, err)
 			}
-			if err := s3api.DownloadObject(ctx, client, &s3Ref, relPath); err != nil {
+			if err := s3api.DownloadObject(ctx, client, &s3Ref, targetPath); err != nil {
 				return fmt.Errorf("failed to download remote dataset for path %s: %w", path, err)
 			}
 			output.Infof("Downloaded remote S3 dataset for path %s", path)
@@ -271,18 +261,6 @@ func unpackRemote(ctx context.Context, ref *registry.Reference, basePath string,
 		if err := os.MkdirAll(targetDir, 0o755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", targetDir, err)
 		}
-		originalWd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current working directory: %w", err)
-		}
-		if err := os.Chdir(targetDir); err != nil {
-			return fmt.Errorf("failed to change working directory to %s: %w", targetDir, err)
-		}
-		defer func() {
-			if err := os.Chdir(originalWd); err != nil {
-				output.Logf(output.LogLevelWarn, "Failed to restore working directory after unpacking reference ModelKit: %v", err)
-			}
-		}()
 		opts.UnpackDir = targetDir
 	}
 
@@ -323,7 +301,7 @@ func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) er
 	return nil
 }
 
-func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, mt mediatype.MediaType) error {
+func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackDir, unpackPath string, overwrite, ignoreExisting bool, mt mediatype.MediaType) error {
 	rc, err := store.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed get layer %s: %w", desc.Digest, err)
@@ -359,19 +337,20 @@ func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.De
 	case mediatype.TarFormat:
 		// Legacy behaviour for ModelKits created prior to Kit v0.5.0 -- tar layers might not include
 		// all parent directories and so these need to be created. For newer ModelKits, unpackPath is empty.
+		extractDir := unpackDir
 		if unpackPath != "" {
-			unpackPath = filepath.Dir(unpackPath)
-			if err := os.MkdirAll(unpackPath, 0755); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", unpackPath, err)
+			extractDir = filepath.Join(unpackDir, filepath.Dir(unpackPath))
+			if err := os.MkdirAll(extractDir, 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", extractDir, err)
 			}
 		}
 
 		tr := tar.NewReader(cr)
-		if err := extractTar(tr, unpackPath, overwrite, ignoreExisting, logger); err != nil {
+		if err := extractTar(tr, extractDir, overwrite, ignoreExisting, logger); err != nil {
 			return err
 		}
 	case mediatype.RawFormat:
-		if err := extractRawLayer(cr, desc, overwrite, ignoreExisting, logger); err != nil {
+		if err := extractRawLayer(cr, desc, unpackDir, overwrite, ignoreExisting, logger); err != nil {
 			return err
 		}
 	default:
@@ -391,14 +370,10 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 		if err != nil {
 			return err
 		}
-		outPath := header.Name
-		if extractDir != "" {
-			outPath = filepath.Join(extractDir, header.Name)
-		}
 		// Check if the outPath is within the target directory
-		_, _, err = filesystem.VerifySubpath(extractDir, outPath)
+		outPath, _, err := filesystem.VerifySubpath(extractDir, header.Name)
 		if err != nil {
-			return fmt.Errorf("illegal file path: %s: %w", outPath, err)
+			return fmt.Errorf("illegal file path: %s: %w", header.Name, err)
 		}
 
 		switch header.Typeflag {
@@ -428,6 +403,9 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 				}
 			}
 			logger.Debugf("Unpacking file %s", outPath)
+			if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", filepath.Dir(outPath), err)
+			}
 			file, err := os.OpenFile(outPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, header.FileInfo().Mode()&fs.ModePerm)
 			if err != nil {
 				return fmt.Errorf("failed to create file %s: %w", outPath, err)
@@ -450,14 +428,15 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 	return nil
 }
 
-func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
+func extractRawLayer(r io.Reader, desc ocispec.Descriptor, extractDir string, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
 	targetPath := desc.Annotations[modelspecv1.AnnotationFilepath]
 	if targetPath == "" {
 		return fmt.Errorf("failed to unpack raw layer: no %s annotation", modelspecv1.AnnotationFilepath)
 	}
 	targetPath = filepath.Clean(targetPath)
 
-	if _, _, err := filesystem.VerifySubpath("", targetPath); err != nil {
+	outPath, _, err := filesystem.VerifySubpath(extractDir, targetPath)
+	if err != nil {
 		return fmt.Errorf("illegal file path: %s: %w", targetPath, err)
 	}
 
@@ -472,7 +451,7 @@ func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExis
 		output.Debugf("no %s annotation on manifest, using defaults", modelspecv1.AnnotationFileMetadata)
 	}
 
-	if fi, exists := filesystem.PathExists(targetPath); exists {
+	if fi, exists := filesystem.PathExists(outPath); exists {
 		if ignoreExisting {
 			output.Debugf("File %s already exists; skipping", targetPath)
 			return
@@ -485,7 +464,7 @@ func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExis
 		}
 	}
 
-	dir := filepath.Dir(targetPath)
+	dir := filepath.Dir(outPath)
 	if dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directories for raw layer: %w", err)
@@ -497,7 +476,7 @@ func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExis
 		fileMode = fs.FileMode(fileMeta.Mode) & fs.ModePerm
 	}
 	logger.Debugf("Unpacking file %s", targetPath)
-	file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, fileMode)
+	file, err := os.OpenFile(outPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, fileMode)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", targetPath, err)
 	}

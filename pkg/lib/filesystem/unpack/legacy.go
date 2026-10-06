@@ -158,7 +158,7 @@ func legacyUnpackLayers(ctx context.Context, store oras.ReadOnlyTarget, manifest
 			}
 		}
 
-		if err := unpackLayer(ctx, store, layerDesc, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType); err != nil {
+		if err := unpackLayer(ctx, store, layerDesc, opts.UnpackDir, relPath, opts.Overwrite, opts.IgnoreExisting, mediaType); err != nil {
 			return fmt.Errorf("failed to unpack: %w", err)
 		}
 	}
