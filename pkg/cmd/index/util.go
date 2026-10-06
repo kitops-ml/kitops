@@ -78,8 +78,10 @@ func writeIndexBytes(ctx context.Context, repo local.LocalRepo, desc ocispec.Des
 	if err := repo.Push(ctx, desc, bytes.NewReader(indexBytes)); err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to save index: %w", err)
 	}
-	if err := repo.Tag(ctx, desc, ref.Reference); err != nil {
-		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to tag index: %w", err)
+	if !artifact.ReferenceIsDigest(ref.Reference) {
+		if err := repo.Tag(ctx, desc, ref.Reference); err != nil {
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to tag index: %w", err)
+		}
 	}
 	if prevIndexDesc.Digest != "" && prevIndexDesc.Digest != desc.Digest {
 		if tags := repo.GetTags(prevIndexDesc); len(tags) == 0 {
