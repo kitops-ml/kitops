@@ -75,7 +75,7 @@ Template placeholders:
 * {{ .Tags }} - slice of tags for the modelkit
 * {{ .Digest }} - digest of the modelkit
 * {{ .ModelName }} - name defined in the Kitfile
-* {{ .Size }} - total size of the modelkit
+* {{ .Size }} - total size of the modelkit, in bytes
 * {{ .Author }} - author from the Kitfile`
 
 	example = `# List local modelkits

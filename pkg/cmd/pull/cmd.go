@@ -23,6 +23,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
+	"github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/output"
 
 	"github.com/spf13/cobra"
@@ -32,16 +33,24 @@ import (
 const (
 	shortDesc = `Retrieve modelkits from a remote registry to your local environment.`
 	longDesc  = `Downloads modelkits from a specified registry. The downloaded modelkits
-are stored in the local registry.`
+are stored in the local registry.
+
+To pull from a ModelKit index, select a ModelKit with --label (-l). It is stored
+locally under the index's reference.`
 
 	example = `# Pull the latest version of a modelkit from a remote registry
-kit pull registry.example.com/my-model:latest`
+kit pull registry.example.com/my-model:latest
+
+# Pull one ModelKit out of a ModelKit index
+kit pull registry.example.com/my-model:all -l quantization=q4_0`
 )
 
 type pullOptions struct {
 	options.NetworkOptions
 	configHome string
 	modelRef   *registry.Reference
+	labelArgs  []string
+	labels     map[string]string
 }
 
 func (opts *pullOptions) complete(ctx context.Context, args []string) error {
@@ -67,6 +76,11 @@ func (opts *pullOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.modelRef = modelRef
 
+	opts.labels, err = index.ParseLabelSelector(opts.labelArgs)
+	if err != nil {
+		return err
+	}
+
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 		return err
 	}
@@ -85,6 +99,7 @@ func PullCommand() *cobra.Command {
 	}
 
 	cmd.Args = cobra.ExactArgs(1)
+	cmd.Flags().StringArrayVarP(&opts.labelArgs, "label", "l", nil, "Select the ModelKit to pull from a ModelKit index by label, as key=value. Can be specified multiple times")
 	opts.AddNetworkFlags(cmd)
 	cmd.Flags().SortFlags = false
 

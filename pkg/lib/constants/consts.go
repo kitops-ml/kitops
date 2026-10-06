@@ -38,6 +38,7 @@ const (
 	// credentials are stored in $KITOPS_HOME/credentials.json
 	DefaultConfigSubdir               = "kitops"
 	StorageSubpath                    = "storage"
+	IndexStorageSubpath               = "indexes"
 	CacheSubpath                      = "cache"
 	CredentialsSubpath                = "credentials.json"
 	UpdateNotificationsConfigFilename = "disable-update-notifications"
@@ -45,6 +46,11 @@ const (
 
 	// Kitops-specific annotations for modelkit artifacts
 	// TODO: update these to use the newer kitops.org domain
+
+	// AnnotationPrefix is the namespace kit records its own annotations in, and is reserved:
+	// annotations a user sets may not use it.
+	AnnotationPrefix = "ml.kitops.modelkit."
+
 	CliVersionAnnotation  = "ml.kitops.modelkit.cli-version"
 	KitfileJsonAnnotation = "ml.kitops.modelkit.kitfile"
 
@@ -53,14 +59,21 @@ const (
 	LayerSubtypeAnnotation = "ml.kitops.modelkit.layer-subtype"
 	LayerSubtypePrompt     = "prompt"
 
+	// OriginalTagAnnotation records, on a ModelKit index entry, the tag the ModelKit was added
+	// to the index under. Only the tag is stored, since an index may only reference ModelKits
+	// in its own repository.
+	OriginalTagAnnotation = "ml.kitops.modelkit.original-tag"
+
+	// ModelKitSizeAnnotation records, on a ModelKit index entry, the total size in bytes of the
+	// ModelKit's layers, so that it is known without the ModelKit itself.
+	ModelKitSizeAnnotation = "ml.kitops.modelkit.size"
+
 	// MaxModelRefChain is the maximum number of "parent" modelkits a modelkit may have
 	// by e.g. referring to another modelkit in its .model.path
 	MaxModelRefChain = 10
 )
 
-var (
-	localIndexNameRegexp = regexp.MustCompile(`^([-A-Za-z0-9_-]*={0,3})-index.json$`)
-)
+var localIndexNameRegexp = regexp.MustCompile(`^([-A-Za-z0-9_-]*={0,3})-index.json$`)
 
 func DefaultKitfileNames() []string {
 	return []string{"Kitfile", "kitfile", ".kitfile"}
@@ -134,6 +147,12 @@ func StoragePath(configBase string) string {
 	return filepath.Join(configBase, StorageSubpath)
 }
 
+// IndexStoragePath returns the directory within storageBase that holds the repository-scoped
+// indexes and tags for ModelKit indexes, which are kept apart from those for ModelKits.
+func IndexStoragePath(storageBase string) string {
+	return filepath.Join(storageBase, IndexStorageSubpath)
+}
+
 func IngestPath(storageBase string) string {
 	return filepath.Join(storageBase, "ingest")
 }
@@ -144,12 +163,6 @@ func CredentialsPath(configBase string) string {
 
 func CachePath(configBase string) string {
 	return filepath.Join(configBase, CacheSubpath)
-}
-
-// IndexJsonPath is a wrapper for getting the index.json path for a local OCI index,
-// based off the base path of the index.
-func IndexJsonPath(storageBase string) string {
-	return filepath.Join(storageBase, "index.json")
 }
 
 // IndexJsonPathForRepo returns the path to an index.json that is scoped for a specific repo (org/name)

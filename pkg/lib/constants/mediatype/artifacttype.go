@@ -25,7 +25,26 @@ import (
 const (
 	ArtifactTypeKitManifest   = "application/vnd.kitops.modelkit.manifest.v1+json"
 	ArtifactTypeModelManifest = "application/vnd.cncf.model.manifest.v1+json"
+	ArtifactTypeKitIndex      = "application/vnd.kitops.modelkit.index.v1+json"
 )
+
+// IsKitIndex returns whether the given media type and artifact type describe a ModelKit index.
+func IsKitIndex(mediaType, artifactType string) bool {
+	return mediaType == ocispec.MediaTypeImageIndex && artifactType == ArtifactTypeKitIndex
+}
+
+// ArtifactTypeForModelFormat returns the manifest artifact type for a model format, so that it
+// can be recorded where only the format is known.
+func ArtifactTypeForModelFormat(format ModelFormat) string {
+	switch format {
+	case KitFormat:
+		return ArtifactTypeKitManifest
+	case ModelPackFormat:
+		return ArtifactTypeModelManifest
+	default:
+		return ""
+	}
+}
 
 func ModelFormatForManifest(manifest *ocispec.Manifest) (ModelFormat, error) {
 	if manifest.ArtifactType == ArtifactTypeKitManifest || manifest.Config.MediaType == KitConfigMediaType.String() {

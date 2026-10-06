@@ -26,6 +26,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
+	"github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/util"
@@ -97,6 +98,9 @@ func pullParents(ctx context.Context, localRepo local.LocalRepo, desc ocispec.De
 		output.Infof("Pulling referenced image %s", refStr)
 		opts := *optsIn
 		opts.modelRef = parentRef
+		// Labels select from the index named on the command line; referenced ModelKits are
+		// named by the Kitfile and are pulled as they are.
+		opts.labels = nil
 		if _, err := runPullRecursive(ctx, localRepo, &opts, pulledRefs); err != nil {
 			return err
 		}
@@ -109,40 +113,85 @@ func pullModel(ctx context.Context, localRepo local.LocalRepo, opts *pullOptions
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to read repository: %w", err)
 	}
-	if err := referenceIsModel(ctx, opts.modelRef, repo); err != nil {
+	modelRef, entry, err := resolveModelRef(ctx, opts.modelRef, repo, opts.labels)
+	if err != nil {
 		return ocispec.DescriptorEmptyJSON, err
 	}
+	if entry == nil && len(opts.labels) > 0 {
+		output.Logf(output.LogLevelWarn, "Labels are ignored: %s is a ModelKit, not a ModelKit index",
+			artifact.FormatRepositoryForDisplay(opts.modelRef.String()))
+	}
 
-	desc, err := localRepo.PullModel(ctx, repo, *opts.modelRef, &opts.NetworkOptions)
+	if entry != nil {
+		named := index.EntryReference(*entry, opts.modelRef)
+		if named == "" {
+			named = entry.Digest.String()
+		}
+		output.Infof("Index %s refers to ModelKit %s", artifact.FormatRepositoryForDisplay(opts.modelRef.String()), named)
+	}
+
+	desc, err := localRepo.PullModel(ctx, repo, *modelRef, &opts.NetworkOptions)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to pull: %w", err)
+	}
+
+	// An entry is pulled by digest, so PullModel does not tag it; like pulling a multi-platform
+	// image, the selected ModelKit takes the index's tag in local storage.
+	if entry != nil && !artifact.ReferenceIsDigest(opts.modelRef.Reference) {
+		if err := localRepo.Tag(ctx, desc, opts.modelRef.Reference); err != nil {
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to tag pulled ModelKit: %w", err)
+		}
 	}
 
 	return desc, nil
 }
 
-func referenceIsModel(ctx context.Context, ref *registry.Reference, repo registry.Repository) error {
+// resolveModelRef returns the reference that should be pulled. A ModelKit index resolves to
+// the entry its labels select, so that pulling always produces a ModelKit; anything else must
+// already be a ModelKit and is returned unchanged.
+func resolveModelRef(ctx context.Context, ref *registry.Reference, repo registry.Repository, labels map[string]string) (*registry.Reference, *index.ModelKitIndexDescriptor, error) {
 	desc, rc, err := repo.FetchReference(ctx, ref.Reference)
 	if err != nil {
-		return fmt.Errorf("failed to fetch %s: %w", ref.String(), err)
+		return nil, nil, fmt.Errorf("failed to fetch %s: %w", ref.String(), err)
 	}
 	defer rc.Close()
 
-	if desc.MediaType != ocispec.MediaTypeImageManifest {
-		return fmt.Errorf("reference %s is not an image manifest", ref.String())
-	}
 	manifestBytes, err := io.ReadAll(rc)
 	if err != nil {
-		return fmt.Errorf("failed to read manifest: %w", err)
+		return nil, nil, fmt.Errorf("failed to read manifest: %w", err)
+	}
+	if desc.MediaType == ocispec.MediaTypeImageIndex {
+		// Registries do not include artifactType in the descriptors they return, so the index
+		// itself is the only thing that can say whether this is a ModelKit index.
+		idx, err := index.ParseIndex(manifestBytes)
+		if errors.Is(err, index.ErrNotAKitIndex) {
+			return nil, nil, fmt.Errorf("reference %s is not an image manifest", ref.String())
+		} else if err != nil {
+			return nil, nil, err
+		}
+		if len(labels) == 0 {
+			return nil, nil, fmt.Errorf("reference %s is a ModelKit index; select the ModelKit to pull with --label (-l). 'kit index info --remote' lists its ModelKits and their labels",
+				artifact.FormatRepositoryForDisplay(ref.String()))
+		}
+		entry, err := index.SelectEntry(idx, labels, ref)
+		if err != nil {
+			return nil, nil, err
+		}
+		entryRef := *ref
+		entryRef.Reference = entry.Digest.String()
+		return &entryRef, &entry, nil
+	}
+	if desc.MediaType != ocispec.MediaTypeImageManifest {
+		return nil, nil, fmt.Errorf("reference %s is not an image manifest", ref.String())
 	}
 	manifest := &ocispec.Manifest{}
 	if err := json.Unmarshal(manifestBytes, manifest); err != nil {
-		return fmt.Errorf("failed to parse manifest: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse manifest: %w", err)
 	}
 	if _, err := mediatype.ModelFormatForManifest(manifest); err != nil {
-		return fmt.Errorf("reference %s does not refer to a model", ref.String())
+		return nil, nil, fmt.Errorf("reference %s does not refer to a model", ref.String())
 	}
-	return nil
+	return ref, nil, nil
 }
 
 func getIndex(list []string, s string) int {

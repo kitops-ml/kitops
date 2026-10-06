@@ -36,7 +36,7 @@ func TestModelInfoFillNormal(t *testing.T) {
 	}
 	info.fill(manifest, kitfile)
 	// Not testing size formatting here
-	assert.Equal(t, info.Size, "600 B")
+	assert.Equal(t, info.Size, int64(600))
 	// Should use first author in list
 	assert.Equal(t, info.Author, "testauthor1")
 	assert.Equal(t, info.ModelName, "testmodelkit")
@@ -48,7 +48,7 @@ func TestModelInfoFillEmptyKitfile(t *testing.T) {
 	kitfile := &artifact.KitFile{}
 	info.fill(manifest, kitfile)
 	// Not testing size formatting here
-	assert.Equal(t, info.Size, "600 B")
+	assert.Equal(t, info.Size, int64(600))
 	// Should use first author in list
 	assert.Equal(t, info.Author, "<none>")
 	assert.Equal(t, info.ModelName, "<none>")
@@ -59,7 +59,7 @@ func TestModelInfoFillNilKitfile(t *testing.T) {
 	manifest := genTestManifest(100, 200, 300)
 	info.fill(manifest, nil)
 	// Not testing size formatting here
-	assert.Equal(t, info.Size, "600 B")
+	assert.Equal(t, info.Size, int64(600))
 	// Should use first author in list
 	assert.Equal(t, info.Author, "<none>")
 	assert.Equal(t, info.ModelName, "<none>")

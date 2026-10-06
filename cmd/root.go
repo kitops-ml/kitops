@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/diff"
+	"github.com/kitops-ml/kitops/pkg/cmd/index"
 	"github.com/kitops-ml/kitops/pkg/cmd/info"
 	"github.com/kitops-ml/kitops/pkg/cmd/inspect"
 	"github.com/kitops-ml/kitops/pkg/cmd/kitcache"
@@ -42,7 +43,6 @@ import (
 	"github.com/kitops-ml/kitops/pkg/cmd/version"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/cache"
-	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/update"
 	"github.com/kitops-ml/kitops/pkg/output"
 
@@ -112,21 +112,11 @@ func RunCommand() *cobra.Command {
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			storagePath := constants.StoragePath(configHome)
-			needsMigration, err := local.NeedsMigrate(storagePath)
-			if err != nil {
-				return output.Fatalf("Failed to determine if local modelkit needs to be migrated")
-			} else if needsMigration {
-				output.Infof("Migrating local storage to new format")
-				if err := local.MigrateStorage(ctx, storagePath); err != nil {
-					return output.Fatalf("Error migrating storage: %s", err)
-				}
-			}
 			return nil
 		},
 	}
 	addSubcommands(cmd)
-	cmd.PersistentFlags().StringVar(&opts.loglevel, "log-level", "info", "Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info')")
+	cmd.PersistentFlags().StringVar(&opts.loglevel, "log-level", "info", "Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error')")
 	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"trace", "debug", "info", "warn", "error"}, cobra.ShellCompDirectiveDefault
 	})
@@ -167,6 +157,7 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(kitimport.ImportCommand())
 	rootCmd.AddCommand(kitcache.CacheCommand())
 	rootCmd.AddCommand(skill.SkillCommand())
+	rootCmd.AddCommand(index.IndexCommand())
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

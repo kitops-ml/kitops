@@ -28,6 +28,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/completion"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/unpack"
+	"github.com/kitops-ml/kitops/pkg/lib/index"
 	"github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/skill"
 	"github.com/kitops-ml/kitops/pkg/output"
@@ -47,6 +48,8 @@ not found, it searches the remote registry and retrieves it. This process
 ensures that the necessary components are always available for unpacking,
 optimizing for efficiency by fetching only specified components from the
 remote registry when necessary.
+
+To unpack from a ModelKit index, select a ModelKit with --label (-l).
 
 The content that is unpacked can be limited via the --filter (-f) flag. For example,
 use
@@ -75,6 +78,9 @@ directory instead.`
 
 	example = `# Unpack all components of a modelkit to the current directory
 kit unpack myrepo/my-model:latest -d /path/to/unpacked
+
+# Unpack one ModelKit out of a ModelKit index
+kit unpack myrepo/my-model:all -l quantization=q4_0 -d /path/to/unpacked
 
 # Unpack only the model and datasets of a modelkit to a specified directory
 kit unpack myrepo/my-model:latest --filter=model,datasets -d /path/to/unpacked
@@ -115,6 +121,8 @@ type unpackOptions struct {
 	ignoreExisting bool
 	includeRemote  bool
 	asSkill        string
+	labelArgs      []string
+	labels         map[string]string
 }
 
 // unpackConf configures which elements of the modelkit should be unpacked.
@@ -152,6 +160,11 @@ func (opts *unpackOptions) complete(ctx context.Context, args []string) error {
 	}
 	opts.unpackDir = absDir
 
+	opts.labels, err = index.ParseLabelSelector(opts.labelArgs)
+	if err != nil {
+		return err
+	}
+
 	if err := opts.NetworkOptions.Complete(ctx, args); err != nil {
 		return err
 	}
@@ -182,6 +195,7 @@ func UnpackCommand() *cobra.Command {
 	cmd.Flags().BoolVarP(&opts.overwrite, "overwrite", "o", false, "Overwrites existing files and directories in the target unpack directory without prompting")
 	cmd.Flags().BoolVarP(&opts.ignoreExisting, "ignore-existing", "i", false, "Skip unpacking files if a file with that name already exists")
 	cmd.Flags().StringArrayVarP(&opts.filters, "filter", "f", []string{}, "Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times")
+	cmd.Flags().StringArrayVarP(&opts.labelArgs, "label", "l", nil, "Select the ModelKit to unpack from a ModelKit index by label, as key=value. Can be specified multiple times")
 	cmd.Flags().BoolVar(&opts.includeRemote, "include-remote", false, "Include remote datasets in unpacked files")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackKitfile, "kitfile", false, "Unpack only Kitfile (deprecated: use --filter=kitfile)")
 	cmd.Flags().BoolVar(&opts.unpackConf.unpackModels, "model", false, "Unpack only model (deprecated: use --filter=model)")
@@ -220,6 +234,7 @@ func runCommand(opts *unpackOptions) func(*cobra.Command, []string) error {
 		// Convert command options to library options
 		libOpts := &unpack.UnpackOptions{
 			ModelRef:       opts.modelRef,
+			Labels:         opts.labels,
 			UnpackDir:      opts.unpackDir,
 			ConfigHome:     opts.configHome,
 			Filters:        opts.filters,
