@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -27,6 +28,7 @@ import (
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/errdef"
@@ -48,15 +50,23 @@ func generateUnpackPlan(manifest *ocispec.Manifest, kitfile *artifact.KitFile, f
 		return fmt.Sprintf("Unpacking %s to %s", layerType, path)
 	}
 
-	descToDigest := make(map[string]ocispec.Descriptor, len(manifest.Layers))
+	layersByDigest := make(map[string][]ocispec.Descriptor, len(manifest.Layers))
 	for _, layerDesc := range manifest.Layers {
-		descToDigest[layerDesc.Digest.String()] = layerDesc
+		layersByDigest[layerDesc.Digest.String()] = append(layersByDigest[layerDesc.Digest.String()], layerDesc)
 	}
 
 	addStep := func(digest, layerType, name, path string) error {
-		desc, ok := descToDigest[digest]
+		descs, ok := layersByDigest[digest]
 		if !ok {
 			return fmt.Errorf("digest %s not found in manifest", digest)
+		}
+		// Identical files at different paths share a digest; the filepath annotation tells them apart
+		desc := descs[0]
+		for _, d := range descs {
+			if filepath.Clean(d.Annotations[modelspecv1.AnnotationFilepath]) == filepath.Clean(path) {
+				desc = d
+				break
+			}
 		}
 		mt, err := mediatype.ParseMediaType(desc.MediaType)
 		if err != nil {

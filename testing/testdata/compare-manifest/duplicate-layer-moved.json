@@ -1,0 +1,34 @@
+{
+    "SameConfig": true,
+    "AnnotationsMatch": true,
+    "SharedLayers": [
+      {
+        "digest": "sha256:layer1"
+      },
+      {
+        "digest": "sha256:layer2"
+      },
+      {
+        "digest": "sha256:layer4",
+        "annotations": {
+          "org.cncf.model.filepath": "pkg_b/__init__.py"
+        }
+      }
+    ],
+    "UniqueLayersA": [
+      {
+        "digest": "sha256:layer4",
+        "annotations": {
+          "org.cncf.model.filepath": "pkg_a/__init__.py"
+        }
+      }
+    ],
+    "UniqueLayersB": [
+      {
+        "digest": "sha256:layer4",
+        "annotations": {
+          "org.cncf.model.filepath": "pkg_c/__init__.py"
+        }
+      }
+    ]
+  }
