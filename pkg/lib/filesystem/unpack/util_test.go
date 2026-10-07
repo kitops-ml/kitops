@@ -22,6 +22,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 	kfutils "github.com/kitops-ml/kitops/pkg/lib/kitfile"
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,7 @@ const (
 	mtDataset   = "application/vnd.kitops.modelkit.dataset.v1.tar+gzip"
 	mtCode      = "application/vnd.kitops.modelkit.code.v1.tar+gzip"
 	mtDocs      = "application/vnd.kitops.modelkit.docs.v1.tar+gzip"
+	mtCodeRaw   = "application/vnd.kitops.modelkit.code.v1.raw"
 )
 
 // fakeDigest builds a syntactically valid sha256 digest from a short id so test
@@ -355,6 +357,28 @@ func TestGenerateUnpackPlan_SkipsRemoteDataset(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, steps, 1)
 	assert.Equal(t, "Unpacking dataset local to data", steps[0].userMessage)
+}
+
+func TestGenerateUnpackPlan_DuplicateDigestMatchesFilepath(t *testing.T) {
+	// Identical raw files at different paths share a digest and differ only in their filepath annotation.
+	layerA := layerDesc("init", mtCodeRaw)
+	layerA.Annotations = map[string]string{modelspecv1.AnnotationFilepath: "pkg_a/__init__.py"}
+	layerB := layerDesc("init", mtCodeRaw)
+	layerB.Annotations = map[string]string{modelspecv1.AnnotationFilepath: "pkg_b/__init__.py"}
+	manifest := &ocispec.Manifest{Layers: []ocispec.Descriptor{layerA, layerB}}
+	kitfile := &artifact.KitFile{
+		ManifestVersion: "1.0.0",
+		Code: []artifact.Code{
+			{Path: "./pkg_a/__init__.py", LayerInfo: layerInfo("init")},
+			{Path: "pkg_b/__init__.py", LayerInfo: layerInfo("init")},
+		},
+	}
+
+	steps, err := generateUnpackPlan(manifest, kitfile, nil)
+	require.NoError(t, err)
+	require.Len(t, steps, 2)
+	assert.Equal(t, "pkg_a/__init__.py", steps[0].desc.Annotations[modelspecv1.AnnotationFilepath])
+	assert.Equal(t, "pkg_b/__init__.py", steps[1].desc.Annotations[modelspecv1.AnnotationFilepath])
 }
 
 func TestGenerateUnpackPlan_DigestNotInManifest(t *testing.T) {

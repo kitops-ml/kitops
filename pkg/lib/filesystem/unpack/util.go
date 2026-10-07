@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
+	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -29,6 +31,7 @@ import (
 	"github.com/kitops-ml/kitops/pkg/lib/repo/local"
 	"github.com/kitops-ml/kitops/pkg/lib/repo/remote"
 	"github.com/kitops-ml/kitops/pkg/output"
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
@@ -42,6 +45,12 @@ type unpackStep struct {
 	userMessage string
 }
 
+// slashPath cleans a path in slash-separated form on every host, so that comparing paths does
+// not depend on the separators the host would use.
+func slashPath(p string) string {
+	return path.Clean(strings.ReplaceAll(p, `\`, "/"))
+}
+
 func generateUnpackPlan(manifest *ocispec.Manifest, kitfile *artifact.KitFile, filters []kfutils.FilterConf) ([]unpackStep, error) {
 	var steps []unpackStep
 
@@ -52,15 +61,26 @@ func generateUnpackPlan(manifest *ocispec.Manifest, kitfile *artifact.KitFile, f
 		return fmt.Sprintf("Unpacking %s to %s", layerType, path)
 	}
 
-	descToDigest := make(map[string]ocispec.Descriptor, len(manifest.Layers))
+	layersByDigest := make(map[string][]ocispec.Descriptor, len(manifest.Layers))
 	for _, layerDesc := range manifest.Layers {
-		descToDigest[layerDesc.Digest.String()] = layerDesc
+		layersByDigest[layerDesc.Digest.String()] = append(layersByDigest[layerDesc.Digest.String()], layerDesc)
 	}
 
-	addStep := func(digest, layerType, name, path string) error {
-		desc, ok := descToDigest[digest]
+	addStep := func(digest, layerType, name, filePath string) error {
+		descs, ok := layersByDigest[digest]
 		if !ok {
 			return fmt.Errorf("digest %s not found in manifest", digest)
+		}
+		// Identical files at different paths share a digest; the filepath annotation tells them
+		// apart. Both are compared as slash-separated paths, since the annotation always is while
+		// a Kitfile keeps whichever separator it was written with.
+		desc := descs[0]
+		wantPath := slashPath(filePath)
+		for _, d := range descs {
+			if slashPath(d.Annotations[modelspecv1.AnnotationFilepath]) == wantPath {
+				desc = d
+				break
+			}
 		}
 		mt, err := mediatype.ParseMediaType(desc.MediaType)
 		if err != nil {
@@ -69,7 +89,7 @@ func generateUnpackPlan(manifest *ocispec.Manifest, kitfile *artifact.KitFile, f
 		steps = append(steps, unpackStep{
 			desc:        desc,
 			mediatype:   mt,
-			userMessage: messageFor(layerType, name, path),
+			userMessage: messageFor(layerType, name, filePath),
 		})
 		return nil
 	}
