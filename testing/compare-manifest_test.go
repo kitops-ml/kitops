@@ -26,6 +26,7 @@ import (
 
 	"github.com/kitops-ml/kitops/pkg/cmd/diff"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -93,6 +94,24 @@ func TestCompareManifests(t *testing.T) {
 			manifestBPath:    "manifestE.json",
 			expectedDiffPath: "mixed-diff.json",
 		},
+		{
+			name:             "DuplicateLayer",
+			manifestAPath:    "manifestF.json",
+			manifestBPath:    "manifestA.json",
+			expectedDiffPath: "duplicate-layer.json",
+		},
+		{
+			name:             "DuplicateLayerInBoth",
+			manifestAPath:    "manifestF.json",
+			manifestBPath:    "manifestF.json",
+			expectedDiffPath: "duplicate-layer-both.json",
+		},
+		{
+			name:             "DuplicateLayerMoved",
+			manifestAPath:    "manifestF.json",
+			manifestBPath:    "manifestG.json",
+			expectedDiffPath: "duplicate-layer-moved.json",
+		},
 	}
 
 	// Iterate over the test cases.
@@ -122,14 +141,23 @@ func compareDescriptors(a, b []ocispec.Descriptor) bool {
 	copy(bSorted, b)
 
 	sort.Slice(aSorted, func(i, j int) bool {
-		return aSorted[i].Digest < aSorted[j].Digest
+		if aSorted[i].Digest != aSorted[j].Digest {
+			return aSorted[i].Digest < aSorted[j].Digest
+		}
+		return aSorted[i].Annotations[modelspecv1.AnnotationFilepath] < aSorted[j].Annotations[modelspecv1.AnnotationFilepath]
 	})
 	sort.Slice(bSorted, func(i, j int) bool {
-		return bSorted[i].Digest < bSorted[j].Digest
+		if bSorted[i].Digest != bSorted[j].Digest {
+			return bSorted[i].Digest < bSorted[j].Digest
+		}
+		return bSorted[i].Annotations[modelspecv1.AnnotationFilepath] < bSorted[j].Annotations[modelspecv1.AnnotationFilepath]
 	})
 
 	for i := range aSorted {
 		if aSorted[i].Digest != bSorted[i].Digest {
+			return false
+		}
+		if aSorted[i].Annotations[modelspecv1.AnnotationFilepath] != bSorted[i].Annotations[modelspecv1.AnnotationFilepath] {
 			return false
 		}
 	}

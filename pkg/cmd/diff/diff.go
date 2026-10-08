@@ -19,9 +19,12 @@ package diff
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry"
 
@@ -71,23 +74,30 @@ func CompareManifests(manifestA *ocispec.Manifest, manifestB *ocispec.Manifest) 
 		}
 	}
 
-	layerMapA := make(map[string]ocispec.Descriptor)
+	layerMapA := make(map[string][]ocispec.Descriptor)
 	for _, layer := range manifestA.Layers {
-		layerMapA[layer.Digest.String()] = layer
+		layerMapA[layer.Digest.String()] = append(layerMapA[layer.Digest.String()], layer)
 	}
 
 	for _, layer := range manifestB.Layers {
-		if _, ok := layerMapA[layer.Digest.String()]; ok {
+		layersA := layerMapA[layer.Digest.String()]
+		pathB := layer.Annotations[modelspecv1.AnnotationFilepath]
+		idx := slices.IndexFunc(layersA, func(layerA ocispec.Descriptor) bool {
+			pathA := layerA.Annotations[modelspecv1.AnnotationFilepath]
+			// ModelKits packed before Kit v1.10.0 have no filepath annotations
+			return pathA == "" || pathB == "" || filepath.Clean(pathA) == filepath.Clean(pathB)
+		})
+		if idx >= 0 {
 			result.SharedLayers = append(result.SharedLayers, layer)
-			delete(layerMapA, layer.Digest.String())
+			layerMapA[layer.Digest.String()] = slices.Delete(layersA, idx, idx+1)
 		} else {
 			result.UniqueLayersB = append(result.UniqueLayersB, layer)
 		}
 	}
 
 	result.UniqueLayersA = make([]ocispec.Descriptor, 0, len(layerMapA))
-	for _, layer := range layerMapA {
-		result.UniqueLayersA = append(result.UniqueLayersA, layer)
+	for _, layers := range layerMapA {
+		result.UniqueLayersA = append(result.UniqueLayersA, layers...)
 	}
 
 	// Sort the slices by layer type

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "config": {
+    "mediaType": "application/vnd.kitops.modelkit.config.v1+json",
+    "digest": "sha256:configA",
+    "size": 409
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.kitops.modelkit.model.v1.tar",
+      "digest": "sha256:layer1",
+      "size": 123456789
+    },
+    {
+      "mediaType": "application/vnd.kitops.modelkit.code.v1.tar",
+      "digest": "sha256:layer2",
+      "size": 23456
+    },
+    {
+      "mediaType": "application/vnd.kitops.modelkit.code.v1.raw",
+      "digest": "sha256:layer4",
+      "size": 0,
+      "annotations": {
+        "org.cncf.model.filepath": "pkg_b/__init__.py"
+      }
+    },
+    {
+      "mediaType": "application/vnd.kitops.modelkit.code.v1.raw",
+      "digest": "sha256:layer4",
+      "size": 0,
+      "annotations": {
+        "org.cncf.model.filepath": "pkg_c/__init__.py"
+      }
+    }
+  ],
+  "annotations": {
+     "ml.kitops.modelkit.cli-version": "0.2.5-29dbdc4"
+  }
+}
