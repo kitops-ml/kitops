@@ -324,7 +324,7 @@ func unpackConfig(config *artifact.KitFile, unpackDir string, overwrite bool) er
 	return nil
 }
 
-func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, mt mediatype.MediaType) error {
+func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor, unpackPath string, overwrite, ignoreExisting bool, mt mediatype.MediaType) (err error) {
 	rc, err := store.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("failed get layer %s: %w", desc.Digest, err)
@@ -357,6 +357,19 @@ func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.De
 		return fmt.Errorf("unrecognized compression format in '%s'", mt.Format())
 	}
 
+	var unpackedFiles []string
+	defer func() {
+		if err == nil {
+			return
+		}
+		for _, path := range unpackedFiles {
+			logger.Debugf("Removing %s", path)
+			if rmErr := os.Remove(path); rmErr != nil && !errors.Is(rmErr, fs.ErrNotExist) {
+				logger.Logf(output.LogLevelWarn, "Failed to remove %s: %s", path, rmErr)
+			}
+		}
+	}()
+
 	switch mt.Format() {
 	case mediatype.TarFormat:
 		// Legacy behaviour for ModelKits created prior to Kit v0.5.0 -- tar layers might not include
@@ -369,11 +382,11 @@ func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.De
 		}
 
 		tr := tar.NewReader(cr)
-		if err := extractTar(tr, unpackPath, overwrite, ignoreExisting, logger); err != nil {
+		if err := extractTar(tr, unpackPath, overwrite, ignoreExisting, logger, &unpackedFiles); err != nil {
 			return err
 		}
 	case mediatype.RawFormat:
-		err := extractRawLayer(cr, desc, overwrite, ignoreExisting, logger)
+		err := extractRawLayer(cr, desc, overwrite, ignoreExisting, logger, &unpackedFiles)
 		if errors.Is(err, errRawLayerSkipped) {
 			logger.Wait()
 			return nil
@@ -397,7 +410,7 @@ func unpackLayer(ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.De
 	return nil
 }
 
-func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
+func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting bool, logger *output.ProgressLogger, unpackedFiles *[]string) (err error) {
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -447,6 +460,7 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 			if err != nil {
 				return fmt.Errorf("failed to create file %s: %w", outPath, err)
 			}
+			*unpackedFiles = append(*unpackedFiles, outPath)
 			defer func() {
 				err = errors.Join(err, file.Close())
 			}()
@@ -467,7 +481,7 @@ func extractTar(tr *tar.Reader, extractDir string, overwrite, ignoreExisting boo
 
 var errRawLayerSkipped = errors.New("raw layer skipped")
 
-func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExisting bool, logger *output.ProgressLogger) (err error) {
+func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExisting bool, logger *output.ProgressLogger, unpackedFiles *[]string) (err error) {
 	targetPath := desc.Annotations[modelspecv1.AnnotationFilepath]
 	if targetPath == "" {
 		return fmt.Errorf("failed to unpack raw layer: no %s annotation", modelspecv1.AnnotationFilepath)
@@ -518,6 +532,7 @@ func extractRawLayer(r io.Reader, desc ocispec.Descriptor, overwrite, ignoreExis
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", targetPath, err)
 	}
+	*unpackedFiles = append(*unpackedFiles, targetPath)
 	defer func() {
 		err = errors.Join(err, file.Close())
 	}()
