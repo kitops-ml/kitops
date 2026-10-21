@@ -144,24 +144,25 @@ func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocisp
 		return nil, fmt.Errorf("fetching layer: %w", err)
 	}
 	defer func() { _ = rc.Close() }()
+	vr := content.NewVerifyReader(rc, desc)
 
 	var cr io.ReadCloser
 	switch compression {
 	case mediatype.GzipCompression, mediatype.GzipFastestCompression:
-		cr, err = gzip.NewReader(rc)
+		cr, err = gzip.NewReader(vr)
 		if err != nil {
 			return nil, fmt.Errorf("decompressing layer: %w", err)
 		}
 		defer func() { _ = cr.Close() }()
 	case mediatype.ZstdCompression:
-		zstdReader, err := zstd.NewReader(rc)
+		zstdReader, err := zstd.NewReader(vr)
 		if err != nil {
 			return nil, fmt.Errorf("decompressing layer: %w", err)
 		}
 		cr = zstdReader.IOReadCloser()
 		defer func() { _ = cr.Close() }()
 	case mediatype.NoneCompression:
-		cr = rc
+		cr = io.NopCloser(vr)
 	default:
 		return nil, fmt.Errorf("unsupported compression type %q for prompt layer %q", compression, entry.Path)
 	}
@@ -175,6 +176,14 @@ func installPromptAsSkill(ctx context.Context, store content.Storage, desc ocisp
 	if !isSkill {
 		output.Infof("Skipping prompt %q: not a SKILL.md, cannot install as skill", entry.Path)
 		return nil, nil
+	}
+
+	// Drain via the decompressor: zstd reads vr from its own goroutine, so reading vr directly here would race.
+	if _, err := io.Copy(io.Discard, cr); err != nil {
+		return nil, fmt.Errorf("reading layer: %w", err)
+	}
+	if err := vr.Verify(); err != nil {
+		return nil, fmt.Errorf("verifying layer: %w", err)
 	}
 
 	skillName := skill.DeriveSkillName(frontmatterName, entry, opts.ModelRef)
