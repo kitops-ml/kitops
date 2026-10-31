@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -49,12 +50,21 @@ kit push registry.example.com/my-org/my-model:latest
 kit push registry.example.com/my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
 
 # Push local modelkit 'mymodel:1.0.0' to a remote registry
-kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest`
+kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest
+
+# Use smaller chunks on a high-latency or unreliable network
+kit push --chunk-size 16 mymodel:1.0.0 registry.example.com/my-org/my-model:latest`
+)
+
+const (
+	bytesPerMiB     int64 = 1 << 20
+	maxChunkSizeMiB       = math.MaxInt64 / bytesPerMiB
 )
 
 type pushOptions struct {
 	options.NetworkOptions
 	configHome   string
+	chunkSizeMiB int64
 	srcModelRef  *registry.Reference
 	destModelRef *registry.Reference
 }
@@ -124,6 +134,12 @@ func PushCommand() *cobra.Command {
 	}
 
 	opts.AddNetworkFlags(cmd)
+	cmd.Flags().Int64Var(
+		&opts.chunkSizeMiB,
+		"chunk-size",
+		remote.DefaultUploadChunkSize/bytesPerMiB,
+		"Maximum size of each blob upload chunk in MiB (must be greater than 0)",
+	)
 	cmd.Flags().SortFlags = false
 
 	return cmd
@@ -134,12 +150,17 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		if err := opts.complete(cmd.Context(), args); err != nil {
 			return output.Fatalf("Invalid arguments: %s", err)
 		}
+		uploadChunkSize, err := uploadChunkSizeBytes(opts.chunkSizeMiB)
+		if err != nil {
+			return output.Fatalf("Invalid arguments: %s", err)
+		}
 
 		remoteRepo, err := remote.NewRepository(
 			cmd.Context(),
 			opts.destModelRef.Registry,
 			opts.destModelRef.Repository,
 			&opts.NetworkOptions,
+			remote.WithUploadChunkSize(uploadChunkSize),
 		)
 		if err != nil {
 			return output.Fatalln(err)
@@ -171,4 +192,16 @@ func runCommand(opts *pushOptions) func(*cobra.Command, []string) error {
 		output.Infof("Pushed %s", desc.Digest)
 		return nil
 	}
+}
+
+func uploadChunkSizeBytes(sizeMiB int64) (int64, error) {
+	if sizeMiB < 1 || sizeMiB > maxChunkSizeMiB {
+		return 0, fmt.Errorf(
+			"invalid argument for chunk-size (%d): must be between 1 and %d MiB",
+			sizeMiB,
+			maxChunkSizeMiB,
+		)
+	}
+
+	return sizeMiB * bytesPerMiB, nil
 }
