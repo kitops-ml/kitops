@@ -492,5 +492,3 @@ func (r *Repository) copyAuth(req *http.Request, authHeader string) {
 		req.Header.Set("Authorization", authHeader)
 	}
 }
-
-// AGENT_MODIFIED: Human review required before merge

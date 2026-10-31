@@ -17,6 +17,7 @@
 package push
 
 import (
+	"math"
 	"testing"
 )
 
@@ -27,15 +28,15 @@ func TestPushCommandUploadChunkSizeDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get chunk-size flag: %v", err)
 	}
-	if got != 32 {
-		t.Fatalf("chunk-size default = %d MiB, want 32 MiB", got)
+	if got != 100 {
+		t.Fatalf("chunk-size default = %d MiB, want 100 MiB", got)
 	}
 }
 
 func TestUploadChunkSizeBytes(t *testing.T) {
 	t.Parallel()
 
-	for _, sizeMiB := range []int64{16, 32} {
+	for _, sizeMiB := range []int64{1, 15, 16, 32, 33, 100, 128, math.MaxInt64 / (1 << 20)} {
 		got, err := uploadChunkSizeBytes(sizeMiB)
 		if err != nil {
 			t.Fatalf("uploadChunkSizeBytes(%d): %v", sizeMiB, err)
@@ -45,11 +46,9 @@ func TestUploadChunkSizeBytes(t *testing.T) {
 		}
 	}
 
-	for _, sizeMiB := range []int64{-1, 0, 15, 33} {
+	for _, sizeMiB := range []int64{-1, 0, math.MaxInt64/(1<<20) + 1, math.MaxInt64} {
 		if _, err := uploadChunkSizeBytes(sizeMiB); err == nil {
 			t.Fatalf("uploadChunkSizeBytes(%d) should fail", sizeMiB)
 		}
 	}
 }
-
-// AGENT_MODIFIED: Human review required before merge

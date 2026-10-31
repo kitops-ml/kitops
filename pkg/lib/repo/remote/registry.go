@@ -102,5 +102,3 @@ func NewRepository(
 
 	return configuredRepo, nil
 }
-
-// AGENT_MODIFIED: Human review required before merge

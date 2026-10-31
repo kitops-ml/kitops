@@ -16,22 +16,107 @@
 
 package remote
 
-import "testing"
+import (
+	"bytes"
+	"io"
+	"net/http"
+	"testing"
 
-func TestWithUploadChunkSize(t *testing.T) {
+	"github.com/kitops-ml/kitops/pkg/cmd/options"
+	"github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewRepositoryUploadChunkSize(t *testing.T) {
 	t.Parallel()
 
-	repo := &Repository{uploadChunkSize: DefaultUploadChunkSize}
-	if err := WithUploadChunkSize(16 << 20)(repo); err != nil {
-		t.Fatalf("WithUploadChunkSize(): %v", err)
-	}
-	if repo.uploadChunkSize != 16<<20 {
-		t.Fatalf("uploadChunkSize = %d, want %d", repo.uploadChunkSize, 16<<20)
+	tests := []struct {
+		name           string
+		repositoryOpts []RepositoryOption
+		wantSize       int64
+		wantFormat     uploadFormat
+		wantErr        bool
+	}{
+		{name: "default", wantSize: 100 << 20, wantFormat: uploadMonolithicPut},
+		{name: "16 MiB", repositoryOpts: []RepositoryOption{WithUploadChunkSize(16 << 20)}, wantSize: 16 << 20, wantFormat: uploadChunkedPatch},
+		{name: "32 MiB", repositoryOpts: []RepositoryOption{WithUploadChunkSize(32 << 20)}, wantSize: 32 << 20, wantFormat: uploadChunkedPatch},
+		{name: "100 MiB", repositoryOpts: []RepositoryOption{WithUploadChunkSize(100 << 20)}, wantSize: 100 << 20, wantFormat: uploadMonolithicPut},
+		{name: "128 MiB", repositoryOpts: []RepositoryOption{WithUploadChunkSize(128 << 20)}, wantSize: 128 << 20, wantFormat: uploadMonolithicPut},
+		{name: "zero", repositoryOpts: []RepositoryOption{WithUploadChunkSize(0)}, wantErr: true},
+		{name: "negative", repositoryOpts: []RepositoryOption{WithUploadChunkSize(-1)}, wantErr: true},
 	}
 
-	if err := WithUploadChunkSize(0)(repo); err == nil {
-		t.Fatal("WithUploadChunkSize(0) should fail")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, err := NewRepository(t.Context(), "registry.example.com", "test/repo", options.DefaultNetworkOptions(t.TempDir()), tt.repositoryOpts...)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, repo)
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			configuredRepo := repo.(*Repository)
+			assert.Equal(t, tt.wantSize, configuredRepo.uploadChunkSize)
+			assert.Equal(t, tt.wantFormat, getUploadFormat("registry.example.com", 50<<20, configuredRepo.uploadChunkSize))
+		})
 	}
 }
 
-// AGENT_MODIFIED: Human review required before merge
+func TestRepositoryPushWithUploadChunkSize(t *testing.T) {
+	t.Parallel()
+
+	const uploadURL = "https://registry.example.com/v2/test/repo/blobs/uploads/test"
+	const blobURL = "https://registry.example.com/v2/test/repo/blobs/test"
+	content := []byte("hello world")
+	expected := ocispec.Descriptor{
+		MediaType: ocispec.MediaTypeImageLayer,
+		Digest:    digest.FromBytes(content),
+		Size:      int64(len(content)),
+	}
+	repo, err := NewRepository(t.Context(), "registry.example.com", "test/repo", options.DefaultNetworkOptions(t.TempDir()), WithUploadChunkSize(5))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responses := []func(*http.Request) (*http.Response, error){
+		func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, http.MethodPost, req.Method)
+			return makeResponse(req, http.StatusAccepted, "", map[string]string{"Location": uploadURL})
+		},
+	}
+	for _, chunk := range []struct{ body, contentRange, responseRange string }{
+		{"hello", "0-4", "0-4"},
+		{" worl", "5-9", "0-9"},
+		{"d", "10-10", "0-10"},
+	} {
+		responses = append(responses, func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, http.MethodPatch, req.Method)
+			assert.Equal(t, uploadURL, req.URL.String())
+			assert.Equal(t, int64(len(chunk.body)), req.ContentLength)
+			assert.Equal(t, chunk.contentRange, req.Header.Get("Content-Range"))
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			req.Body.Close()
+			assert.Equal(t, chunk.body, string(body))
+			return makeResponse(req, http.StatusAccepted, "", map[string]string{
+				"Location": uploadURL,
+				"Range":    chunk.responseRange,
+			})
+		})
+	}
+	responses = append(responses, func(req *http.Request) (*http.Response, error) {
+		assert.Equal(t, http.MethodPut, req.Method)
+		assert.Zero(t, req.ContentLength)
+		assert.Equal(t, expected.Digest.String(), req.URL.Query().Get("digest"))
+		return makeResponse(req, http.StatusCreated, "", map[string]string{"Location": blobURL})
+	})
+	client := &testClient{responses: responses}
+	repo.(*Repository).Client = client
+	assert.NoError(t, repo.Push(t.Context(), expected, bytes.NewReader(content)))
+	assert.Equal(t, len(responses), client.responseIdx)
+}

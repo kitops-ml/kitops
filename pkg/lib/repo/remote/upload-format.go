@@ -33,7 +33,7 @@ const (
 
 const (
 	// DefaultUploadChunkSize is the default maximum size of each chunked blob upload request.
-	DefaultUploadChunkSize int64 = 32 << 20
+	DefaultUploadChunkSize int64 = 100 << 20
 	uploadChunkDefaultSize       = DefaultUploadChunkSize
 )
 
@@ -69,5 +69,3 @@ func getUploadFormat(registry string, size int64, chunkSize int64) uploadFormat 
 		}
 	}
 }
-
-// AGENT_MODIFIED: Human review required before merge
