@@ -292,7 +292,8 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 			addErr("invalid path for doc (%s): only local paths are permitted", doc.Path)
 		}
 	}
-	for _, prompt := range kf.Prompts {
+	for idx, prompt := range kf.Prompts {
+		addPath(prompt.Path, fmt.Sprintf("prompt layer %d", idx))
 		pathType, err := GetPathType(prompt.Path)
 		if err != nil {
 			addErr("invalid path for prompt (%s): %s", prompt.Path, err)
@@ -328,6 +329,8 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 		}
 		if path.IsAbs(layerPath) || filepath.IsAbs(layerPath) {
 			addErr("absolute paths are not supported in a Kitfile (path %s in %s)", layerPath, layerIds[0])
+		} else if pathType, _ := GetPathType(layerPath); pathType == LocalPathType && !filepath.IsLocal(layerPath) {
+			addErr("paths outside the context directory are not supported in a Kitfile (path %s in %s)", layerPath, layerIds[0])
 		}
 		for _, remoteDatasetPath := range remoteDatasetPaths {
 			if remoteDatasetPath == layerPath {

@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  prompts:
+    - path: ../outside/skills/personal/
+errRegexp: "paths outside the context directory are not supported in a Kitfile \\(path ../outside/skills/personal in prompt layer 0\\)"
