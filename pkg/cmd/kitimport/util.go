@@ -83,21 +83,6 @@ func readExistingKitfile(kfPath string) (*artifact.KitFile, error) {
 }
 
 func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *artifact.KitFile, ref *registry.Reference) (*ocispec.Descriptor, error) {
-	// Packing requires the working dir to be the context dir so that relative paths are correct in the tarball
-	// On Windows, we need to switch back to the current directory or removing the temporary directory will fail
-	curDir, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current directory: %w", err)
-	}
-	if err := os.Chdir(contextDir); err != nil {
-		return nil, fmt.Errorf("failed to use context path %s: %w", contextDir, err)
-	}
-	defer func() {
-		if err := os.Chdir(curDir); err != nil {
-			output.Logf(output.LogLevelWarn, "Failed to change directory to %s: %s", curDir, err)
-		}
-	}()
-
 	localRepo, err := local.NewLocalRepo(constants.StoragePath(configHome), ref)
 	if err != nil {
 		return nil, err
@@ -110,6 +95,7 @@ func packDirectory(ctx context.Context, configHome, contextDir string, kitfile *
 		ModelFormat: mediatype.KitFormat,
 		Compression: mediatype.NoneCompression,
 		LayerFormat: mediatype.TarFormat,
+		ContextDir:  contextDir,
 	})
 	if err != nil {
 		return nil, err
