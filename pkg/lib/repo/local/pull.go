@@ -40,6 +40,24 @@ import (
 )
 
 func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, ref registry.Reference, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
+	lock, err := lockStorage(ctx, l.storagePath)
+	if err != nil {
+		return ocispec.DescriptorEmptyJSON, err
+	}
+	defer lock.Close()
+	// Read the current indexes after acquiring the lock, without replacing state used by readers.
+	working := &localRepo{storagePath: l.storagePath, indexBase: l.indexBase, nameRef: l.nameRef}
+	if err := working.reload(); err != nil {
+		return ocispec.DescriptorEmptyJSON, err
+	}
+	desc, err := working.pullModel(ctx, src, ref, opts)
+	l.stateMu.Lock()
+	l.Store, l.localIndex = working.Store, working.localIndex
+	l.stateMu.Unlock()
+	return desc, err
+}
+
+func (l *localRepo) pullModel(ctx context.Context, src oras.ReadOnlyTarget, ref registry.Reference, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
 	// Only support pulling image manifests
 	desc, err := src.Resolve(ctx, ref.Reference)
 	if err != nil {

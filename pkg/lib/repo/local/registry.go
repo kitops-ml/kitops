@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/kitops-ml/kitops/pkg/cmd/options"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -54,7 +55,9 @@ type LocalRepo interface {
 }
 
 type localRepo struct {
+	stateMu     sync.RWMutex
 	storagePath string
+	indexBase   string
 	nameRef     string
 	localIndex  *localIndex
 	*oci.Store
@@ -81,24 +84,36 @@ func NewLocalIndexRepo(storagePath string, ref *registry.Reference) (LocalRepo, 
 // and tags from indexBase. Blobs are always shared, so indexBase is all that separates ModelKit
 // storage from index storage.
 func newRepoForName(storagePath, indexBase, name string) (LocalRepo, error) {
-	repo := &localRepo{}
-	repo.storagePath = storagePath
-	repo.nameRef = name
-
-	store, err := oci.New(storagePath)
-	if err != nil {
+	// Existing stores remain readable while a pull holds the download lock.
+	if _, err := os.Stat(filepath.Join(storagePath, ocispec.ImageIndexFile)); errors.Is(err, fs.ErrNotExist) {
+		lock, err := lockStorage(context.Background(), storagePath)
+		if err != nil {
+			return nil, err
+		}
+		defer lock.Close()
+	}
+	repo := &localRepo{storagePath: storagePath, indexBase: indexBase, nameRef: name}
+	if err := repo.reload(); err != nil {
 		return nil, err
 	}
-	repo.Store = store
+	return repo, nil
+}
+
+func (repo *localRepo) reload() error {
+	store, err := oci.New(repo.storagePath)
+	if err != nil {
+		return err
+	}
 
 	// Initialize repo-specific index.json
-	localIndex, err := newLocalIndex(indexBase, name)
+	localIndex, err := newLocalIndex(repo.indexBase, repo.nameRef)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	repo.Store = store
 	repo.localIndex = localIndex
 
-	return repo, nil
+	return nil
 }
 
 func GetAllLocalRepos(storagePath string) ([]LocalRepo, error) {
@@ -163,6 +178,8 @@ func isManifestMediaType(mediaType string) bool {
 }
 
 func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) error {
+	lr.stateMu.Lock()
+	defer lr.stateMu.Unlock()
 	output.SafeLogf(output.LogLevelTrace, "Deleting digest %s in local repository %s", target.Digest.String(), lr.nameRef)
 	if !isManifestMediaType(target.MediaType) {
 		return lr.Store.Delete(ctx, target)
@@ -193,6 +210,8 @@ func (lr *localRepo) Delete(ctx context.Context, target ocispec.Descriptor) erro
 }
 
 func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (exists bool, err error) {
+	lr.stateMu.RLock()
+	defer lr.stateMu.RUnlock()
 	if isManifestMediaType(target.MediaType) {
 		exists, err = lr.localIndex.exists(target), nil
 	} else {
@@ -210,6 +229,8 @@ func (lr *localRepo) Exists(ctx context.Context, target ocispec.Descriptor) (exi
 }
 
 func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
+	lr.stateMu.RLock()
+	defer lr.stateMu.RUnlock()
 	output.SafeLogf(output.LogLevelTrace, "Fetching digest %s in local repository %s", target.Digest.String(), lr.nameRef)
 	if isManifestMediaType(target.MediaType) {
 		if exists := lr.localIndex.exists(target); !exists {
@@ -225,6 +246,8 @@ func (lr *localRepo) Fetch(ctx context.Context, target ocispec.Descriptor) (io.R
 }
 
 func (lr *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
+	lr.stateMu.Lock()
+	defer lr.stateMu.Unlock()
 	output.SafeLogf(output.LogLevelTrace, "Pushing digest %s to local repository %s", expected.Digest.String(), lr.nameRef)
 	if isManifestMediaType(expected.MediaType) {
 		// Attempting to push a manifest to oci.Store will return an error if it already exists.
@@ -245,26 +268,36 @@ func (lr *localRepo) Push(ctx context.Context, expected ocispec.Descriptor, cont
 }
 
 func (lr *localRepo) Resolve(_ context.Context, reference string) (ocispec.Descriptor, error) {
+	lr.stateMu.RLock()
+	defer lr.stateMu.RUnlock()
 	output.SafeLogf(output.LogLevelTrace, "Resolving reference %s in local repository %s", reference, lr.nameRef)
 	return lr.localIndex.resolve(reference)
 }
 
 func (lr *localRepo) Tag(_ context.Context, desc ocispec.Descriptor, reference string) error {
+	lr.stateMu.Lock()
+	defer lr.stateMu.Unlock()
 	output.SafeLogf(output.LogLevelTrace, "Tagging digest %s with %s in local repository %s", desc.Digest.String(), reference, lr.nameRef)
 	// TODO: should we tag it in the general index.json too?
 	return lr.localIndex.tag(desc, reference)
 }
 
 func (lr *localRepo) Untag(_ context.Context, reference string) error {
+	lr.stateMu.Lock()
+	defer lr.stateMu.Unlock()
 	output.SafeLogf(output.LogLevelTrace, "Untagging reference %s in local repository %s", reference, lr.nameRef)
 	return lr.localIndex.untag(reference)
 }
 
 func (lr *localRepo) GetAllModels() []ocispec.Descriptor {
-	return lr.localIndex.Manifests
+	lr.stateMu.RLock()
+	defer lr.stateMu.RUnlock()
+	return slices.Clone(lr.localIndex.Manifests)
 }
 
 func (lr *localRepo) GetTags(desc ocispec.Descriptor) []string {
+	lr.stateMu.RLock()
+	defer lr.stateMu.RUnlock()
 	return lr.localIndex.listTags(desc)
 }
 
@@ -275,5 +308,23 @@ func (lr *localRepo) EnsureDirs(desc ocispec.Descriptor) error {
 	}
 	return nil
 }
+
+func (lr *localRepo) currentStore() *oci.Store {
+	lr.stateMu.RLock()
+	defer lr.stateMu.RUnlock()
+	return lr.Store
+}
+
+func (lr *localRepo) Predecessors(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+	return lr.currentStore().Predecessors(ctx, desc)
+}
+
+func (lr *localRepo) Tags(ctx context.Context, last string, fn func([]string) error) error {
+	return lr.currentStore().Tags(ctx, last, fn)
+}
+
+func (lr *localRepo) SaveIndex() error { return lr.currentStore().SaveIndex() }
+
+func (lr *localRepo) GC(ctx context.Context) error { return lr.currentStore().GC(ctx) }
 
 var _ LocalRepo = (*localRepo)(nil)
