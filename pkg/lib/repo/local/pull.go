@@ -36,12 +36,30 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"oras.land/oras-go/v2"
-	"oras.land/oras-go/v2/registry"
 )
 
-func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, ref registry.Reference, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
+// PullModel downloads srcRef and saves dstRef as its local tag unless dstRef is a digest.
+func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, srcRef, dstRef string, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
+	lock, err := lockStorage(ctx, l.storagePath)
+	if err != nil {
+		return ocispec.DescriptorEmptyJSON, err
+	}
+	defer lock.Close()
+	// Read the current indexes after acquiring the lock, without replacing state used by readers.
+	working := &localRepo{storagePath: l.storagePath, indexBase: l.indexBase, nameRef: l.nameRef}
+	if err := working.reload(); err != nil {
+		return ocispec.DescriptorEmptyJSON, err
+	}
+	desc, err := working.pullModel(ctx, src, srcRef, dstRef, opts)
+	l.stateMu.Lock()
+	l.Store, l.localIndex = working.Store, working.localIndex
+	l.stateMu.Unlock()
+	return desc, err
+}
+
+func (l *localRepo) pullModel(ctx context.Context, src oras.ReadOnlyTarget, srcRef, dstRef string, opts *options.NetworkOptions) (ocispec.Descriptor, error) {
 	// Only support pulling image manifests
-	desc, err := src.Resolve(ctx, ref.Reference)
+	desc, err := src.Resolve(ctx, srcRef)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, err
 	}
@@ -108,8 +126,8 @@ func (l *localRepo) PullModel(ctx context.Context, src oras.ReadOnlyTarget, ref 
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to add manifest to shared index: %w", err)
 	}
 
-	if !artifact.ReferenceIsDigest(ref.Reference) {
-		if err := l.localIndex.tag(desc, ref.Reference); err != nil {
+	if !artifact.ReferenceIsDigest(dstRef) {
+		if err := l.localIndex.tag(desc, dstRef); err != nil {
 			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to save tag: %w", err)
 		}
 	}
@@ -133,6 +151,7 @@ func (l *localRepo) pullNode(ctx context.Context, src oras.ReadOnlyTarget, desc 
 	if err != nil {
 		return fmt.Errorf("failed to fetch: %w", err)
 	}
+	defer blob.Close()
 	if seekBlob, ok := blob.(io.ReadSeekCloser); ok {
 		p.Logf(output.LogLevelTrace, "Remote supports range requests, using resumable download")
 		return l.resumeAndDownloadFile(desc, seekBlob, p)

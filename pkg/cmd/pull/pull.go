@@ -130,17 +130,9 @@ func pullModel(ctx context.Context, localRepo local.LocalRepo, opts *pullOptions
 		output.Infof("Index %s refers to ModelKit %s", artifact.FormatRepositoryForDisplay(opts.modelRef.String()), named)
 	}
 
-	desc, err := localRepo.PullModel(ctx, repo, *modelRef, &opts.NetworkOptions)
+	desc, err := localRepo.PullModel(ctx, repo, modelRef.Reference, opts.modelRef.Reference, &opts.NetworkOptions)
 	if err != nil {
 		return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to pull: %w", err)
-	}
-
-	// An entry is pulled by digest, so PullModel does not tag it; like pulling a multi-platform
-	// image, the selected ModelKit takes the index's tag in local storage.
-	if entry != nil && !artifact.ReferenceIsDigest(opts.modelRef.Reference) {
-		if err := localRepo.Tag(ctx, desc, opts.modelRef.Reference); err != nil {
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to tag pulled ModelKit: %w", err)
-		}
 	}
 
 	return desc, nil
