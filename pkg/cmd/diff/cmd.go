@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 
+	modelspecv1 "github.com/modelpack/model-spec/specs-go/v1"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
@@ -38,8 +39,8 @@ const (
 	remotePrefix = "remote://"
 	localPrefix  = "local://"
 	//Constants for formatting output tables.
-	layerTableHeadings = "Type    | Digest             | Size"
-	layerTableFormat   = "%-7s | %-18s | %s\n"
+	layerTableHeadings = "Type    | Digest             | Size       | Path"
+	layerTableFormat   = "%-7s | %-18s | %-10s | %s\n"
 	shortDesc          = "Compare two ModelKits"
 	longDesc           = `Compare two ModelKits to see the differences in their layers.
 		
@@ -194,10 +195,20 @@ func displayLayers(title string, layers []ocispec.Descriptor) {
 			output.Infof(layerTableFormat,
 				mediatype.FormatMediaTypeForUser(layer.MediaType),
 				layer.Digest[:17],
-				output.FormatBytes(layer.Size))
+				output.FormatBytes(layer.Size),
+				layerPath(layer))
 		}
 	} else {
 		output.Infoln("<none>")
 	}
 	output.Infoln("")
+}
+
+// layerPath returns the path a layer unpacks to. ModelKits packed before Kit v1.10.0 have no
+// filepath annotations.
+func layerPath(layer ocispec.Descriptor) string {
+	if path := layer.Annotations[modelspecv1.AnnotationFilepath]; path != "" {
+		return path
+	}
+	return "<none>"
 }
