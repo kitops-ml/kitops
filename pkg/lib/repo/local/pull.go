@@ -151,6 +151,7 @@ func (l *localRepo) pullNode(ctx context.Context, src oras.ReadOnlyTarget, desc 
 	if err != nil {
 		return fmt.Errorf("failed to fetch: %w", err)
 	}
+	defer blob.Close()
 	if seekBlob, ok := blob.(io.ReadSeekCloser); ok {
 		p.Logf(output.LogLevelTrace, "Remote supports range requests, using resumable download")
 		return l.resumeAndDownloadFile(desc, seekBlob, p)

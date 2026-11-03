@@ -393,3 +393,65 @@ func TestFailedPullReleasesStorageLock(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, desc.Digest, got.Digest)
 }
+
+type trackedSource struct {
+	oras.ReadOnlyTarget
+	resumable bool
+	fail      bool
+	open      atomic.Int32
+}
+
+func (s *trackedSource) Fetch(ctx context.Context, desc ocispec.Descriptor) (io.ReadCloser, error) {
+	reader, err := s.ReadOnlyTarget.Fetch(ctx, desc)
+	if err != nil {
+		return nil, err
+	}
+	s.open.Add(1)
+	tracked := &trackedReader{ReadCloser: reader, source: s}
+	if s.resumable {
+		return &trackedSeekReader{trackedReader: tracked, Seeker: reader.(io.Seeker)}, nil
+	}
+	return tracked, nil
+}
+
+type trackedReader struct {
+	io.ReadCloser
+	source *trackedSource
+}
+
+func (r *trackedReader) Read(p []byte) (int, error) {
+	if r.source.fail {
+		return 0, io.ErrUnexpectedEOF
+	}
+	return r.ReadCloser.Read(p)
+}
+func (r *trackedReader) Close() error { r.source.open.Add(-1); return r.ReadCloser.Close() }
+
+type trackedSeekReader struct {
+	*trackedReader
+	io.Seeker
+}
+
+func TestPullNodeClosesSourceReader(t *testing.T) {
+	for _, resumable := range []bool{false, true} {
+		for _, fail := range []bool{false, true} {
+			t.Run(fmt.Sprintf("resumable=%t/readError=%t", resumable, fail), func(t *testing.T) {
+				src := testRepo(t)
+				desc := pushModelKit(t, src, "v1", "layer")
+				manifest, err := getManifest(t, src, desc)
+				require.NoError(t, err)
+				dst := testRepo(t).(*localRepo)
+				require.NoError(t, dst.ensurePullDirs())
+				tracked := &trackedSource{ReadOnlyTarget: src, resumable: resumable, fail: fail}
+				progress := output.NewPullProgress(context.Background())
+				err = dst.pullNode(context.Background(), tracked, manifest.Layers[0], progress)
+				if fail {
+					require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+				} else {
+					require.NoError(t, err)
+				}
+				require.Zero(t, tracked.open.Load(), "pullNode must close the reader after success or failure")
+			})
+		}
+	}
+}
