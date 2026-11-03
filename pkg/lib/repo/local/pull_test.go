@@ -63,9 +63,9 @@ func TestPullReloadsIndexes(t *testing.T) {
 			require.NoError(t, err)
 			b, err := NewLocalRepo(storage, refB)
 			require.NoError(t, err)
-			_, err = a.PullModel(ctx, src, *refA, &options.NetworkOptions{Concurrency: 2})
+			_, err = a.PullModel(ctx, src, refA.Reference, refA.Reference, &options.NetworkOptions{Concurrency: 2})
 			require.NoError(t, err)
-			_, err = b.PullModel(ctx, src, *refB, &options.NetworkOptions{Concurrency: 2})
+			_, err = b.PullModel(ctx, src, refB.Reference, refB.Reference, &options.NetworkOptions{Concurrency: 2})
 			require.NoError(t, err)
 			for _, item := range []struct {
 				ref  *registry.Reference
@@ -161,7 +161,7 @@ func testPullWaitsWithoutDeletingActiveDownload(t *testing.T, resumable bool) {
 	blocked := &blockedSource{resumable: resumable, ReadOnlyTarget: src, digest: manifest.Layers[0].Digest, entered: make(chan struct{}), release: release}
 	done := make(chan error, 1)
 	go func() {
-		_, err := a.PullModel(ctx, blocked, *refA, &options.NetworkOptions{Concurrency: 1})
+		_, err := a.PullModel(ctx, blocked, refA.Reference, refA.Reference, &options.NetworkOptions{Concurrency: 1})
 		done <- err
 	}()
 	select {
@@ -174,13 +174,13 @@ func testPullWaitsWithoutDeletingActiveDownload(t *testing.T, resumable bool) {
 	require.Len(t, files, 1)
 	waiting, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 	defer cancel()
-	_, err = b.PullModel(waiting, src, *refB, &options.NetworkOptions{Concurrency: 1})
+	_, err = b.PullModel(waiting, src, refB.Reference, refB.Reference, &options.NetworkOptions{Concurrency: 1})
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 	_, err = os.Stat(filepath.Join(constants.IngestPath(storage), files[0].Name()))
 	require.NoError(t, err)
 	independent, cancelIndependent := context.WithTimeout(ctx, 5*time.Second)
 	defer cancelIndependent()
-	_, err = other.PullModel(independent, src, *refB, &options.NetworkOptions{Concurrency: 1})
+	_, err = other.PullModel(independent, src, refB.Reference, refB.Reference, &options.NetworkOptions{Concurrency: 1})
 	require.NoError(t, err)
 	unblock()
 	select {
@@ -189,7 +189,7 @@ func testPullWaitsWithoutDeletingActiveDownload(t *testing.T, resumable bool) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("first pull did not complete")
 	}
-	_, err = b.PullModel(ctx, src, *refB, &options.NetworkOptions{Concurrency: 1})
+	_, err = b.PullModel(ctx, src, refB.Reference, refB.Reference, &options.NetworkOptions{Concurrency: 1})
 	require.NoError(t, err)
 	for _, desc := range []ocispec.Descriptor{first, second} {
 		require.FileExists(t, a.BlobPath(desc))
@@ -327,7 +327,7 @@ func TestFetchDuringPull(t *testing.T) {
 	ref := &registry.Reference{Registry: "localhost", Repository: "a", Reference: "v1"}
 	dst, err := NewLocalRepo(storage, ref)
 	require.NoError(t, err)
-	_, err = dst.PullModel(ctx, src, *ref, &options.NetworkOptions{Concurrency: 2})
+	_, err = dst.PullModel(ctx, src, ref.Reference, ref.Reference, &options.NetworkOptions{Concurrency: 2})
 	require.NoError(t, err)
 	var stop atomic.Bool
 	started := make(chan struct{})
@@ -365,7 +365,7 @@ func TestFetchDuringPull(t *testing.T) {
 	for range 2 {
 		go func() {
 			for range 10 {
-				if _, err := dst.PullModel(ctx, src, *ref, &options.NetworkOptions{Concurrency: 2}); err != nil {
+				if _, err := dst.PullModel(ctx, src, ref.Reference, ref.Reference, &options.NetworkOptions{Concurrency: 2}); err != nil {
 					pulls <- err
 					return
 				}
@@ -386,10 +386,10 @@ func TestFailedPullReleasesStorageLock(t *testing.T) {
 	require.NoError(t, err)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err = dst.PullModel(ctx, src, *ref, &options.NetworkOptions{Concurrency: 1})
+	_, err = dst.PullModel(ctx, src, ref.Reference, ref.Reference, &options.NetworkOptions{Concurrency: 1})
 	require.Error(t, err)
 	ref.Reference = "v1"
-	got, err := dst.PullModel(ctx, src, *ref, &options.NetworkOptions{Concurrency: 1})
+	got, err := dst.PullModel(ctx, src, ref.Reference, ref.Reference, &options.NetworkOptions{Concurrency: 1})
 	require.NoError(t, err)
 	require.Equal(t, desc.Digest, got.Digest)
 }
@@ -454,4 +454,42 @@ func TestPullNodeClosesSourceReader(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestPullSelectedModelPreservesTags(t *testing.T) {
+	ctx := context.Background()
+	src := testRepo(t)
+	first := pushModelKit(t, src, "v1", "first layer")
+	second := pushModelKit(t, src, "v2", "second layer")
+	storage := t.TempDir()
+	a, err := NewLocalRepo(storage, testRef)
+	require.NoError(t, err)
+	b, err := NewLocalRepo(storage, testRef)
+	require.NoError(t, err)
+
+	// Index selection resolves a digest but keeps the index's tag locally.
+	_, err = a.PullModel(ctx, src, first.Digest.String(), "index-v1", &options.NetworkOptions{Concurrency: 2})
+	require.NoError(t, err)
+	_, err = b.PullModel(ctx, src, second.Digest.String(), "index-v2", &options.NetworkOptions{Concurrency: 2})
+	require.NoError(t, err)
+
+	reopened, err := NewLocalRepo(storage, testRef)
+	require.NoError(t, err)
+	for tag, expected := range map[string]ocispec.Descriptor{"index-v1": first, "index-v2": second} {
+		got, err := reopened.Resolve(ctx, tag)
+		require.NoError(t, err)
+		require.Equal(t, expected.Digest, got.Digest)
+		require.Equal(t, []string{tag}, reopened.GetTags(expected))
+	}
+}
+
+func TestPullByDigestDoesNotTag(t *testing.T) {
+	ctx := context.Background()
+	src := testRepo(t)
+	desc := pushModelKit(t, src, "v1", "layer")
+	dst := testRepo(t)
+	got, err := dst.PullModel(ctx, src, desc.Digest.String(), desc.Digest.String(), &options.NetworkOptions{Concurrency: 1})
+	require.NoError(t, err)
+	require.Equal(t, desc.Digest, got.Digest)
+	require.Empty(t, dst.GetTags(desc))
 }
