@@ -17,11 +17,13 @@
 package local
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -92,7 +94,7 @@ func (li *localIndex) save() error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal index: %w", err)
 	}
-	if err := os.WriteFile(li.indexPath, indexJson, 0666); err != nil {
+	if err := writeIndexFile(li.indexPath, indexJson); err != nil {
 		return fmt.Errorf("failed to save index: %w", err)
 	}
 	return nil
@@ -212,8 +214,37 @@ func (ti *tagsIndex) save() error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal tags index: %w", err)
 	}
-	if err := os.WriteFile(ti.tagsIndexPath, jsonBytes, 0666); err != nil {
+	if err := writeIndexFile(ti.tagsIndexPath, jsonBytes); err != nil {
 		return fmt.Errorf("failed to save tags index: %w", err)
 	}
 	return nil
+}
+
+// writeIndexFile replaces an index only after its complete contents have been written.
+func writeIndexFile(path string, data []byte) error {
+	temporaryPath := filepath.Join(filepath.Dir(path), "."+filepath.Base(path)+"."+rand.Text())
+	file, err := os.OpenFile(temporaryPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temporaryPath)
+	defer file.Close()
+
+	if info, err := os.Stat(path); err == nil {
+		if err := file.Chmod(info.Mode().Perm()); err != nil {
+			return err
+		}
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if _, err := file.Write(data); err != nil {
+		return err
+	}
+	if err := file.Sync(); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	return os.Rename(temporaryPath, path)
 }

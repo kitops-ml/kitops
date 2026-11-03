@@ -20,6 +20,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
@@ -229,4 +233,66 @@ func TestDeleteIndexKeepsBlobSharedWithOtherRepository(t *testing.T) {
 
 	_, err = getManifest(t, repoB, indexDesc)
 	assert.NoError(t, err, "the other repository's index must still be readable")
+}
+
+func TestIndexSaveReplacesFile(t *testing.T) {
+	for _, tags := range []bool{false, true} {
+		name := "manifests"
+		if tags {
+			name = "tags"
+		}
+		t.Run(name, func(t *testing.T) {
+			repo := testRepo(t).(*localRepo)
+			desc := pushModelKit(t, repo, "v1", "first layer")
+			indexPath := repo.localIndex.indexPath
+			if tags {
+				indexPath = repo.localIndex.modelTags.tagsIndexPath
+			}
+			original, err := os.ReadFile(indexPath)
+			require.NoError(t, err)
+			reader, err := os.Open(indexPath)
+			require.NoError(t, err)
+			defer reader.Close()
+			if tags {
+				require.NoError(t, repo.Tag(context.Background(), desc, "v2"))
+			} else {
+				pushModelKit(t, repo, "v2", "second layer")
+			}
+			previous, err := io.ReadAll(reader)
+			require.NoError(t, err)
+			require.Equal(t, string(original), string(previous), "an open reader must retain the previous complete index")
+			current, err := os.ReadFile(indexPath)
+			require.NoError(t, err)
+			require.True(t, json.Valid(current))
+			require.NotEqual(t, string(original), string(current))
+		})
+	}
+}
+
+func TestWriteIndexFilePreservesPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix file permissions")
+	}
+	path := filepath.Join(t.TempDir(), "index.json")
+	require.NoError(t, os.WriteFile(path, []byte(`{"old":true}`), 0600))
+	require.NoError(t, os.Chmod(path, 0640))
+	require.NoError(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0640), info.Mode().Perm())
+}
+
+func TestWriteIndexFileCleansUpAfterReplaceFailure(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "index.json")
+	require.NoError(t, os.Mkdir(path, 0755))
+	marker := filepath.Join(path, "keep")
+	require.NoError(t, os.WriteFile(marker, []byte("original"), 0600))
+	require.Error(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	data, err := os.ReadFile(marker)
+	require.NoError(t, err)
+	require.Equal(t, "original", string(data))
+	entries, err := os.ReadDir(directory)
+	require.NoError(t, err)
+	require.Len(t, entries, 1, "failed replacement must not leave a temporary file")
 }
