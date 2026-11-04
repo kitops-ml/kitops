@@ -17,6 +17,7 @@
 package local
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,7 +26,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func TestWriteIndexFileWithBlockingReader(t *testing.T) {
+func TestWriteIndexFileWithOrdinaryWindowsReader(t *testing.T) {
 	directory := t.TempDir()
 	path := filepath.Join(directory, "index.json")
 	original := []byte(`{"original":true}`)
@@ -33,10 +34,18 @@ func TestWriteIndexFileWithBlockingReader(t *testing.T) {
 	reader, err := os.Open(path)
 	require.NoError(t, err)
 	defer reader.Close()
-	require.Error(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	updated := []byte(`{"new":true}`)
+	replaceErr := writeIndexFile(path, updated)
+	previous, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	require.Equal(t, original, previous)
 	current, err := os.ReadFile(path)
 	require.NoError(t, err)
-	require.Equal(t, original, current)
+	if replaceErr != nil {
+		require.Equal(t, original, current)
+	} else {
+		require.Equal(t, updated, current)
+	}
 	entries, err := os.ReadDir(directory)
 	require.NoError(t, err)
 	require.Len(t, entries, 1)
