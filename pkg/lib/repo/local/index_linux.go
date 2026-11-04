@@ -31,6 +31,13 @@ func copyIndexACL(source, target *os.File) error {
 			continue
 		}
 		if errors.Is(err, unix.ENODATA) {
+			_, err = unix.Fgetxattr(int(target.Fd()), name, nil)
+			if errors.Is(err, unix.ENODATA) || errors.Is(err, unix.ENOTSUP) {
+				continue
+			}
+			if err != nil {
+				return err
+			}
 			err = unix.Fremovexattr(int(target.Fd()), name)
 			if err != nil && !errors.Is(err, unix.ENODATA) && !errors.Is(err, unix.ENOTSUP) {
 				return err
