@@ -44,3 +44,7 @@ func copyIndexSecurity(source, target *os.File) error {
 	}
 	return copyIndexACL(source, target)
 }
+
+func replaceIndexFile(temporaryPath, path string) error {
+	return os.Rename(temporaryPath, path)
+}

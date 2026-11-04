@@ -22,3 +22,7 @@ import "os"
 
 func openIndex(path string) (*os.File, error)         { return os.Open(path) }
 func copyIndexSecurity(source, target *os.File) error { return os.ErrUnsupported }
+
+func replaceIndexFile(temporaryPath, path string) error {
+	return os.Rename(temporaryPath, path)
+}

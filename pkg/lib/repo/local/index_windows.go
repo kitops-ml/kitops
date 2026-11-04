@@ -18,6 +18,7 @@ package local
 
 import (
 	"os"
+	"path/filepath"
 
 	"golang.org/x/sys/windows"
 )
@@ -62,4 +63,13 @@ func copyIndexSecurity(source, target *os.File) error {
 		information |= windows.UNPROTECTED_DACL_SECURITY_INFORMATION
 	}
 	return windows.SetNamedSecurityInfo(target.Name(), windows.SE_FILE_OBJECT, information, owner, group, dacl, nil)
+}
+
+func replaceIndexFile(temporaryPath, path string) error {
+	directory, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return err
+	}
+	defer directory.Close()
+	return directory.Rename(filepath.Base(temporaryPath), filepath.Base(path))
 }

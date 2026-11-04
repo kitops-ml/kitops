@@ -253,10 +253,5 @@ func writeIndexFile(path string, data []byte) error {
 	if err := file.Close(); err != nil {
 		return err
 	}
-	directory, err := os.OpenRoot(filepath.Dir(path))
-	if err != nil {
-		return err
-	}
-	defer directory.Close()
-	return directory.Rename(filepath.Base(temporaryPath), filepath.Base(path))
+	return replaceIndexFile(temporaryPath, path)
 }
