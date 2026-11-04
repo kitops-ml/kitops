@@ -230,13 +230,20 @@ func writeIndexFile(path string, data []byte) error {
 	defer os.Remove(temporaryPath)
 	defer file.Close()
 
-	if info, err := os.Stat(path); err == nil {
-		if err := file.Chmod(info.Mode().Perm()); err != nil {
-			return err
+	source, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err == nil {
+		err = copyIndexSecurity(source, file)
+		closeErr := source.Close()
+		if err != nil {
+			return fmt.Errorf("failed to preserve index security: %w", err)
+		}
+		if closeErr != nil {
+			return closeErr
 		}
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
+
 	if _, err := file.Write(data); err != nil {
 		return err
 	}
