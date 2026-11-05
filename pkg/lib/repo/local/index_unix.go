@@ -39,10 +39,11 @@ func copyIndexSecurity(source, target *os.File) error {
 			return err
 		}
 	}
-	if err := target.Chmod(os.FileMode(original.Mode & 0777)); err != nil {
+	// Apply access restrictions before widening the staging file's mode bits.
+	if err := copyIndexACL(source, target); err != nil {
 		return err
 	}
-	return copyIndexACL(source, target)
+	return target.Chmod(os.FileMode(original.Mode & 0777))
 }
 
 func replaceIndexFile(temporaryPath, path string) error {

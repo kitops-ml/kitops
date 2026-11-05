@@ -26,3 +26,7 @@ func copyIndexSecurity(source, target *os.File) error { return os.ErrUnsupported
 func replaceIndexFile(temporaryPath, path string) error {
 	return os.Rename(temporaryPath, path)
 }
+
+func createPrivateIndexFile(path string) (*os.File, error) {
+	return nil, os.ErrUnsupported
+}

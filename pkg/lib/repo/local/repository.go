@@ -222,16 +222,29 @@ func (ti *tagsIndex) save() error {
 
 // writeIndexFile replaces an index only after its complete contents have been written.
 func writeIndexFile(path string, data []byte) error {
-	temporaryPath := filepath.Join(filepath.Dir(path), "."+filepath.Base(path)+"."+rand.Text())
-	file, err := os.OpenFile(temporaryPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
+	source, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if source != nil {
+		defer source.Close()
+	}
+
+	temporaryPath := filepath.Join(filepath.Dir(path), ".kitops-index-"+rand.Text())
+	var file *os.File
+	if source == nil {
+		// New indexes retain the process umask and the directory's default ACL.
+		file, err = os.OpenFile(temporaryPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
+	} else {
+		file, err = createPrivateIndexFile(temporaryPath)
+	}
 	if err != nil {
 		return err
 	}
 	defer os.Remove(temporaryPath)
 	defer file.Close()
 
-	source, err := os.OpenFile(path, os.O_WRONLY, 0)
-	if err == nil {
+	if source != nil {
 		err = copyIndexSecurity(source, file)
 		closeErr := source.Close()
 		if err != nil {
@@ -240,8 +253,6 @@ func writeIndexFile(path string, data []byte) error {
 		if closeErr != nil {
 			return closeErr
 		}
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return err
 	}
 
 	if _, err := file.Write(data); err != nil {

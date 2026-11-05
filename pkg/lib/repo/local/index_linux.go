@@ -25,7 +25,7 @@ import (
 )
 
 func copyIndexACL(source, target *os.File) error {
-	for _, name := range []string{"system.posix_acl_access", "security.selinux"} {
+	for _, name := range []string{"security.selinux", "system.posix_acl_access"} {
 		size, err := unix.Fgetxattr(int(source.Fd()), name, nil)
 		if errors.Is(err, unix.ENOTSUP) {
 			continue
@@ -61,4 +61,8 @@ func copyIndexACL(source, target *os.File) error {
 		}
 	}
 	return nil
+}
+
+func createPrivateIndexFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 }

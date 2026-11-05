@@ -61,3 +61,24 @@ func copyIndexACL(source, target *os.File) error {
 	}
 	return nil
 }
+
+func createPrivateIndexFile(path string) (*os.File, error) {
+	name, err := unix.BytePtrFromString(path)
+	if err != nil {
+		return nil, err
+	}
+	// Supply an empty, protected ACL at creation to prevent inherited read access.
+	// Layout and flag values are defined in sys/kauth.h.
+	security := struct {
+		Magic             uint32
+		Owner, Group      [16]byte
+		EntryCount, Flags uint32
+	}{Magic: 0x012cc16d, Flags: 1 << 17}
+	const noOwnerOrGroup = ^uint32(0) - 100 // KAUTH_UID_NONE and KAUTH_GID_NONE.
+	flags := unix.O_WRONLY | unix.O_CREAT | unix.O_EXCL | unix.O_CLOEXEC
+	fd, _, errno := unix.Syscall6(unix.SYS_OPEN_EXTENDED, uintptr(unsafe.Pointer(name)), uintptr(flags), uintptr(noOwnerOrGroup), uintptr(noOwnerOrGroup), 0600, uintptr(unsafe.Pointer(&security)))
+	if errno != 0 {
+		return nil, &os.PathError{Op: "open", Path: path, Err: errno}
+	}
+	return os.NewFile(fd, path), nil
+}

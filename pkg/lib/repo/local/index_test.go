@@ -28,6 +28,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
 	"github.com/opencontainers/go-digest"
@@ -332,4 +333,61 @@ func TestWriteIndexFileDoesNotInheritNewACL(t *testing.T) {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err, "replacement must not inherit an ACL absent from the original")
 	require.Equal(t, `{"new":true}`, string(data))
+}
+
+func TestWriteIndexFileWithLongRepositoryName(t *testing.T) {
+	path := constants.IndexJsonPathForRepo(t.TempDir(), "registry.example/"+strings.Repeat("a", 148))
+	original := []byte(`{"old":true}`)
+	updated := []byte(`{"new":true}`)
+	require.NoError(t, os.WriteFile(path, original, 0600))
+	require.NoError(t, writeIndexFile(path, updated))
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, updated, got)
+}
+
+func TestCreatePrivateIndexFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix file permissions")
+	}
+	path := filepath.Join(t.TempDir(), "staging")
+	file, err := createPrivateIndexFile(path)
+	require.NoError(t, err)
+	defer file.Close()
+	info, err := file.Stat()
+	require.NoError(t, err)
+	require.Zero(t, info.Mode().Perm()&0077, "staging must not grant access to other users")
+}
+
+func TestCreatePrivateIndexFileDoesNotInheritACL(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("macOS ACL")
+	}
+	directory := t.TempDir()
+	output, err := exec.Command("chmod", "+a", "everyone allow read,file_inherit", directory).CombinedOutput()
+	require.NoError(t, err, string(output))
+	t.Cleanup(func() { _ = exec.Command("chmod", "-RN", directory).Run() })
+	path := filepath.Join(directory, "staging")
+	file, err := createPrivateIndexFile(path)
+	require.NoError(t, err)
+	defer file.Close()
+	output, err = exec.Command("ls", "-le", path).CombinedOutput()
+	require.NoError(t, err)
+	require.NotContains(t, string(output), "everyone", "staging must not inherit public read access")
+}
+
+func TestWriteNewIndexFilePreservesDefaultPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix file permissions")
+	}
+	directory := t.TempDir()
+	baseline := filepath.Join(directory, "baseline")
+	require.NoError(t, os.WriteFile(baseline, nil, 0666))
+	want, err := os.Stat(baseline)
+	require.NoError(t, err)
+	path := filepath.Join(directory, "index.json")
+	require.NoError(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	got, err := os.Stat(path)
+	require.NoError(t, err)
+	require.Equal(t, want.Mode().Perm(), got.Mode().Perm())
 }

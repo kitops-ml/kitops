@@ -19,6 +19,7 @@ package local
 import (
 	"os"
 	"path/filepath"
+	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
@@ -72,4 +73,25 @@ func replaceIndexFile(temporaryPath, path string) error {
 	}
 	defer directory.Close()
 	return directory.Rename(filepath.Base(temporaryPath), filepath.Base(path))
+}
+
+func createPrivateIndexFile(path string) (*os.File, error) {
+	name, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return nil, err
+	}
+	// Grant only the owner access, without inheriting the directory's DACL.
+	security, err := windows.SecurityDescriptorFromString("D:P(A;;FA;;;OW)")
+	if err != nil {
+		return nil, err
+	}
+	attributes := windows.SecurityAttributes{
+		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
+		SecurityDescriptor: security,
+	}
+	handle, err := windows.CreateFile(name, windows.GENERIC_WRITE, windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, &attributes, windows.CREATE_NEW, windows.FILE_ATTRIBUTE_NORMAL, 0)
+	if err != nil {
+		return nil, &os.PathError{Op: "open", Path: path, Err: err}
+	}
+	return os.NewFile(uintptr(handle), path), nil
 }

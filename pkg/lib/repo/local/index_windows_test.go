@@ -72,3 +72,13 @@ func TestWriteIndexFilePreservesDACL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, before.String(), after.String())
 }
+
+func TestCreatePrivateIndexFileDACL(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "staging")
+	file, err := createPrivateIndexFile(path)
+	require.NoError(t, err)
+	defer file.Close()
+	security, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	require.NoError(t, err)
+	require.Equal(t, "D:P(A;;FA;;;OW)", security.String())
+}
