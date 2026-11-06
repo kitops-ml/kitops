@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/opencontainers/image-spec/specs-go"
@@ -33,7 +34,7 @@ func parseIndex(indexPath string) (*ocispec.Index, error) {
 			SchemaVersion: 2,
 		},
 	}
-	indexBytes, err := os.ReadFile(indexPath)
+	indexBytes, err := readIndexFile(indexPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return index, nil
@@ -47,7 +48,7 @@ func parseIndex(indexPath string) (*ocispec.Index, error) {
 }
 
 func parseTagsIndex(tagsIndexPath string) (*tagsIndex, error) {
-	bytes, err := os.ReadFile(tagsIndexPath)
+	bytes, err := readIndexFile(tagsIndexPath)
 	tags := emptyTagsIndex(tagsIndexPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -84,4 +85,13 @@ func canSafelyDeleteManifest(ctx context.Context, storagePath string, desc ocisp
 		}
 	}
 	return refCount <= 1, nil
+}
+
+func readIndexFile(path string) ([]byte, error) {
+	file, err := openIndex(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return io.ReadAll(file)
 }
