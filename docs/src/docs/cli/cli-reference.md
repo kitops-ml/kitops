@@ -45,7 +45,7 @@ kit cache clear
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -72,7 +72,7 @@ kit cache clear [flags]
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -99,7 +99,7 @@ kit cache info [flags]
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -153,7 +153,7 @@ kit diff local://jozu.ml/foo:latest remote://jozu.ml/foo:latest
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -224,7 +224,483 @@ kit import myorg/myrepo --file ./path/to/Kitfile
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index
+
+Manage ModelKit indexes
+
+### Synopsis
+
+Create and manage ModelKit indexes.
+
+A ModelKit index groups variants of a model under a single reference. Use
+'kit pull -l' or 'kit unpack -l' to select a ModelKit from an index by label.
+
+### Examples
+
+```
+# Create an index in local storage
+kit index create my-org/my-model:all
+
+# Add ModelKits to the index
+kit index add my-org/my-model:all my-org/my-model:q4_0
+kit index add my-org/my-model:all my-org/my-model:q8_0
+
+# Remove a ModelKit from the index
+kit index remove my-org/my-model:all my-org/my-model:q4_0
+
+# List indexes in local storage
+kit index list
+
+# List the ModelKits in the index
+kit index info my-org/my-model:all
+
+# Print the index manifest
+kit index inspect my-org/my-model:all
+
+# Push the index to a remote registry
+kit index push my-org/my-model:all registry.example.com/my-org/my-model:all
+
+# Pull an index from a remote registry
+kit index pull registry.example.com/my-org/my-model:all
+
+# Delete the index
+kit index delete my-org/my-model:all
+```
+
+### Options
+
+```
+  -h, --help   help for index
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index add
+
+Add a ModelKit to a ModelKit index
+
+### Synopsis
+
+Add a ModelKit to a ModelKit index, or update the labels and annotations of
+a ModelKit already in it. Labels and annotations are merged into what the entry
+already has.
+
+```
+kit index add [flags] INDEX MODELKIT
+```
+
+### Examples
+
+```
+# Add a ModelKit to an index
+kit index add my-org/my-model:all my-org/my-model:q4_0
+
+# Add a ModelKit to an index by digest
+kit index add my-org/my-model:all my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+
+# Add a ModelKit, labelling the entry
+kit index add my-org/my-model:all my-org/my-model:q4_0 -l quantization=q4_0 -l vram=6GB
+
+# Add a ModelKit with a JSON label value
+kit index add my-org/my-model:all my-org/my-model:q4_0 -l 'gpuArchs:=["sm_80","sm_90"]'
+
+# Annotate an entry already in the index, and drop one of its labels
+kit index add my-org/my-model:all my-org/my-model:q4_0 --annotate org.example.tested=true -l vram-
+```
+
+### Options
+
+```
+  -r, --remote                 Resolve the ModelKit in its remote registry instead of local storage
+  -l, --label stringArray      Set a label on the entry as key=value, or as key:=<json> for a JSON value, or remove one as key-. Can be specified multiple times
+      --annotate stringArray   Set an annotation on the entry as key=value, or remove one as key-. Can be specified multiple times
+      --plain-http             Use plain HTTP when connecting to remote registries
+      --tls-verify             Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings       Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string            Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string             Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int        Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string           Proxy to use for connections (overrides proxy set by environment)
+  -h, --help                   help for add
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index create
+
+Create a ModelKit index
+
+### Synopsis
+
+Create an empty ModelKit index in local storage.
+
+```
+kit index create [flags] INDEX
+```
+
+### Examples
+
+```
+# Create an index in local storage
+kit index create my-org/my-model:all
+
+# Create an index using a full reference
+kit index create registry.example.com/my-org/my-model:all
+```
+
+### Options
+
+```
+  -h, --help   help for create
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index delete
+
+Delete a ModelKit index
+
+### Synopsis
+
+Delete a ModelKit index from local storage. The ModelKits it references are
+not removed. To delete an index from a remote registry, use
+'kit remove --remote'.
+
+If specified by tag, the index is only untagged while other tags refer to it,
+unless --force is used.
+
+```
+kit index delete [flags] INDEX
+```
+
+### Examples
+
+```
+# Delete an index from local storage
+kit index delete my-org/my-model:all
+
+# Delete an index and every other tag that refers to it
+kit index delete --force my-org/my-model:all
+
+# Delete an index by digest
+kit index delete my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+
+# Delete all untagged indexes
+kit index delete --all
+
+# Delete all locally stored indexes
+kit index delete --all --force
+```
+
+### Options
+
+```
+  -f, --force   Delete the index and all other tags that refer to it
+  -a, --all     Delete all untagged indexes
+  -h, --help    help for delete
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index info
+
+Show the ModelKits contained in an index
+
+### Synopsis
+
+List the ModelKits in a ModelKit index, with their labels and annotations.
+
+```
+kit index info [flags] INDEX
+```
+
+### Examples
+
+```
+# See the contents of a local index:
+kit index info my-org/my-model:all
+
+# See the contents of a local index by digest:
+kit index info my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+
+# See the contents of a remote index:
+kit index info --remote registry.example.com/my-org/my-model:all
+
+# Print the contents of an index as JSON:
+kit index info --format json my-org/my-model:all
+```
+
+### Options
+
+```
+  -r, --remote             Check remote registry instead of local storage
+      --format string      Output format: table or json (default "table")
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for info
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index inspect
+
+Inspect a ModelKit index's manifest
+
+### Synopsis
+
+Print the contents of a ModelKit index manifest.
+
+By default, kit will check local storage for the specified index. To
+inspect an index stored on a remote registry, use the --remote flag.
+
+```
+kit index inspect [flags] INDEX
+```
+
+### Examples
+
+```
+# Inspect a local index:
+kit index inspect my-org/my-model:all
+
+# Inspect a local index by digest:
+kit index inspect my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+
+# Inspect a remote index:
+kit index inspect --remote registry.example.com/my-org/my-model:all
+```
+
+### Options
+
+```
+  -r, --remote             Check remote registry instead of local storage
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for inspect
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index list
+
+List ModelKit indexes in local storage
+
+### Synopsis
+
+List ModelKit indexes in local storage, with the number of ModelKits each one
+references.
+
+```
+kit index list [flags]
+```
+
+### Examples
+
+```
+# List local indexes
+kit index list
+
+# List local indexes as JSON
+kit index list --format json
+```
+
+### Options
+
+```
+      --format string   Output format: table or json (default "table")
+  -h, --help            help for list
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index pull
+
+Download a ModelKit index from a registry
+
+### Synopsis
+
+Pull a ModelKit index from a remote registry. Only the index is pulled; use
+'kit pull -l' or 'kit unpack -l' to pull one of its ModelKits.
+
+```
+kit index pull [flags] INDEX
+```
+
+### Examples
+
+```
+# Pull an index from a remote registry
+kit index pull registry.example.com/my-org/my-model:all
+
+# Pull a specific version of an index, which is stored untagged
+kit index pull registry.example.com/my-org/my-model@sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+```
+
+### Options
+
+```
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for pull
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index push
+
+Upload a ModelKit index to a specified registry
+
+### Synopsis
+
+Push a ModelKit index to a remote registry. Only the index is pushed; the
+ModelKits it references must already be in the destination repository.
+
+```
+kit index push [flags] SOURCE [DESTINATION]
+```
+
+### Examples
+
+```
+# Push an index to a remote registry
+kit index push registry.example.com/my-org/my-model:all
+
+# Push a local index to a remote registry
+kit index push my-org/my-model:all registry.example.com/my-org/my-model:all
+```
+
+### Options
+
+```
+      --plain-http         Use plain HTTP when connecting to remote registries
+      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string       Proxy to use for connections (overrides proxy set by environment)
+  -h, --help               help for push
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
+      --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
+  -v, --verbose count      Increase verbosity of output (use -vv for more)
+```
+
+## kit index remove
+
+Remove a ModelKit from a ModelKit index
+
+### Synopsis
+
+Remove a ModelKit from a ModelKit index in local storage. The ModelKit itself
+is not removed.
+
+```
+kit index remove [flags] INDEX MODELKIT
+```
+
+### Examples
+
+```
+# Remove a ModelKit from an index
+kit index remove my-org/my-model:all my-org/my-model:q4_0
+
+# Remove a ModelKit from an index by digest
+kit index remove my-org/my-model:all sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+```
+
+### Options
+
+```
+  -h, --help   help for remove
+```
+
+### Options inherited from parent commands
+
+```
+      --config string      Alternate path to root storage directory for CLI
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -277,7 +753,7 @@ kit info --remote registry.example.com/my-model:1.0.0
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -346,7 +822,7 @@ kit init myorg/mymodel --remote --output ./Kitfile
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -397,7 +873,7 @@ kit inspect --remote registry.example.com/my-model:1.0.0
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -446,7 +922,7 @@ Template placeholders:
 * <code v-pre>{{ .Tags }}</code> - slice of tags for the modelkit
 * <code v-pre>{{ .Digest }}</code> - digest of the modelkit
 * <code v-pre>{{ .ModelName }}</code> - name defined in the Kitfile
-* <code v-pre>{{ .Size }}</code> - total size of the modelkit
+* <code v-pre>{{ .Size }}</code> - total size of the modelkit, in bytes
 * <code v-pre>{{ .Author }}</code> - author from the Kitfile
 
 ```
@@ -494,7 +970,7 @@ kit list -f prompts:pdf-processing
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -542,7 +1018,7 @@ kit login docker.io --password-stdin -u docker_user
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -577,7 +1053,7 @@ kit logout ghcr.io
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -643,7 +1119,7 @@ kit pack . -t registry.example.com/my-org/my-model:latest --push
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -657,6 +1133,9 @@ Retrieve modelkits from a remote registry to your local environment.
 Downloads modelkits from a specified registry. The downloaded modelkits
 are stored in the local registry.
 
+To pull from a ModelKit index, select a ModelKit with --label (-l). It is stored
+locally under the index's reference.
+
 ```
 kit pull [flags] registry/repository[:tag|@digest]
 ```
@@ -666,26 +1145,30 @@ kit pull [flags] registry/repository[:tag|@digest]
 ```
 # Pull the latest version of a modelkit from a remote registry
 kit pull registry.example.com/my-model:latest
+
+# Pull one ModelKit out of a ModelKit index
+kit pull registry.example.com/my-model:all -l quantization=q4_0
 ```
 
 ### Options
 
 ```
-      --plain-http         Use plain HTTP when connecting to remote registries
-      --tls-verify         Require TLS and verify certificates when connecting to remote registries (default true)
-      --tls-cert strings   Path to TLS cert to add to trust store (flag can be repeated)
-      --cert string        Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
-      --key string         Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
-      --concurrency int    Maximum number of simultaneous uploads/downloads (default 5)
-      --proxy string       Proxy to use for connections (overrides proxy set by environment)
-  -h, --help               help for pull
+  -l, --label stringArray   Select the ModelKit to pull from a ModelKit index by label, as key=value. Can be specified multiple times
+      --plain-http          Use plain HTTP when connecting to remote registries
+      --tls-verify          Require TLS and verify certificates when connecting to remote registries (default true)
+      --tls-cert strings    Path to TLS cert to add to trust store (flag can be repeated)
+      --cert string         Path to client certificate used for authentication (can also be set via environment variable KITOPS_CLIENT_CERT)
+      --key string          Path to client certificate key used for authentication (can also be set via environment variable KITOPS_CLIENT_KEY)
+      --concurrency int     Maximum number of simultaneous uploads/downloads (default 5)
+      --proxy string        Proxy to use for connections (overrides proxy set by environment)
+  -h, --help                help for pull
 ```
 
 ### Options inherited from parent commands
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -735,7 +1218,7 @@ kit push mymodel:1.0.0 registry.example.com/my-org/my-model:latest
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -814,7 +1297,7 @@ kit remove --remote --force my-registry.com/my-org/my-repo:my-tag
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -873,7 +1356,7 @@ kit skill -o
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -939,7 +1422,7 @@ kit tag myregistry.com/myrepo/mykit:latest myregistry.com/myrepo/mykit:v1.0.0
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -959,6 +1442,8 @@ not found, it searches the remote registry and retrieves it. This process
 ensures that the necessary components are always available for unpacking,
 optimizing for efficiency by fetching only specified components from the
 remote registry when necessary.
+
+To unpack from a ModelKit index, select a ModelKit with --label (-l).
 
 The content that is unpacked can be limited via the --filter (-f) flag. For example,
 use
@@ -995,6 +1480,9 @@ kit unpack [flags] [registry/]repository[:tag|@digest]
 # Unpack all components of a modelkit to the current directory
 kit unpack myrepo/my-model:latest -d /path/to/unpacked
 
+# Unpack one ModelKit out of a ModelKit index
+kit unpack myrepo/my-model:all -l quantization=q4_0 -d /path/to/unpacked
+
 # Unpack only the model and datasets of a modelkit to a specified directory
 kit unpack myrepo/my-model:latest --filter=model,datasets -d /path/to/unpacked
 
@@ -1030,6 +1518,7 @@ kit unpack myrepo/my-model:latest --as-skill -o
   -o, --overwrite                  Overwrites existing files and directories in the target unpack directory without prompting
   -i, --ignore-existing            Skip unpacking files if a file with that name already exists
   -f, --filter stringArray         Filter what is unpacked from the modelkit based on type and name. Can be specified multiple times
+  -l, --label stringArray          Select the ModelKit to unpack from a ModelKit index by label, as key=value. Can be specified multiple times
       --include-remote             Include remote datasets in unpacked files
       --kitfile                    Unpack only Kitfile (deprecated: use --filter=kitfile)
       --model                      Unpack only model (deprecated: use --filter=model)
@@ -1051,7 +1540,7 @@ kit unpack myrepo/my-model:latest --as-skill -o
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
@@ -1083,7 +1572,7 @@ kit version [flags]
 
 ```
       --config string      Alternate path to root storage directory for CLI
-      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default 'info') (default "info")
+      --log-level string   Log messages above specified level ('trace', 'debug', 'info', 'warn', 'error') (default "info")
       --progress string    Configure progress bars for longer operations (options: none, plain, fancy) (default "plain")
   -v, --verbose count      Increase verbosity of output (use -vv for more)
 ```
