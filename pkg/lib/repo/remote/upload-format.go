@@ -32,7 +32,9 @@ const (
 )
 
 const (
-	uploadChunkDefaultSize int64 = 100 << 20
+	// DefaultUploadChunkSize is the default maximum size of each chunked blob upload request.
+	DefaultUploadChunkSize int64 = 100 << 20
+	uploadChunkDefaultSize       = DefaultUploadChunkSize
 )
 
 var (
