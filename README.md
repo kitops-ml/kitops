@@ -1,5 +1,7 @@
 <img width="1270" alt="KitOps" src="https://github.com/kitops-ml/kitops/assets/10517533/41295471-fe49-4011-adf6-a215f29890c2" id="top">
 
+**English** | [简体中文](./README.zh-CN.md)
+
 ## KitOps: Standards-based packaging & versioning for AI/ML projects
 
 [![LICENSE](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](./LICENSE)
@@ -192,3 +194,4 @@ At KitOps, inclusivity, empathy, and responsibility are at our core. Please read
             <img src="https://img.shields.io/badge/Back_to_Top-black?style=for-the-badge&logo=github&logoColor=white" alt="Back to Top">
         </a>
 </div>
+<!-- AGENT_MODIFIED: Human review required before merge -->
