@@ -278,7 +278,8 @@ func NewDownloadProgress() (*DownloadProgressBar, *ProgressLogger) {
 }
 
 func (pb *DownloadProgressBar) TrackDownload(rc io.ReadCloser, name string, totalSize int64) io.ReadCloser {
-	if pb.progress == nil {
+	// mpb bars with total <= 0 never complete, so Done() would block forever.
+	if pb.progress == nil || totalSize <= 0 {
 		return rc
 	}
 	bar := pb.progress.New(totalSize,
