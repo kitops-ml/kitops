@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
@@ -74,6 +75,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 	}
 
 	var kitfile *artifact.KitFile
+	var preDownloaded []kfgen.FileListing
 	if opts.kitfilePath == "-" {
 		kitfile = &artifact.KitFile{}
 		if err := kitfile.LoadModel(os.Stdin); err != nil {
@@ -86,6 +88,14 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 		}
 		kitfile = kf
 	} else {
+		// Kitfile generation reads SKILL.md frontmatter from disk.
+		preDownloaded = collectSkillMDFiles(dirListing)
+		if len(preDownloaded) > 0 {
+			if err := hf.DownloadFiles(ctx, repo, commitSHA, tmpDir, preDownloaded, opts.token, opts.concurrency, repoType); err != nil {
+				return nil, fmt.Errorf("error downloading SKILL.md files: %w", err)
+			}
+			setListingContextDir(dirListing, tmpDir)
+		}
 		kf, err := generateKitfile(dirListing, repo, tmpDir, opts.depth)
 		if err != nil {
 			return nil, err
@@ -118,6 +128,7 @@ func importUsingHF(ctx context.Context, opts *importOptions) (*ProvenanceData, e
 	if err != nil {
 		return nil, err
 	}
+	toDownload = slices.DeleteFunc(toDownload, func(f kfgen.FileListing) bool { return slices.Contains(preDownloaded, f) })
 	if err := hf.DownloadFiles(ctx, repo, commitSHA, tmpDir, toDownload, opts.token, opts.concurrency, repoType); err != nil {
 		return nil, fmt.Errorf("error downloading repository: %w", err)
 	}
@@ -175,6 +186,26 @@ func filterListingForKitfile(contents *kfgen.DirectoryListing, kitfile *artifact
 	}
 
 	return pathsToDownload, nil
+}
+
+func collectSkillMDFiles(dir *kfgen.DirectoryListing) []kfgen.FileListing {
+	var result []kfgen.FileListing
+	for _, file := range dir.Files {
+		if file.Name == "SKILL.md" {
+			result = append(result, file)
+		}
+	}
+	for i := range dir.Subdirs {
+		result = append(result, collectSkillMDFiles(&dir.Subdirs[i])...)
+	}
+	return result
+}
+
+func setListingContextDir(dir *kfgen.DirectoryListing, contextDir string) {
+	dir.ContextDir = contextDir
+	for i := range dir.Subdirs {
+		setListingContextDir(&dir.Subdirs[i], contextDir)
+	}
 }
 
 // hfSourceURI builds the SourceURI for a HF import. Datasets get a "datasets/"
