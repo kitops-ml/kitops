@@ -59,6 +59,7 @@ type (
 		Docs            []Docs      `json:"docs,omitempty" yaml:"docs,omitempty"`
 		Prompts         []Prompt    `json:"prompts,omitempty" yaml:"prompts,omitempty"`
 		MCPServers      []MCPServer `json:"mcpServers,omitempty" yaml:"mcpServers,omitempty"`
+		Agent           *Agent      `json:"agent,omitempty" yaml:"agent,omitempty"`
 	}
 
 	Package struct {
@@ -345,6 +346,8 @@ func (kf *KitFile) Validate() (warnings []string, err error) {
 			}
 		}
 	}
+
+	kf.validateAgent(addErr)
 
 	if len(errs) > 0 {
 		// Iterating through the paths map is random; sort to get a consistent message

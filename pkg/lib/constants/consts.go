@@ -58,6 +58,8 @@ const (
 	// layer within its annotations (e.g. storing prompts within code-type layers)
 	LayerSubtypeAnnotation = "ml.kitops.modelkit.layer-subtype"
 	LayerSubtypePrompt     = "prompt"
+	// LayerSubtypeAgent marks the code layer that holds an Agent Definition file.
+	LayerSubtypeAgent = "agent"
 
 	// OriginalTagAnnotation records, on a ModelKit index entry, the tag the ModelKit was added
 	// to the index under. Only the tag is stored, since an index may only reference ModelKits
