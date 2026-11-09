@@ -15,8 +15,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       vue3-marquee:
-        specifier: ^4.2.2
-        version: 4.2.2(vue@3.5.34)
+        specifier: ^4.3.0
+        version: 4.3.0(vue@3.5.34)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.0
@@ -1403,9 +1403,9 @@ packages:
     peerDependencies:
       vue: ^3.2.45
 
-  vue3-marquee@4.2.2:
-    resolution: {integrity: sha512-FeFvGUVInKfFilXFcnl8sDRBJBZCZSNLlQDquJErB9db6W2xICRVqbRV/jtdzsEP0rftarLQhx9MeEAU0+TPuQ==}
-    engines: {node: '>=12'}
+  vue3-marquee@4.3.0:
+    resolution: {integrity: sha512-NSOU7irnmfQ8EI6Qd2K75Vdz5gP0MbiXpzjZLmO2RWCx27SWjoiQOb12gpSNdpSJAu6gNg40nadkKPpEI8kgrQ==}
+    engines: {node: '>=14.16'}
     peerDependencies:
       vue: ^3.2
 
@@ -2938,7 +2938,7 @@ snapshots:
     dependencies:
       vue: 3.5.34
 
-  vue3-marquee@4.2.2(vue@3.5.34):
+  vue3-marquee@4.3.0(vue@3.5.34):
     dependencies:
       vue: 3.5.34
 
