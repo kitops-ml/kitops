@@ -4,7 +4,7 @@ The Kitfile manifest for AI/ML is a YAML file designed to encapsulate all the ne
 
 ## Overview
 
-The manifest is structured into several key sections: `manifestVersion`, `package`, `code`, `datasets`, `docs`, `prompts`, `mcpServers`, and `model`. Each section serves a specific purpose in describing the AI/ML package components and requirements.
+The manifest is structured into several key sections: `manifestVersion`, `package`, `code`, `datasets`, `docs`, `prompts`, `mcpServers`, `agent`, and `model`. Each section serves a specific purpose in describing the AI/ML package components and requirements.
 
 ### `manifestVersion`
 
@@ -77,6 +77,27 @@ This section provides general information about the AI/ML project.
   - `path`: Location of the `.mcpb` file relative to the context.
   - `description`: Description of the MCP server.
 
+### `agent`
+
+- **Description**: The Agent Definition of an agent ModelKit, in its `agent:` block form. The block carries the `spec` of an Agent Definition as defined in the [Agent Definition Specification](./agent-definition.md); `apiVersion`, `kind` and `metadata` are omitted, and `metadata.name` is the package's `name`. The block is validated when the Kitfile is loaded and is stored in the ModelKit's config. When a ModelKit carries both an `agent` block and a definition file in its `code` layer, the block is the definition and the file is ignored (Agent Definition Specification §4.3).
+- **Type**: Object
+  - `framework`: The framework the agent runs under. Required unless `base` is given.
+  - `base`: A base agent to compose from.
+    - `modelkit`: Reference to the base agent ModelKit.
+  - `needs`: List of runtime values the agent consumes (Agent Definition Specification §6).
+    - `name`: Required; unique within `needs`, and a valid environment variable name.
+    - `target`: `env` (default) or `file`.
+    - `mountPath`: Path the value is written to; required for, and only with, `target: file`.
+    - `optional`: Whether resolution may fail without aborting. Default `false`.
+    - `from`: Where the value comes from; exactly one of `envFrom`, `file`, `text`, `keychain`, `vault`, `oidc`. Omitted for a bare need.
+  - `includes`: List of modules the resolver provides (Agent Definition Specification §7 and §8).
+    - `name`: Required; unique within `includes`.
+    - `type`: `llm`, `mcp`, `policy` or `skill`.
+    - `source`: Where the module comes from; exactly one of `model`, `modelkit` or `endpoint`, as the type permits. A `modelkit` beginning with `./` names an entry of this Kitfile by name: an `mcpServers` entry for an `mcp` module, a `prompts` entry for a `skill` module, the `model` for an `llm` module.
+    - `transport`: `http` or `sse`; required for, and only with, a remote `mcp` module.
+    - `headers`: Headers sent to a remote `mcp` module's endpoint. Values may reference needs as `${needs.NAME}`.
+    - `config`: Non-secret settings passed to the module.
+
 ### `model`
 
 - **Description**: Details of the trained models included in the package.
@@ -120,6 +141,22 @@ mcpServers:
   - name: filesystem
     path: filesystem.mcpb
     description: MCP server providing filesystem access.
+agent:
+  framework: claude-code
+  needs:
+    - name: GITHUB_TOKEN
+  includes:
+    - name: filesystem
+      type: mcp
+      source:
+        modelkit: ./filesystem
+    - name: github
+      type: mcp
+      source:
+        endpoint: https://api.githubcopilot.com/mcp/
+      transport: http
+      headers:
+        Authorization: "Bearer ${needs.GITHUB_TOKEN}"
 model:
     name: ModelName
     path: models/model.h5

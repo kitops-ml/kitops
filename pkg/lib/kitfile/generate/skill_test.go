@@ -454,3 +454,111 @@ func TestGenerateKitfile_RootSkillOverridesSubdir(t *testing.T) {
 		t.Errorf("prompt name = %q, want %q", kitfile.Prompts[0].Name, "root")
 	}
 }
+
+func TestAddAgentSkills(t *testing.T) {
+	// Skills live inside the framework directory, which is excluded from layer
+	// classification, so they are added back by path with their frontmatter.
+	dir := t.TempDir()
+	skillDir := filepath.Join(dir, ".claude", "skills", "code-review")
+	if err := os.MkdirAll(skillDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	skillMD := "---\nname: code-review\ndescription: Reviews code for correctness\n---\nDo the review.\n"
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte(skillMD), 0644); err != nil {
+		t.Fatal(err)
+	}
+	rulePath := filepath.Join(dir, ".cursor", "rules", "style.mdc")
+	if err := os.MkdirAll(filepath.Dir(rulePath), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(rulePath, []byte("rule"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	kitfile := &artifact.KitFile{ManifestVersion: "1.0.0"}
+	AddAgentSkills(kitfile, dir, []string{
+		".claude/skills/code-review",
+		".cursor/rules/style.mdc",
+		".claude/skills/missing",
+	})
+
+	if len(kitfile.Prompts) != 1 {
+		t.Fatalf("got %d prompts, want 1 (a file and a missing path are skipped): %+v", len(kitfile.Prompts), kitfile.Prompts)
+	}
+	skill := kitfile.Prompts[0]
+	if skill.Path != ".claude/skills/code-review/" {
+		t.Errorf("skill path = %q, want a trailing slash for a directory", skill.Path)
+	}
+	if skill.Name != "code-review" || skill.Description != "Reviews code for correctness" {
+		t.Errorf("skill frontmatter not applied: %+v", skill)
+	}
+
+	// Adding the same skill twice must not duplicate the layer.
+	AddAgentSkills(kitfile, dir, []string{".claude/skills/code-review"})
+	if len(kitfile.Prompts) != 1 {
+		t.Errorf("got %d prompts after re-adding, want 1", len(kitfile.Prompts))
+	}
+}
+
+func TestGenerateAgentKitfilePacksDefinitionInCodeLayer(t *testing.T) {
+	// A resolver looks for a standalone definition in the code layer.
+	kitfile := GenerateAgentKitfile(AgentContent{Definition: "agent-definition.yaml"}, nil, t.TempDir())
+	if len(kitfile.Code) != 1 || kitfile.Code[0].Path != "agent-definition.yaml" {
+		t.Errorf("Code = %+v, want the definition as its own code entry", kitfile.Code)
+	}
+	if kitfile.Agent != nil {
+		t.Errorf("no agent block may sit beside a definition file, got %+v", kitfile.Agent)
+	}
+}
+
+func TestGenerateAgentKitfileCarriesAgentContentOnly(t *testing.T) {
+	// An agent ModelKit carries the agent, not the repository it operates on.
+	dir := t.TempDir()
+	for _, rel := range []string{"src/main.go", "vendor/dep.go", ".git/HEAD", "go.mod", "model.safetensors"} {
+		full := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte("x"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	skillDir := filepath.Join(dir, ".claude", "skills", "rev")
+	if err := os.MkdirAll(skillDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("---\nname: rev\n---\nx"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "CLAUDE.md"), []byte("# i"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	kitfile := GenerateAgentKitfile(AgentContent{
+		Prompts: []string{"CLAUDE.md"},
+		Skills:  []string{".claude/skills/rev"},
+		Bundles: []string{"filesystem.mcpb"},
+	}, &artifact.Package{Name: "agent"}, dir)
+
+	if kitfile.Model != nil {
+		t.Errorf("an agent ModelKit must carry no model: %+v", kitfile.Model)
+	}
+	if len(kitfile.Code) != 0 {
+		t.Errorf("an agent ModelKit must carry no code layers: %+v", kitfile.Code)
+	}
+	if len(kitfile.DataSets) != 0 || len(kitfile.Docs) != 0 {
+		t.Errorf("unexpected layers: datasets=%+v docs=%+v", kitfile.DataSets, kitfile.Docs)
+	}
+	if len(kitfile.Prompts) != 2 {
+		t.Fatalf("got %d prompts, want the prompt file and the skill: %+v", len(kitfile.Prompts), kitfile.Prompts)
+	}
+	if kitfile.Prompts[0].Path != "CLAUDE.md" {
+		t.Errorf("prompts[0] = %+v, want CLAUDE.md first", kitfile.Prompts[0])
+	}
+	if kitfile.Prompts[1].Path != ".claude/skills/rev/" || kitfile.Prompts[1].Name != "rev" {
+		t.Errorf("prompts[1] = %+v, want the skill with its frontmatter name", kitfile.Prompts[1])
+	}
+	if len(kitfile.MCPServers) != 1 || kitfile.MCPServers[0].Path != "filesystem.mcpb" {
+		t.Errorf("MCPServers = %+v, want the bundle", kitfile.MCPServers)
+	}
+}
