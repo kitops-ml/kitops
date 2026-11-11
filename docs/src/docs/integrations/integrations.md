@@ -31,6 +31,7 @@ The most fully-featured model registry integration for ModelKits is the [Jozu Hu
 * GitLab Container Registry (on-prem only, [see their docs](https://gitlab.com/gitlab-org/container-registry/-/blob/master/docs/supported-media-types.md?ref_type=heads))
 * Google Artifact Registry
 * Harbor
+* Hippius Hub
 * IBM Cloud Container Registry
 * JFrog Artifactory
 * Jozu Hub
@@ -107,5 +108,3 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 ## 🤩 Community Feedback
 
 If you've used KitOps with a product or project we've missed, please [open an issue](https://github.com/jozu-ai/kitops/issues/new/choose) in our GitHub repository.
-
-For help please join our [Discord community](https://discord.gg/Tapeh8agYy).
