@@ -22,9 +22,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/kitops-ml/kitops/pkg/output"
 )
+
+// staleCacheAge is how long a cache entry must go unmodified before CleanCacheDir removes it.
+const staleCacheAge = 24 * time.Hour
 
 var cacheHomeDir = os.TempDir()
 
@@ -95,6 +99,8 @@ func MkCacheFile(subDir CacheSubDir, basename string) (tempFile *os.File, cleanu
 	return f, cleanup, nil
 }
 
+// CleanCacheDir removes leftovers in a cache subdirectory, e.g. from cancelled commands. Entries modified
+// within staleCacheAge are kept, since they may belong to a command still running in another process.
 func CleanCacheDir(subDir CacheSubDir) error {
 	cacheSubDir := filepath.Join(cacheHome(), string(subDir))
 	ds, err := os.ReadDir(cacheSubDir)
@@ -106,6 +112,13 @@ func CleanCacheDir(subDir CacheSubDir) error {
 	}
 	for _, d := range ds {
 		entryPath := filepath.Join(cacheSubDir, d.Name())
+		modTime, err := latestModTime(entryPath)
+		if err != nil {
+			return fmt.Errorf("failed to check %s: %w", entryPath, err)
+		}
+		if time.Since(modTime) < staleCacheAge {
+			continue
+		}
 		if d.IsDir() {
 			if err := os.RemoveAll(entryPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("failed to remove directory %s: %w", entryPath, err)
@@ -117,6 +130,31 @@ func CleanCacheDir(subDir CacheSubDir) error {
 		}
 	}
 	return nil
+}
+
+// latestModTime returns the most recent modification time of path or anything inside it.
+func latestModTime(path string) (time.Time, error) {
+	var latest time.Time
+	err := filepath.WalkDir(path, func(_ string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		info, err := d.Info()
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		if info.ModTime().After(latest) {
+			latest = info.ModTime()
+		}
+		return nil
+	})
+	return latest, err
 }
 
 func StatCache() (totalSize int64, subdirsSize map[string]int64, err error) {
