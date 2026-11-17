@@ -22,7 +22,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem/ignore"
@@ -68,7 +67,7 @@ func VerifySubpath(context, subDir string) (absPath, relPath string, err error) 
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get relative path: %w", err)
 	}
-	if strings.Contains(relPath, "..") {
+	if !filepath.IsLocal(relPath) {
 		return "", "", fmt.Errorf("paths must be within context directory")
 	}
 

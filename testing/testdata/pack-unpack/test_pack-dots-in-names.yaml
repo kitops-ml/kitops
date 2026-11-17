@@ -1,0 +1,19 @@
+description: Pack and unpack files and directories with '..' in their names
+kitfile: |
+  manifestVersion: 1.0.0
+  package:
+    name: test-dots-in-names
+  code:
+    - path: .
+  datasets:
+    - name: dataset-with-dots-in-files
+      path: data
+    - name: dataset-with-dots-in-path
+      path: data..v2
+files:
+  - main.py
+  - weights..bin
+  - notes...txt
+  - data/part1.csv
+  - data/v1..2.csv
+  - data..v2/file1.csv
