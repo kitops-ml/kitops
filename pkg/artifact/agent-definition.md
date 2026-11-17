@@ -2,13 +2,11 @@
 
 ## 1. Overview
 
-An Agent Definition is a YAML document that declares an AI agent as a composable, governed unit: its framework, the runtime values it consumes, and the modules (LLM providers, MCP servers, policies, skills) the resolver must configure to run it.
+An Agent Definition is a YAML document that declares an AI agent as a governed unit: its framework, the runtime values it consumes, and the modules (LLM providers, MCP servers, policies, skills) the resolver must configure to run it.
 
 An Agent Definition travels in a ModelKit in one of two forms (section 4): as an `agent:` block in the Kitfile, or as a standalone file in the `code:` layer. Either way it is packaged alongside the prompts, skills, model weights, and datasets the agent uses. The resolver pulls the ModelKit, locates the definition, and acts on its `spec:` block.
 
-Agents compose through `spec.base` references, enabling restricted variants, capability extensions, and environment-specific configurations without duplicating definitions.
-
-An **agent resolver** is any runtime that can read an Agent Definition, resolve its references, and produce a running agent. Resolvers differ in what they guarantee, not in how they read the definition: a developer tool that runs the agent locally and a governed runtime that adds a gateway, policy enforcement and audit read the same document. Section 12 lists what a conforming resolver must do.
+An **agent resolver** is any runtime that can read an Agent Definition, resolve its references, and produce a running agent. Resolvers differ in what they guarantee, not in how they read the definition: a developer tool that runs the agent locally and a governed runtime that adds a gateway, policy enforcement and audit read the same document. Section 11 lists what a conforming resolver must do.
 
 ---
 
@@ -143,7 +141,7 @@ Packing turns each part of an agent's Kitfile into a part of the ModelKit:
 
 An **agent ModelKit** carries the definition and the agent's content — prompts, rules, local skills, bundles — and not the repository the agent works on. The repository is the agent's subject: a resolver runs the agent in a working directory of the operator's choosing, and an artifact that also carried the code it was authored in could not be run anywhere else.
 
-A packer MUST set the annotation `ml.kitops.modelkit.layer-subtype: agent` on the code layer that holds a definition file, and MUST NOT set it on any other layer. The annotation marks the layer as holding the definition and nothing more: it carries no field of the definition, since the effective framework and modules are known only after the `base` chain resolves. A layer so marked holds exactly one file, the definition, so that it can be fetched on its own and a consumer can tell from the manifest alone that a ModelKit carries a definition file. Locating the definition follows section 4.3: the resolver reads the config first, and only when it holds no `agent:` block does it look for the marked layer. A ModelKit packed before this annotation existed carries its definition file in an unmarked code layer, so a resolver that finds no marked layer MUST fall back to scanning the code layers for the document; the annotation's absence never means "no definition".
+A packer MUST set the annotation `ml.kitops.modelkit.layer-subtype: agent` on the code layer that holds a definition file, and MUST NOT set it on any other layer. The annotation marks the layer as holding the definition and nothing more: it carries no field of the definition. A layer so marked holds exactly one file, the definition, so that it can be fetched on its own and a consumer can tell from the manifest alone that a ModelKit carries a definition file. Locating the definition follows section 4.3: the resolver reads the config first, and only when it holds no `agent:` block does it look for the marked layer. A ModelKit packed before this annotation existed carries its definition file in an unmarked code layer, so a resolver that finds no marked layer MUST fall back to scanning the code layers for the document; the annotation's absence never means "no definition".
 
 ---
 
@@ -164,13 +162,10 @@ In the `agent:` block form (section 4.1) only the contents of `spec` appear: `ap
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `framework` | Yes (root agents) | Identifier for the agent framework (e.g., `claude-code`, `pydantic-ai`). Inherited from base in composed agents. |
-| `base` | No | Reference to a base agent ModelKit for composition (section 10). |
+| `framework` | Yes | Identifier for the agent framework (e.g., `claude-code`, `pydantic-ai`). |
 | `needs` | No | List of runtime value declarations (see section 6). |
 | `includes` | No | List of module declarations (see sections 7 and 8). |
 | `egress` | No | List of hosts the agent runtime may reach, some with headers the gateway sets on their requests (see section 9). |
-
-A root agent (no `spec.base`) MUST declare `spec.framework`. A composed agent (with `spec.base`) inherits `framework` from its base and MUST NOT override it. A composed agent MAY declare `spec.framework` as a validation assertion — the resolver MUST reject the definition if it does not match the base.
 
 Every field of a definition is one this specification defines. A resolver MUST reject a definition carrying a field this specification does not define, at any level other than an opaque `config` map (section 8). A field a resolver needs that the definition lacks belongs in a revision of this specification, not in an extension one resolver understands and another silently ignores.
 
@@ -262,13 +257,13 @@ A need whose resolver is `envFrom` naming the need's own name — the canonical 
 
 1. The host environment variable of that name. When it is set, its value is used.
 2. When the variable is unset, the host keychain item under the resolver's keychain service name, with the need's name as the account. When that item exists, its value is used.
-3. When neither exists, the need is unresolved: a required need causes deploy-time rejection and an optional need is skipped with a deploy-time warning (section 10.6).
+3. When neither exists, the need is unresolved: a required need causes deploy-time rejection and an optional need is skipped with a deploy-time warning (section 6.6).
 
 The environment variable takes precedence when both exist. The resolver MUST record in the need's audit entry which source answered: `envFrom` when the variable supplied the value, `keychain` when the keychain item did. An `envFrom` resolver naming any other variable, and every other resolver kind, reads only the source it names.
 
 The keychain service name is the resolver's choice, not this specification's. A resolver MUST document it, MUST name it wherever it reports an unresolved need, and MUST store nothing else under it. That convention is the whole mechanism: an operator stores, inspects and removes those items with the host's own keychain tools.
 
-The default exists to keep common cases free of boilerplate. A definition declares a need by name; whether the value comes from the shell or the keychain is a per-host choice that the definition does not encode. Policies MAY still forbid implicit-env resolution where it would be inappropriate (section 12).
+The default exists to keep common cases free of boilerplate. A definition declares a need by name; whether the value comes from the shell or the keychain is a per-host choice that the definition does not encode. Policies MAY still forbid implicit-env resolution where it would be inappropriate (section 11).
 
 ### 6.4 Operator-side resolver configuration
 
@@ -301,7 +296,15 @@ In place of the value, the agent runtime and every local MCP server receive:
 
 The placeholder's form, and what becomes of the provider's conventional variable names when an `llm` module declares `credential`, are set out in Appendix A.1.
 
-Withholding is decided by the definition's declarations alone. A need is withheld because a gateway consumer references it, never because of its name or its value. Withholding, including the provider variable names of Appendix A.1, is computed before any reference to an optional need that failed to resolve is dropped (sections 8.1, 8.2 and 9.6), so it does not depend on what resolved on the host. It is computed on the merged chain (sections 10.1 and 10.7), so a derived definition that adds a gateway consumer referencing an inherited need withholds that need from every consumer, including a local consumer that relied on the real value under the base. The resolver MUST report, at agent start, each need it withheld.
+Withholding is decided by the definition's declarations alone. A need is withheld because a gateway consumer references it, never because of its name or its value. Withholding, including the provider variable names of Appendix A.1, is computed before any reference to an optional need that failed to resolve is dropped (sections 8.1, 8.2 and 9.6), so it does not depend on what resolved on the host. The resolver MUST report, at agent start, each need it withheld.
+
+### 6.6 Resolution
+
+The resolver MUST resolve needs before it configures any module:
+
+1. Normalize default `target`, `optional`, and `from` values on every `needs` entry.
+2. Resolve every `needs` entry using its `from:` (or operator override). Required entries that fail to resolve MUST cause deploy-time rejection. Optional entries that fail to resolve are skipped and produce a deploy-time warning.
+3. Configure the modules with the runtime environment that `needs` produced.
 
 ---
 
@@ -320,7 +323,7 @@ Local skills are packed into the ModelKit's `prompts:` layers and declared with 
 
 Every module MUST have a `name` (unique within `spec.includes`) and a `type`.
 
-**Relative references.** A `source.modelkit` that begins with `./` is a relative reference: it names an entry of the ModelKit that carries the declaring document, by that entry's `name`, in the section the module's type reads from — `mcpServers` for `mcp`, `prompts` for `skill`, `model` for `llm`. The form exists for content packaged beside the agent that uses it. A plain `source.modelkit` names a different ModelKit in a registry, and a bare name would be one too, so the prefix is what tells them apart. A relative reference MUST resolve to exactly one entry: a reference to no entry, or to more than one, MUST be rejected. In a composed definition the ModelKit is the one the module was declared in, so a derived definition that inherits such a module uses the base's entry, not one of its own, and replaces it by declaring a module of the same name (section 10.1). A `policy` module has no relative form, because a Kitfile has no policy section.
+**Relative references.** A `source.modelkit` that begins with `./` is a relative reference: it names an entry of the ModelKit that carries the declaring document, by that entry's `name`, in the section the module's type reads from — `mcpServers` for `mcp`, `prompts` for `skill`, `model` for `llm`. The form exists for content packaged beside the agent that uses it. A plain `source.modelkit` names a different ModelKit in a registry, and a bare name would be one too, so the prefix is what tells them apart. A relative reference MUST resolve to exactly one entry: a reference to no entry, or to more than one, MUST be rejected. A `policy` module has no relative form, because a Kitfile has no policy section.
 
 ---
 
@@ -393,13 +396,13 @@ spec:
 
 Constraints:
 
-- `credential` MUST name a need declared or inherited in `spec.needs`.
+- `credential` MUST name a need declared in `spec.needs`.
 - A module with `credential` MUST name, in `source.model`, a provider the provider table has an entry for, written `<provider>/<model>`. A `source.model` with no provider prefix, a provider the table has no entry for, and a module without `source.model` MUST be rejected.
 - The need MUST have `target: env` (section 6.2). A `credential` naming a file-target need MUST be rejected.
 - `credential` is allowed only where the gateway holds the module's provider entry, which is where the gateway reaches the provider on the agent's behalf. Which of the two applies is decided by the framework the resolver runs. Where the framework reaches its provider itself, with a credential from the runtime environment, a module that declares `credential` MUST be rejected: withholding the provider's variable names (section 6.5) would take the credential from the framework and give it to nothing.
 - `credential` is permitted on `llm` modules only. It MUST be rejected on any other module type.
 
-A module whose `credential` names an optional need that failed to resolve MUST be skipped: the resolver does not register its provider, and MUST report the module it skipped. A required need that fails to resolve aborts resolution (section 10.6).
+A module whose `credential` names an optional need that failed to resolve MUST be skipped: the resolver does not register its provider, and MUST report the module it skipped. A required need that fails to resolve aborts resolution (section 6.6).
 
 The **provider table** is the resolver's: the LLM providers whose credential its gateway can apply, keyed by the provider prefix of `source.model`, each with the variable names that conventionally carry that provider's credential (Appendix A.2).
 
@@ -479,7 +482,7 @@ A relative reference (section 7) names this ModelKit's `mcpServers` entry by its
 
 #### Header interpolation
 
-A header value MAY contain one or more `${needs.NAME}` references. `NAME` MUST match a need declared (or inherited) in `spec.needs`. The gateway MUST substitute each occurrence with the need's resolved value before the header is sent, and MUST NOT expose the substituted value to the agent runtime. Constraints:
+A header value MAY contain one or more `${needs.NAME}` references. `NAME` MUST match a need declared in `spec.needs`. The gateway MUST substitute each occurrence with the need's resolved value before the header is sent, and MUST NOT expose the substituted value to the agent runtime. Constraints:
 
 - A header value that references a need with `target: file` MUST be rejected — file-target needs deliver bytes to a path, not strings.
 - A header that references an optional need which failed to resolve MUST be dropped: the gateway does not send it, and does not substitute the empty string. The module's other headers are still sent.
@@ -585,7 +588,7 @@ Declares a skill the agent requires. The resolver mounts the skill's contents wh
 
 A relative reference (section 7) names this ModelKit's `prompts` entry by its `name` (see `prompts` in the Kitfile reference). The resolver MUST take that entry's contents and mount them as it mounts a skill pulled from the registry.
 
-A skill packed in `prompts:` that no module names is still mounted with the ModelKit's other content (section 12), at its own path. The module is what places it where the framework looks.
+A skill packed in `prompts:` that no module names is still mounted with the ModelKit's other content (section 11), at its own path. The module is what places it where the framework looks.
 
 #### Structured fields
 
@@ -665,7 +668,7 @@ Constraints:
 - `host` MUST be an exact DNS name under the rules of section 9.2. A wildcard MUST be rejected, because headers applied to every name under a suffix go to whoever registers one. The `tcp://` form MUST be rejected, because the gateway terminates only on port 443. An address MUST be rejected.
 - An object entry without `headers` MUST be treated exactly as the string entry for its `host`, including the wildcard and `tcp://` forms of section 9.2; the constraints below apply only to an entry that carries `headers`.
 - Each header name MUST be a valid HTTP field name. It MUST NOT be `Host`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Keep-Alive`, `TE`, `Trailer` or `Upgrade`, and MUST NOT begin with `Proxy-`, compared without regard to case. The gateway owns those.
-- A header value follows the rules for header interpolation in section 8.2: `NAME` MUST match a need declared or inherited in `spec.needs`, a reference to a need with `target: file` MUST be rejected, and any other `${...}` token MUST be rejected. The value is substituted in the gateway at request time, and the agent never receives it (section 6.5).
+- A header value follows the rules for header interpolation in section 8.2: `NAME` MUST match a need declared in `spec.needs`, a reference to a need with `target: file` MUST be rejected, and any other `${...}` token MUST be rejected. The value is substituted in the gateway at request time, and the agent never receives it (section 6.5).
 - A header value MAY instead be a mapping with the single key `basic`, whose value is a string template under the same rules. The gateway renders the template, encodes the result in base64 and sends `Basic`, a space, and the encoding. A credential a service expects as a Basic user-password pair (RFC 7617) is written `basic: "user:${needs.NAME}"`, and the need holds the raw secret. A mapping with any other key, or with more than one key, MUST be rejected, as MUST a `basic` template that is empty.
 - An empty or null value MUST be rejected.
 - A host MUST appear in at most one object entry per document.
@@ -676,9 +679,9 @@ For each object entry in the resolved set, the gateway terminates the host's con
 
 ### 9.5 Validation
 
-Validation runs on the merged chain, after the merge of section 10.7, because a derived definition can add or remove the modules and needs the checks depend on. The resolver MUST reject the definition if:
+The resolver MUST reject the definition if:
 
-- an object entry's header references a need that is not declared anywhere in the chain;
+- an object entry's header references a need that is not declared;
 - an object entry's header references a need with `target: file`;
 - an object entry's host is a provider host;
 - any entry, string or object, names the endpoint host of a remote MCP module, or is a wildcard that covers one. The gateway reaches a remote MCP server holding the module's headers, under policy, and enforcing the module's `tools` allow-list; a direct route would bypass all three;
@@ -686,7 +689,7 @@ Validation runs on the merged chain, after the merge of section 10.7, because a 
 
 ### 9.6 Unresolved needs
 
-A header whose value references an optional need that failed to resolve is dropped from its object entry; the gateway does not apply it. An object entry left with no headers remains in the resolved set as the string entry for its host. A required need that fails to resolve aborts resolution (section 10.6).
+A header whose value references an optional need that failed to resolve is dropped from its object entry; the gateway does not apply it. An object entry left with no headers remains in the resolved set as the string entry for its host. A required need that fails to resolve aborts resolution (section 6.6).
 
 ### 9.7 Registry entries
 
@@ -705,121 +708,18 @@ Constraints:
 
 - The entry is a URL with the scheme `oci` and a host, and nothing else. A trailing slash after the host MAY be accepted; a port, path, query, fragment or user MUST be rejected. The gateway terminates on port 443 only, so a registry on another port cannot take a login this way. A path would name a repository, and the login applies to the registry, not to a repository.
 - The host MUST be an exact DNS name under the rules of section 9.2. A wildcard MUST be rejected, as MUST an address.
-- A registry MAY also appear in a string entry. A document MUST NOT list a host of a registry entry in an object entry: the entry's login and the object entry's headers would both claim the request's `Authorization`. Section 10.7 applies the same rule across the chain.
+- A registry MAY also appear in a string entry. A document MUST NOT list a host of a registry entry in an object entry: the entry's login and the object entry's headers would both claim the request's `Authorization`.
 - The hosts of a registry entry are subject to the checks of section 9.5 as the host of an object entry is.
 
 The gateway signs in to the registry with the store's login, and the agent never receives it (Appendix A.5). Where the store holds no login for the registry, the agent reaches it as an anonymous client and the resolver reports so at agent start. The hosts a registry's responses name, its token service and content hosts, are admitted under the rules of Appendix A.5. An entry is still a grant and not a condition for the agent to start, as section 9.2 says of every entry.
 
 ---
 
-## 10. Composition
-
-An agent definition MAY reference a base agent via `spec.base`:
-
-```yaml
-spec:
-  base:
-    modelkit: registry.example.com/org/base-agent:v1
-```
-
-`spec.base.modelkit` references another agent ModelKit, one that carries an Agent Definition of its own. The derived agent inherits the base's `needs`, `includes`, `egress`, and content layers, and can add, override, or restrict. The resolver MUST resolve the full base chain before merging.
-
-### 10.1 Module merge rules
-
-The resolver MUST apply these rules when merging a derived agent's `spec.includes` with its base:
-
-| Scenario | Behavior |
-|----------|----------|
-| New name with type/source | Added to the module set |
-| Same name with type/source | Overrides the base module entirely, unless the base module is a policy (section 10.2) |
-| Same name with nothing else | Removes that module from the resolved set, unless the base module is a policy (section 10.2) |
-
-Every module other than a policy is the derived agent's to override or remove: its LLM, its MCP servers, its skills. Policies are the exception, and the only one.
-
-**Override example:**
-
-```yaml
-- name: primary-llm
-  type: llm
-  source:
-    model: anthropic/claude-sonnet-4-20250514
-```
-
-**Remove example:**
-
-```yaml
-- name: github
-```
-
-### 10.2 Policy accumulation
-
-Policies are additive and protected. A derived agent MUST NOT remove or replace a policy from its base: the name of a policy module anywhere in the chain is reserved, and a derived definition that declares a module of that name — a name-only entry, a policy with a different source, or a module of any other type — is a validation error the resolver MUST reject. A derived agent adds policies; it never touches the ones it inherits.
-
-This is a deliberate security property: restrictions only accumulate up the composition chain. To create a less restricted variant, compose from a less restricted base.
-
-### 10.3 Needs merge rules
-
-The resolver MUST apply these rules when merging a derived agent's `spec.needs` with its base:
-
-| Scenario | Behavior |
-|----------|----------|
-| New name | Added to the resolved `needs` set |
-| Existing name, same `target` and `mountPath`, new `from` | `from` is replaced (definition-level override) |
-| Existing name, `optional: true` in base, `optional: false` in derived | Tightening: allowed |
-| Existing name, `optional: false` in base, `optional: true` in derived | Loosening: allowed when no gateway consumer references the need in the merged chain (below); otherwise MUST be rejected |
-| Existing name, different `target` or `mountPath` | MUST be rejected (changes the consumption contract) |
-| Name-only removal entry | MUST be rejected (needs are additive only) |
-
-Needs are never removed: a need the base declares binds every descendant. A need the derived definition leaves with nothing to consume it, because it removed the module that read it, is **dangling**, and what the resolver can do about it depends on how the need was consumed.
-
-A need a gateway consumer references (section 6.5) is consumed only through that reference, so the resolver can see the reference go. A need that some definition in the chain references from a gateway consumer and that none references in the merged chain is dangling: the resolver MUST NOT deliver it to the agent runtime or to local MCP servers, MUST NOT require or resolve it, and MUST report it at agent start, naming the definition that referenced it and the module whose removal left it unreferenced. A derived definition that references it again, from a module of its own, makes it an ordinary withheld need.
-
-A need consumed through the environment has no reference the resolver can watch, so only the derived definition can say it is no longer read, and it says so by loosening the need to `optional: true`: the need stays in the chain, resolves when the host supplies it, and no longer blocks the agent when it does not. Loosening is permitted only while no gateway consumer in the merged chain references the need. A need a kept module's `credential` or `headers`, or an inherited egress entry, still references MUST stay as the base declared it, since an unset optional need would drop the header or skip the module and change what a vetted base sends (section 10.7). The resolver MUST report each loosened need at agent start.
-
-### 10.4 Content layers
-
-Content layers (`code:`, `prompts:`, `model:`, `datasets:`) belong to the ModelKit, not the Agent Definition. Layer composition follows the underlying ModelKit composition semantics: layers from a base ModelKit are inherited and mounted alongside the derived ModelKit's content. This specification does not redefine layer merge rules. A module with a relative `source.modelkit` (section 7) keeps naming the ModelKit it was declared in when it is inherited; a derived definition replaces what the module refers to by declaring a module of the same name (section 10.1).
-
-### 10.5 Composition depth
-
-`spec.base` references MAY chain (A extends B extends C). The resolver MUST flatten the chain at deploy time, applying merge rules at each level bottom-up. The resolver MUST reject circular references.
-
-### 10.6 Resolution order
-
-The resolver MUST flatten in this order:
-
-1. Walk the base chain bottom-up, merging `needs`, `includes`, `egress`, and content layers per the rules above.
-2. Normalize default `target`, `optional`, and `from` values on every `needs` entry.
-3. Resolve every `needs` entry using its `from:` (or operator override). Required entries that fail to resolve MUST cause deploy-time rejection. Optional entries that fail to resolve are skipped and produce a deploy-time warning.
-4. Configure the resolved modules with the runtime environment that `needs` produced.
-
-### 10.7 Egress merge rules
-
-The resolved `spec.egress` is the union of the entries of every definition in the chain. An entry contributed by more than one definition appears once. The resolver MUST apply these rules when merging a derived agent's `spec.egress` with its base:
-
-| Scenario | Behavior |
-|----------|----------|
-| New string entry | Added to the resolved `egress` set |
-| New object entry, for a host no ancestor lists | Added to the resolved `egress` set |
-| Object entry for a host an ancestor lists only in string form | Added; the gateway applies its headers to that host |
-| String entry for a host an ancestor lists as an object entry | Allowed; the inherited object entry is unchanged |
-| Object entry for a host an ancestor lists as an object entry | MUST be rejected |
-| Registry entry for a registry an ancestor lists as a registry entry | Appears once |
-| Registry entry for a registry whose hosts an ancestor lists in an object entry, or object entry for a host of a registry an ancestor lists as a registry entry | MUST be rejected |
-
-A derived definition MAY add entries and MUST NOT remove an inherited one. An inherited object entry MUST NOT be changed or redeclared, whether its headers would differ or not.
-
-Changing an inherited object entry would change which credential a vetted base sends to a host. Object entries therefore accumulate up the chain as policies do (section 10.2).
-
-Validation of the merged set (section 9.5) and withholding (section 6.5) are computed after this merge.
-
----
-
-## 11. Examples
+## 10. Examples
 
 Each example shows a definition in file form; the contents of its `spec` serve unchanged as an `agent:` block (section 4.1). The surrounding ModelKit (Kitfile, content layers) is omitted; it is packaged with standard ModelKit semantics and the resolver mounts content layers as described in section 4.
 
-### 11.1 Root Agent — Code Review
+### 10.1 Code Review
 
 ```yaml
 apiVersion: kitops.org/v1
@@ -856,69 +756,7 @@ spec:
 
 The Anthropic SDK in the framework reads `ANTHROPIC_API_KEY` from the runtime environment. The agent-definition.yaml declares the need; the SDK finds it. Prompts are packed into the ModelKit's `prompts:` layers, mounted by the resolver, and discovered by the framework; a local skill would be packed there too and declared with a `skill` module that names it (section 8.4).
 
-### 11.2 Composed Agent — Restricted Variant
-
-```yaml
-apiVersion: kitops.org/v1
-kind: AgentDefinition
-metadata:
-  name: code-review-agent-restricted
-spec:
-  base:
-    modelkit: registry.example.com/org/code-review-agent:v1
-  includes:
-    - name: primary-llm
-      type: llm
-      source:
-        model: anthropic/claude-sonnet-4-20250514
-
-    - name: no-database-access
-      type: policy
-      source:
-        modelkit: jozu.com/policies/no-database-access:v1
-```
-
-**Resolved composition:**
-
-- `framework: claude-code` — inherited
-- `needs: ANTHROPIC_API_KEY` — inherited from base
-- `primary-llm` — overridden to Sonnet
-- `filesystem` MCP — inherited
-- `tool-restrictions` policy — inherited
-- `content-guardrail` policy — inherited
-- `no-database-access` policy — added
-- Prompts and skills — inherited from base content layers
-
-### 11.3 Composed Agent — Air-Gapped Environment
-
-```yaml
-apiVersion: kitops.org/v1
-kind: AgentDefinition
-metadata:
-  name: code-review-agent-onprem
-spec:
-  base:
-    modelkit: registry.example.com/org/code-review-agent:v1
-  needs:
-    - name: ANTHROPIC_API_KEY
-      optional: true
-  includes:
-    - name: primary-llm
-      type: llm
-      source:
-        modelkit: jozu.com/models/llama3:70b
-
-    - name: local-git
-      type: mcp
-      source:
-        modelkit: jozu.com/mcps/git:v1
-      config:
-        repoPath: /repos
-```
-
-The local LLM does not require an API key, so the inherited `ANTHROPIC_API_KEY` need would be dangling. No gateway consumer references it (the base's `primary-llm` declares no `credential`), so the derived definition loosens it to `optional: true` (section 10.3): the need stays in the chain, and an air-gapped host where the variable is unset no longer blocks the agent.
-
-### 11.4 Root Agent — Local Model with Guardrails
+### 10.2 Local Model with Guardrails
 
 ```yaml
 apiVersion: kitops.org/v1
@@ -963,7 +801,7 @@ spec:
 
 The fine-tuned model weights, system prompts, analysis skills, and regulatory reference datasets are packaged in the ModelKit's `model:`, `prompts:` and `datasets:` layers. `analyst-llm` names the packed model, so the resolver serves it locally; `ratio-analysis` names a packed skill, so the resolver places it where the framework looks for skills. The prompts and datasets no module names are mounted with the rest and discovered by the framework.
 
-### 11.5 Root Agent — Short-Lived AWS Credentials via OIDC
+### 10.3 Short-Lived AWS Credentials via OIDC
 
 ```yaml
 apiVersion: kitops.org/v1
@@ -1026,34 +864,29 @@ The AWS SDK in the cloudwatch MCP respects the standard `AWS_WEB_IDENTITY_TOKEN_
 
 ---
 
-## 12. Conformance
+## 11. Conformance
 
 A resolver conforms to this specification when it meets every requirement below. Each item names the section that defines it, except the few that are stated only here. A conforming resolver MUST:
 
 1. Pull a ModelKit and locate the Agent Definition (section 4): the Kitfile's `agent:` block when there is one, otherwise the document with `kind: AgentDefinition` in its code layer. If neither exists, the ModelKit is not a valid agent ModelKit. If more than one such document exists in the code layer, the resolver MUST reject.
 2. Parse the Agent Definition and validate it per section 5: its `spec` in either form, and `apiVersion` and `kind` in file form. Reject a field this specification does not define.
-3. Resolve the full `spec.base` chain if present, rejecting circular references.
-4. Merge `spec.includes` according to the rules in section 10.1.
-5. Reject any attempt to remove or replace a policy module inherited from the base chain (section 10.2).
-6. Merge `spec.needs` according to the rules in section 10.3: reject target changes, removal entries, and the loosening of a need a gateway consumer references in the merged chain; report each loosened need; and treat as dangling each need that a gateway consumer references in some definition of the chain and none references in the merged chain, delivering it nowhere, not requiring it, and reporting it.
-7. Validate that `spec.framework` is consistent across the composition chain (section 5.1).
-8. Flatten the chain, normalize `needs` defaults, resolve every need and configure the modules in the order of section 10.6, rejecting when a required need fails to resolve and skipping an optional one with a warning.
-9. Deliver `env`-target needs as environment variables in the agent runtime, except needs withheld under section 6.5, which receive their placeholder or nothing as that section requires. Deliver `file`-target needs as files at their declared `mountPath`, on a non-persistent filesystem.
-10. Provide an operator-side configuration mechanism for resolver backends and per-need overrides (section 6.4).
-11. Allow policies to inspect the resolved `needs` and `includes` shape, so admission rules can forbid (for example) implicit-env resolution for credential-shaped names.
-12. For each `llm` module, register an inference provider accessible to the framework, serving the model locally where the module names one through `source.modelkit`, with the gateway applying the module's `credential` where it declares one (section 8.1).
-13. For each `mcp` module, launch or connect the server and make its tools available to the framework, restricted to the module's `tools` allow-list where it declares one (section 8.2 and Appendix A.3).
-14. For each `policy` module, load the policy artifact and enforce it at the evaluation points declared by the policy itself.
-15. For each `skill` module, take the skill from the referenced ModelKit, or from the `prompts` entry of the ModelKit the module was declared in when the reference is relative (section 7), and mount it where the framework discovers skills (section 8.4).
-16. Mount the ModelKit's content layers (code, prompts, model, datasets), whether or not a module names them, so the framework can discover them by convention.
-17. Never write resolved `needs` values to disk on the host outside of the agent runtime. Audit logs MUST record the resolver kind that produced each value, but MUST NOT record the value itself.
-18. Resolve a bare need from the host environment variable of its name and, when that variable is unset, from the host keychain item with the resolver's documented service name and the need's name as account, recording which of the two answered (section 6.3).
-19. Validate `spec.egress` per section 9 on each document and on the merged chain, and merge it according to the rules in section 10.7.
-20. Withhold every need a gateway consumer references, and the provider variable names of each `llm` module that declares `credential`, from the agent runtime and local MCP servers, delivering a placeholder where section 6.5 requires one, in the form of Appendix A.1, and report each need it withheld.
-21. Apply every object egress entry at the gateway as Appendix A.4 requires, or reject the definition.
-22. Skip, and report, each `llm` module whose `credential` names an optional need that failed to resolve, and drop each remote MCP or egress header that references one (sections 8.1, 8.2 and 9.6).
-23. Apply every registry entry at the gateway as section 9.7 and Appendix A.5 require, with the login the host's registry login store holds for the registry, never delivering that login to the agent runtime, and report each registry entry for which the store holds no login.
-24. Record each value given to the gateway for a gateway consumer, with the consumer and its source, and never the value itself, and withhold the value when that record cannot be written.
+3. Normalize `needs` defaults, resolve every need and then configure the modules, in the order of section 6.6, rejecting when a required need fails to resolve and skipping an optional one with a warning.
+4. Deliver `env`-target needs as environment variables in the agent runtime, except needs withheld under section 6.5, which receive their placeholder or nothing as that section requires. Deliver `file`-target needs as files at their declared `mountPath`, on a non-persistent filesystem.
+5. Provide an operator-side configuration mechanism for resolver backends and per-need overrides (section 6.4).
+6. Allow policies to inspect the resolved `needs` and `includes` shape, so admission rules can forbid (for example) implicit-env resolution for credential-shaped names.
+7. For each `llm` module, register an inference provider accessible to the framework, serving the model locally where the module names one through `source.modelkit`, with the gateway applying the module's `credential` where it declares one (section 8.1).
+8. For each `mcp` module, launch or connect the server and make its tools available to the framework, restricted to the module's `tools` allow-list where it declares one (section 8.2 and Appendix A.3).
+9. For each `policy` module, load the policy artifact and enforce it at the evaluation points declared by the policy itself.
+10. For each `skill` module, take the skill from the referenced ModelKit, or from the `prompts` entry of the ModelKit the module was declared in when the reference is relative (section 7), and mount it where the framework discovers skills (section 8.4).
+11. Mount the ModelKit's content layers (code, prompts, model, datasets), whether or not a module names them, so the framework can discover them by convention.
+12. Never write resolved `needs` values to disk on the host outside of the agent runtime. Audit logs MUST record the resolver kind that produced each value, but MUST NOT record the value itself.
+13. Resolve a bare need from the host environment variable of its name and, when that variable is unset, from the host keychain item with the resolver's documented service name and the need's name as account, recording which of the two answered (section 6.3).
+14. Validate `spec.egress` per section 9.
+15. Withhold every need a gateway consumer references, and the provider variable names of each `llm` module that declares `credential`, from the agent runtime and local MCP servers, delivering a placeholder where section 6.5 requires one, in the form of Appendix A.1, and report each need it withheld.
+16. Apply every object egress entry at the gateway as Appendix A.4 requires, or reject the definition.
+17. Skip, and report, each `llm` module whose `credential` names an optional need that failed to resolve, and drop each remote MCP or egress header that references one (sections 8.1, 8.2 and 9.6).
+18. Apply every registry entry at the gateway as section 9.7 and Appendix A.5 require, with the login the host's registry login store holds for the registry, never delivering that login to the agent runtime, and report each registry entry for which the store holds no login.
+19. Record each value given to the gateway for a gateway consumer, with the consumer and its source, and never the value itself, and withhold the value when that record cannot be written.
 
 A tool that reads a definition without meeting these requirements — a developer tool that runs the agent locally with no gateway, for instance — is not a conforming resolver, however faithfully it reads the definition. What such a tool does with a definition is its own specification's concern.
 
@@ -1061,7 +894,7 @@ A tool that reads a definition without meeting these requirements — a develope
 
 ## Appendix A. Gateway and Resolver Mechanics
 
-This appendix is normative. It states what a resolver does, at its gateway and around the processes it launches, to honour the declarations of sections 6, 8 and 9. Section 12 requires it of a conforming resolver. The body of this specification says what a definition declares and when it is valid; this appendix says how a resolver makes those declarations hold.
+This appendix is normative. It states what a resolver does, at its gateway and around the processes it launches, to honour the declarations of sections 6, 8 and 9. Section 11 requires it of a conforming resolver. The body of this specification says what a definition declares and when it is valid; this appendix says how a resolver makes those declarations hold.
 
 ### A.1 Withholding
 
@@ -1083,7 +916,7 @@ Several names in one entry are spellings of the same credential.
 
 ### A.3 Local MCP servers
 
-Every successfully resolved need with `target: env`, other than one withheld under section 6.5, MUST be present in a local MCP server's environment when it is launched. Every successfully resolved need with `target: file` MUST be readable by the server at its declared `mountPath`. A resolver that runs the server inside the agent runtime's process boundary satisfies both by inheritance: the server inherits the runtime environment and sees the runtime's filesystem. A resolver that isolates the server from the agent runtime MUST deliver both explicitly, writing file-target needs at the same `mountPath` inside the server's filesystem, under the same non-persistence requirement as section 6.1. Optional needs that fail to resolve are skipped (section 10.6) and impose no delivery requirement.
+Every successfully resolved need with `target: env`, other than one withheld under section 6.5, MUST be present in a local MCP server's environment when it is launched. Every successfully resolved need with `target: file` MUST be readable by the server at its declared `mountPath`. A resolver that runs the server inside the agent runtime's process boundary satisfies both by inheritance: the server inherits the runtime environment and sees the runtime's filesystem. A resolver that isolates the server from the agent runtime MUST deliver both explicitly, writing file-target needs at the same `mountPath` inside the server's filesystem, under the same non-persistence requirement as section 6.1. Optional needs that fail to resolve are skipped (section 6.6) and impose no delivery requirement.
 
 Where a module declares `tools`, the resolver MUST NOT make any other tool of that server reachable, and SHOULD omit them from what the framework discovers rather than merely refusing the invocation. A tool the agent cannot see is one it cannot attempt, and an agent that can enumerate a withheld tool learns what the server exposes.
 
@@ -1110,6 +943,6 @@ A registry is more than one host. A client reaches the registry host, the token 
 
 For each registry entry in the resolved set, the gateway MUST sign in to the registry host and its token service with the store's login, as HTTP Basic (RFC 7617), on every request that carries no `Authorization` of its own, and MUST leave a request's own `Authorization` unchanged: a client signs in once at the token service and then presents the bearer token it was issued. The login MUST NOT be sent to a content host, whose redirect carries its own authorization. The resolver MAY obtain the login from the store again during the run, since a credential helper can issue one that expires.
 
-The login MUST NOT reach the agent runtime. The resolver MUST NOT deliver it as an environment variable, as a file or as an entry in the agent runtime's own registry login store, and that store MUST hold no login for the entry's hosts. The audit log records the registry as `oci://<registry>` and never the login (section 12).
+The login MUST NOT reach the agent runtime. The resolver MUST NOT deliver it as an environment variable, as a file or as an entry in the agent runtime's own registry login store, and that store MUST hold no login for the entry's hosts. The audit log records the registry as `oci://<registry>` and never the login (section 11).
 
 Where the store holds no login for the registry, the resolver MUST report it at agent start and the gateway sets no `Authorization`: the agent reaches the registry as an anonymous client, and public content stays reachable. ---
