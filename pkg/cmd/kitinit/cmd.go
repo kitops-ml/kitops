@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
+	"github.com/kitops-ml/kitops/pkg/lib/agent"
 	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/external/hf"
 	kfgen "github.com/kitops-ml/kitops/pkg/lib/kitfile/generate"
@@ -81,6 +82,9 @@ type initOptions struct {
 	token               string
 	outputPath          string
 	depth               int
+	ignoreAgent         bool
+	agentGlobals        bool
+	agentFramework      string
 	// Computed fields (remote only)
 	repo     string
 	repoType hf.RepositoryType
@@ -107,6 +111,9 @@ func InitCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.token, "token", "", "Auth token for remote repository (requires --remote)")
 	cmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "Output path for generated Kitfile ('-' writes to stdout; default: Kitfile in directory for local, stdout for remote)")
 	cmd.Flags().IntVar(&opts.depth, "depth", 0, "Maximum directory depth to process when generating a Kitfile. Setting to a negative number processes all files individually")
+	cmd.Flags().BoolVar(&opts.ignoreAgent, "ignore-agent", false, "Ignore agent configuration and classify the directory as an ordinary ModelKit")
+	cmd.Flags().BoolVar(&opts.agentGlobals, "agent-globals", false, "Import user-scope MCP servers as project configuration")
+	cmd.Flags().StringVar(&opts.agentFramework, "agent-framework", "", fmt.Sprintf("Agent framework to import for, overriding detection (one of: %s)", strings.Join(agent.FrameworkNames(), ", ")))
 	cmd.Flags().SortFlags = false
 	return cmd
 }
@@ -119,6 +126,12 @@ func runCommand(opts *initOptions) func(*cobra.Command, []string) error {
 			}
 			if cmd.Flags().Changed("token") {
 				return output.Fatalf("Invalid arguments: --token requires --remote")
+			}
+		} else {
+			for _, flag := range []string{"ignore-agent", "agent-globals", "agent-framework"} {
+				if cmd.Flags().Changed(flag) {
+					return output.Fatalf("Invalid arguments: --%s cannot be used with --remote", flag)
+				}
 			}
 		}
 
@@ -146,18 +159,48 @@ func runCommand(opts *initOptions) func(*cobra.Command, []string) error {
 }
 
 func runInit(dirContents *kfgen.DirectoryListing, opts *initOptions) error {
+	agentResult, err := importAgent(opts)
+	if err != nil {
+		return output.Fatalf("Error reading agent configuration: %s", err)
+	}
+
+	if handled, err := addAgentToExistingKitfile(agentResult, opts); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+
 	modelPackage := buildPackageFromRepo(opts.repo, opts.modelkitName, opts.modelkitDescription, opts.modelkitAuthor)
 
-	kitfile, err := kfgen.GenerateKitfile(dirContents, modelPackage, opts.depth)
-	if err != nil {
-		return output.Fatalf("Error generating Kitfile: %s", err)
+	var kitfile *artifact.KitFile
+	if agentResult.Found() {
+		kitfile = kfgen.GenerateAgentKitfile(kfgen.AgentContent{
+			Definition: agentResult.DefinitionPath,
+			Prompts:    agentResult.PromptPaths,
+			Rules:      agentResult.RulePaths,
+			Skills:     agentResult.SkillPaths,
+			Bundles:    agentResult.BundlePaths,
+		}, modelPackage, opts.path)
+		kitfile.Agent = agentResult.Agent
+		agentResult.AddContentModules(kitfile)
+	} else {
+		var err error
+		kitfile, err = kfgen.GenerateKitfile(dirContents, modelPackage, opts.depth)
+		if err != nil {
+			return output.Fatalf("Error generating Kitfile: %s", err)
+		}
 	}
+
 	bytes, err := kitfile.MarshalToYAML()
 	if err != nil {
 		return output.Fatalf("Error formatting Kitfile: %s", err)
 	}
 
-	return writeKitfile(bytes, opts)
+	if err := writeKitfile(bytes, opts); err != nil {
+		return err
+	}
+	printAgentReport(agentResult)
+	return nil
 }
 
 func writeKitfile(bytes []byte, opts *initOptions) error {

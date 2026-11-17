@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -181,6 +182,16 @@ func saveKitfileLayers(ctx context.Context, target oras.Target, kitfile *artifac
 		if err != nil {
 			return nil, nil, err
 		}
+		isDefinition, err := isAgentDefinitionLayer(code.Path)
+		if err != nil {
+			return nil, nil, err
+		}
+		if isDefinition {
+			if layer.Annotations == nil {
+				layer.Annotations = map[string]string{}
+			}
+			layer.Annotations[constants.LayerSubtypeAnnotation] = constants.LayerSubtypeAgent
+		}
 		layers = append(layers, layer)
 		diffIDs = append(diffIDs, digest.Digest(layerInfo.DiffId))
 		kitfile.Code[idx].LayerInfo = layerInfo
@@ -274,6 +285,30 @@ func saveKitfileLayers(ctx context.Context, target oras.Target, kitfile *artifac
 	}
 
 	return layers, diffIDs, nil
+}
+
+// isAgentDefinitionLayer reports whether a code entry's path is a regular file
+// by one of the Agent Definition file names holding an AgentDefinition
+// document, so that its layer holds the definition and nothing else. A
+// directory containing a definition is ordinary code.
+func isAgentDefinitionLayer(path string) (bool, error) {
+	if !artifact.IsAgentDefinitionFileName(filepath.Base(path)) {
+		return false, nil
+	}
+	info, err := os.Lstat(path)
+	if err != nil || !info.Mode().IsRegular() {
+		return false, nil
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return false, fmt.Errorf("failed to read %s: %w", path, err)
+	}
+	defer file.Close()
+	isDefinition, _, err := artifact.DetectAgentDefinition(file)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse %s: %w", path, err)
+	}
+	return isDefinition, nil
 }
 
 func saveContentLayer(ctx context.Context, target oras.Target, path string, mediaType mediatype.MediaType, ignore ignore.Paths) (ocispec.Descriptor, *artifact.LayerInfo, error) {

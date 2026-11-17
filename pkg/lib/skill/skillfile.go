@@ -39,6 +39,9 @@ type TarEntry struct {
 	Content []byte
 }
 
+// FileName is the file whose presence marks a directory as a skill.
+const FileName = "SKILL.md"
+
 // ReadSkillLayer reads all entries from a tar reader, buffers them, and
 // determines whether the layer contains a SKILL.md file. Returns the buffered
 // entries, whether it qualifies as a skill, and the frontmatter "name" if
