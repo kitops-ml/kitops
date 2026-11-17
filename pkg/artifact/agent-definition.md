@@ -194,7 +194,7 @@ spec:
 
 Names MUST be unique within `spec.needs` and MUST match `[A-Za-z_][A-Za-z0-9_]*` so they are safe to use as environment variable names.
 
-When `target` is `env`, the resolved value is delivered to the agent runtime as an environment variable with the same name as `name`. When `target` is `file`, the resolved value is written as a file at `mountPath` inside the agent runtime, on a tmpfs that does not persist across runs. The resolver's output for file targets MUST be raw bytes, not a host path.
+When `target` is `env`, the resolved value is delivered to the agent runtime as an environment variable with the same name as `name`. When `target` is `file`, the resolved value is written as a file at `mountPath` inside the agent runtime, on a tmpfs that does not persist across runs. The resolver's output for file targets MUST be raw bytes, not a host path. `from` chooses where the value comes from and `target` how it is delivered, independently of each other: `envFrom` with `target: file` writes the variable's value as the file's bytes.
 
 ### 6.2 Resolvers
 
@@ -389,7 +389,7 @@ spec:
       credential: ANTHROPIC_KEY
 ```
 
-`credential` is the name of one need. The gateway applies the need's value to every request it sends to the provider, in the provider's API-key scheme. The need is withheld from the agent (section 6.5).
+`credential` is the name of one need. The gateway applies the need's value to every request it sends to the provider, in the provider's API-key scheme. The need is withheld from the agent (section 6.5). It takes the bare name because it refers to exactly one need; a header value is a template that may embed several needs, so it uses the `${needs.NAME}` form (section 8.2).
 
 Constraints:
 
@@ -408,7 +408,7 @@ The **provider table** is the resolver's: the LLM providers whose credential its
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Unique identifier within `spec.includes` |
-| `type` | Yes | `llm` |
+| `type` | Yes | The literal `llm` |
 | `source.model` | If remote | Provider and model identifier (e.g., `anthropic/claude-opus-4-5`). The provider prefix indicates the API format. |
 | `source.endpoint` | No | URL override for the LLM API. Required for custom deployments (Azure, self-hosted), optional for well-known providers. |
 | `source.modelkit` | If local | ModelKit reference to a servable model artifact, or `./name` for this ModelKit's `model` (section 7). |
@@ -483,7 +483,7 @@ A header value MAY contain one or more `${needs.NAME}` references. `NAME` MUST m
 
 - A header value that references a need with `target: file` MUST be rejected — file-target needs deliver bytes to a path, not strings.
 - A header that references an optional need which failed to resolve MUST be dropped: the gateway does not send it, and does not substitute the empty string. The module's other headers are still sent.
-- Any `${…}` token that is not of the form `${needs.NAME}` for a known need MUST be rejected at validation.
+- Any `${...}` token that is not of the form `${needs.NAME}` for a known need MUST be rejected at validation.
 - A header value MUST be a valid HTTP field value. A value containing a control character, such as CR or LF, MUST be rejected at validation, so that a definition cannot split one header into two or carry a value no request can send.
 
 A need a remote MCP module's headers reference is withheld, and the agent runtime and local MCP servers receive nothing in its place (section 6.5). An agent that also uses the same value itself, against a host it calls directly, declares an object entry in `spec.egress` for that host (section 9.3). The resolver reports each such need at agent start, as section 6.5 requires.
@@ -511,7 +511,7 @@ Constraints:
 - An absent `tools` field means every tool the server exposes. This is the default, so a definition written before this field behaves as it did.
 - An empty list MUST be rejected at validation. Omitting the field is how a module declares no restriction, so an empty list can only be an authoring mistake, and reading it as "no tools" would strand the module silently.
 - `tools` is permitted on MCP modules only, local and remote alike. It MUST be rejected on any other module type.
-- Entries are not substitutable: a `${…}` token in a tool name MUST be rejected at validation.
+- Entries are not substitutable: a `${...}` token in a tool name MUST be rejected at validation.
 - The resolver SHOULD reject a duplicate name rather than deduplicating it silently.
 
 Where a module declares `tools`, the resolver MUST NOT make any other tool of that server reachable (Appendix A.3).
@@ -521,7 +521,7 @@ Where a module declares `tools`, the resolver MUST NOT make any other tool of th
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Unique identifier within `spec.includes` |
-| `type` | Yes | `mcp` |
+| `type` | Yes | The literal `mcp` |
 | `source.modelkit` | If local | ModelKit reference containing the MCP server, or `./name` for a bundle in this ModelKit (section 7) |
 | `source.endpoint` | If remote | URL of the remote MCP server |
 | `transport` | If remote | `http` or `sse` |
@@ -549,7 +549,7 @@ Declares a policy the resolver MUST enforce. The policy ModelKit itself declares
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Unique identifier within `spec.includes` |
-| `type` | Yes | `policy` |
+| `type` | Yes | The literal `policy` |
 | `source.modelkit` | Yes | ModelKit reference to the policy artifact |
 
 ---
@@ -592,7 +592,7 @@ A skill packed in `prompts:` that no module names is still mounted with the Mode
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Unique identifier within `spec.includes` |
-| `type` | Yes | `skill` |
+| `type` | Yes | The literal `skill` |
 | `source.modelkit` | Yes | ModelKit reference to the skill artifact, or `./name` for a skill in this ModelKit's `prompts` (section 7) |
 
 ---
@@ -665,7 +665,7 @@ Constraints:
 - `host` MUST be an exact DNS name under the rules of section 9.2. A wildcard MUST be rejected, because headers applied to every name under a suffix go to whoever registers one. The `tcp://` form MUST be rejected, because the gateway terminates only on port 443. An address MUST be rejected.
 - An object entry without `headers` MUST be treated exactly as the string entry for its `host`, including the wildcard and `tcp://` forms of section 9.2; the constraints below apply only to an entry that carries `headers`.
 - Each header name MUST be a valid HTTP field name. It MUST NOT be `Host`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Keep-Alive`, `TE`, `Trailer` or `Upgrade`, and MUST NOT begin with `Proxy-`, compared without regard to case. The gateway owns those.
-- A header value follows the rules for header interpolation in section 8.2: `NAME` MUST match a need declared or inherited in `spec.needs`, a reference to a need with `target: file` MUST be rejected, and any other `${…}` token MUST be rejected. The value is substituted in the gateway at request time, and the agent never receives it (section 6.5).
+- A header value follows the rules for header interpolation in section 8.2: `NAME` MUST match a need declared or inherited in `spec.needs`, a reference to a need with `target: file` MUST be rejected, and any other `${...}` token MUST be rejected. The value is substituted in the gateway at request time, and the agent never receives it (section 6.5).
 - A header value MAY instead be a mapping with the single key `basic`, whose value is a string template under the same rules. The gateway renders the template, encodes the result in base64 and sends `Basic`, a space, and the encoding. A credential a service expects as a Basic user-password pair (RFC 7617) is written `basic: "user:${needs.NAME}"`, and the need holds the raw secret. A mapping with any other key, or with more than one key, MUST be rejected, as MUST a `basic` template that is empty.
 - An empty or null value MUST be rejected.
 - A host MUST appear in at most one object entry per document.
