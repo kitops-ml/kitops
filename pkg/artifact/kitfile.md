@@ -81,9 +81,7 @@ This section provides general information about the AI/ML project.
 
 - **Description**: The Agent Definition of an agent ModelKit, in its `agent:` block form. The block carries the `spec` of an Agent Definition as defined in the Agent Definition Specification (`pkg/artifact/agent-definition.md`); `apiVersion`, `kind` and `metadata` are omitted, and `metadata.name` is the package's `name`. The block is validated when the Kitfile is loaded and is stored in the ModelKit's config. When a ModelKit carries both an `agent` block and a definition file in its `code` layer, the block is the definition and the file is ignored (Agent Definition Specification §4.3).
 - **Type**: Object
-  - `framework`: The framework the agent runs under. Required unless `base` is given.
-  - `base`: A base agent to compose from.
-    - `modelkit`: Reference to the base agent ModelKit.
+  - `framework`: The framework the agent runs under. Required.
   - `needs`: List of runtime values the agent consumes (Agent Definition Specification §6).
     - `name`: Required; unique within `needs`, and a valid environment variable name.
     - `target`: `env` (default) or `file`.

@@ -114,10 +114,10 @@ func TestAgentBlockValidationErrors(t *testing.T) {
 		describe string
 	}{
 		{
-			name:     "no framework and no base",
+			name:     "no framework",
 			agent:    "agent:\n  needs: []\n",
 			wantErr:  "must specify a framework",
-			describe: "a root definition has to name a framework",
+			describe: "a definition has to name a framework",
 		},
 		{
 			name:     "invalid need name",
@@ -264,10 +264,10 @@ func TestAgentBlockValidationErrors(t *testing.T) {
 			describe: "names must be unique",
 		},
 		{
-			name:     "removal entry without a base",
+			name:     "module without a type",
 			agent:    "agent:\n  framework: claude-code\n  includes:\n    - name: github\n",
 			wantErr:  "must have a type",
-			describe: "removing an inherited module needs something to inherit from",
+			describe: "every module declares what it is",
 		},
 	}
 
@@ -281,23 +281,6 @@ func TestAgentBlockValidationErrors(t *testing.T) {
 				t.Errorf("error %q does not mention %q (%s)", err, tt.wantErr, tt.describe)
 			}
 		})
-	}
-}
-
-func TestAgentRemovalEntryWithBase(t *testing.T) {
-	// A name-only entry is how a derived definition drops an inherited module.
-	_, err := loadKitfile(t, `
-manifestVersion: 1.0.0
-package:
-  name: derived
-agent:
-  base:
-    modelkit: registry.example.com/org/base-agent:v1
-  includes:
-    - name: github
-`)
-	if err != nil {
-		t.Fatalf("expected a valid composed definition, got: %s", err)
 	}
 }
 

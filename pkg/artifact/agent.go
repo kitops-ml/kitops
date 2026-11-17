@@ -28,14 +28,8 @@ import (
 // supplies them (metadata.name comes from package.name).
 type Agent struct {
 	Framework string        `json:"framework,omitempty" yaml:"framework,omitempty"`
-	Base      *AgentBase    `json:"base,omitempty" yaml:"base,omitempty"`
 	Needs     []AgentNeed   `json:"needs,omitempty" yaml:"needs,omitempty"`
 	Includes  []AgentModule `json:"includes,omitempty" yaml:"includes,omitempty"`
-}
-
-// AgentBase references another agent ModelKit to compose from.
-type AgentBase struct {
-	ModelKit string `json:"modelkit,omitempty" yaml:"modelkit,omitempty"`
 }
 
 // AgentNeed declares a runtime value the agent consumes, bound to a resolver.
@@ -71,8 +65,7 @@ type AgentOIDCFrom struct {
 	Audience string `json:"audience,omitempty" yaml:"audience,omitempty"`
 }
 
-// AgentModule is one entry in the agent's includes list. A module with only a
-// name is a removal entry, meaningful when this definition composes from a base.
+// AgentModule is one entry in the agent's includes list.
 type AgentModule struct {
 	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Type      string            `json:"type,omitempty" yaml:"type,omitempty"`
@@ -137,11 +130,8 @@ func (kf *KitFile) validateAgent(addErr func(format string, a ...any)) {
 		return
 	}
 
-	if agent.Base != nil && agent.Base.ModelKit == "" {
-		addErr("agent base must specify a modelkit reference")
-	}
-	if agent.Framework == "" && agent.Base == nil {
-		addErr("agent must specify a framework, or a base to inherit one from")
+	if agent.Framework == "" {
+		addErr("agent must specify a framework")
 	}
 
 	needNames := map[string]bool{}
@@ -192,11 +182,7 @@ func (kf *KitFile) validateAgent(addErr func(format string, a ...any)) {
 		moduleNames[module.Name] = true
 
 		if module.Type == "" {
-			if agent.Base == nil {
-				addErr("agent module %s must have a type", module.Name)
-			} else if module.Source != nil || module.Transport != "" || len(module.Headers) > 0 || module.Config != nil {
-				addErr("agent module %s has no type but declares other fields: a name-only entry removes an inherited module", module.Name)
-			}
+			addErr("agent module %s must have a type", module.Name)
 			continue
 		}
 
