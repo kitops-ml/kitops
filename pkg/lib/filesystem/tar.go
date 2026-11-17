@@ -25,7 +25,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/kitops-ml/kitops/pkg/artifact"
@@ -196,7 +195,7 @@ func writeLayerToTar(basePath string, ignorePaths ignore.Paths, tarWriter *outpu
 			plog.Logf(output.LogLevelWarn, "Cannot compare directories %s and %s, skipping path", a, b)
 			return false
 		}
-		if strings.Contains(aToB, "..") && strings.Contains(bToA, "..") {
+		if !filepath.IsLocal(aToB) && !filepath.IsLocal(bToA) {
 			return false
 		}
 		return true
