@@ -22,7 +22,7 @@ In addition, this image can be used to verify the signature on a ModelKit in a r
   * `$COSIGN_CERT_IDENTITY` should contain the identity of the expected signer within the OIDC issuer
   * `$COSIGN_CERT_OIDC_ISSUER` should contain the URL to the expected OIDC issuer used to sign the modelkit (e.g. `https://github.com/login/oauth`)
 
-  For additional documentation how verifying ModelKit signatures works, see the [`cosign` documentation](https://docs.sigstore.dev/verifying/verify/)
+  For additional documentation how verifying ModelKit signatures works, see the [`cosign` documentation](https://docs.sigstore.dev/cosign/verifying/verify/)
 
 ## Example
 

@@ -399,7 +399,7 @@ type Kitfile = {
 
 | Property | Type | Description |
 |---|---|---|
-| `manifestVersion` | `string` | Kitfile schema version. See the [KitOps Kitfile spec](https://kitops.org/docs/kitfile/kf-spec.html) for the authoritative value. |
+| `manifestVersion` | `string` | Kitfile schema version. See the [KitOps Kitfile spec](https://kitops.org/docs/kitfile/format/) for the authoritative value. |
 | `package` | [`Package`](#package) | Package-level metadata. |
 | `model` | [`Model`](#model) | Model artifact definition. |
 | `code` | [`Code[]`](#code) | Source code artifact definitions. |
