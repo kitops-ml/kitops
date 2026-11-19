@@ -70,53 +70,95 @@ func walkRepoTree(ctx context.Context, client *http.Client, token string, repoBa
 	curUrl := *repoBaseUrl
 	curUrl.Path = path.Join(curUrl.Path, subDir)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, curUrl.String(), nil)
+	dirListing := &kfgen.DirectoryListing{
+		Name: path.Base(subDir),
+		Path: subDir,
+	}
+	// The tree API returns at most 1000 entries per request, so follow the next page links until there are none left
+	for pageUrl := &curUrl; pageUrl != nil; {
+		repoTree, nextUrl, err := fetchTreePage(ctx, client, token, pageUrl)
+		if err != nil {
+			return nil, err
+		}
+		for _, elem := range *repoTree {
+			switch elem.Type {
+			case "directory":
+				subDirListing, err := walkRepoTree(ctx, client, token, repoBaseUrl, elem.Path)
+				if err != nil {
+					return nil, err
+				}
+				dirListing.Subdirs = append(dirListing.Subdirs, *subDirListing)
+			case "file":
+				name := path.Base(elem.Path)
+				if name == ".gitignore" || name == ".gitattributes" {
+					continue
+				}
+				dirListing.Files = append(dirListing.Files, kfgen.FileListing{
+					Name: name,
+					Path: elem.Path,
+					Size: elem.Size,
+				})
+			default:
+				return nil, fmt.Errorf("unknown type in repository tree: %s", elem.Type)
+			}
+		}
+		pageUrl = nextUrl
+	}
+
+	return dirListing, nil
+}
+
+// fetchTreePage requests one page of the repository tree and returns it along with the URL of the next page, or nil
+// if this is the last page.
+func fetchTreePage(ctx context.Context, client *http.Client, token string, pageUrl *url.URL) (*hfTreeResponse, *url.URL, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pageUrl.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
+		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
 	if token != "" {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error calling API: %w", err)
+		return nil, nil, fmt.Errorf("error calling API: %w", err)
 	}
 	repoTree, err := processTreeResponse(resp)
 	if closeErr := resp.Body.Close(); closeErr != nil {
 		output.Logf(output.LogLevelWarn, "failed to close response body: %s", closeErr)
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	nextUrl, err := nextPageUrl(pageUrl, resp.Header)
+	if err != nil {
+		return nil, nil, err
+	}
+	return repoTree, nextUrl, nil
+}
 
-	dirListing := &kfgen.DirectoryListing{
-		Name: path.Base(subDir),
-		Path: subDir,
-	}
-	for _, elem := range *repoTree {
-		switch elem.Type {
-		case "directory":
-			subDirListing, err := walkRepoTree(ctx, client, token, repoBaseUrl, elem.Path)
-			if err != nil {
-				return nil, err
-			}
-			dirListing.Subdirs = append(dirListing.Subdirs, *subDirListing)
-		case "file":
-			name := path.Base(elem.Path)
-			if name == ".gitignore" || name == ".gitattributes" {
+// nextPageUrl returns the target of the rel="next" entry in the Link header, or nil if there isn't one. The next page
+// must be on the same host, since the request carries the auth token.
+func nextPageUrl(curUrl *url.URL, header http.Header) (*url.URL, error) {
+	for _, value := range header.Values("Link") {
+		for _, link := range strings.Split(value, ",") {
+			target, params, ok := strings.Cut(link, ">")
+			if !ok || !strings.Contains(params, `rel="next"`) {
 				continue
 			}
-			dirListing.Files = append(dirListing.Files, kfgen.FileListing{
-				Name: name,
-				Path: elem.Path,
-				Size: elem.Size,
-			})
-		default:
-			return nil, fmt.Errorf("unknown type in repository tree: %s", elem.Type)
+			nextUrl, err := curUrl.Parse(strings.TrimLeft(strings.TrimSpace(target), "<"))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse next page URL: %w", err)
+			}
+			if nextUrl.Scheme != curUrl.Scheme || nextUrl.Host != curUrl.Host {
+				return nil, fmt.Errorf("next page URL %s is not on %s", nextUrl.Redacted(), curUrl.Host)
+			}
+			if nextUrl.String() == curUrl.String() {
+				return nil, fmt.Errorf("next page URL is the same as the current page")
+			}
+			return nextUrl, nil
 		}
 	}
-
-	return dirListing, nil
+	return nil, nil
 }
 
 func processTreeResponse(resp *http.Response) (*hfTreeResponse, error) {
