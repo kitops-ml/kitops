@@ -20,8 +20,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
+	"github.com/kitops-ml/kitops/pkg/lib/constants"
 	"github.com/kitops-ml/kitops/pkg/lib/constants/mediatype"
 
 	"github.com/opencontainers/go-digest"
@@ -229,4 +236,158 @@ func TestDeleteIndexKeepsBlobSharedWithOtherRepository(t *testing.T) {
 
 	_, err = getManifest(t, repoB, indexDesc)
 	assert.NoError(t, err, "the other repository's index must still be readable")
+}
+
+func TestIndexSaveReplacesFile(t *testing.T) {
+	for _, tags := range []bool{false, true} {
+		name := "manifests"
+		if tags {
+			name = "tags"
+		}
+		t.Run(name, func(t *testing.T) {
+			repo := testRepo(t).(*localRepo)
+			desc := pushModelKit(t, repo, "v1", "first layer")
+			indexPath := repo.localIndex.indexPath
+			if tags {
+				indexPath = repo.localIndex.modelTags.tagsIndexPath
+			}
+			original, err := os.ReadFile(indexPath)
+			require.NoError(t, err)
+			reader, err := openIndex(indexPath)
+			require.NoError(t, err)
+			defer reader.Close()
+			if tags {
+				require.NoError(t, repo.Tag(context.Background(), desc, "v2"))
+			} else {
+				pushModelKit(t, repo, "v2", "second layer")
+			}
+			previous, err := io.ReadAll(reader)
+			require.NoError(t, err)
+			require.Equal(t, string(original), string(previous), "an open reader must retain the previous complete index")
+			current, err := os.ReadFile(indexPath)
+			require.NoError(t, err)
+			require.True(t, json.Valid(current))
+			require.NotEqual(t, string(original), string(current))
+		})
+	}
+}
+
+func TestWriteIndexFilePreservesPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix file permissions")
+	}
+	path := filepath.Join(t.TempDir(), "index.json")
+	require.NoError(t, os.WriteFile(path, []byte(`{"old":true}`), 0600))
+	require.NoError(t, os.Chmod(path, 0640))
+	require.NoError(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0640), info.Mode().Perm())
+}
+
+func TestWriteIndexFileCleansUpAfterReplaceFailure(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "index.json")
+	require.NoError(t, os.Mkdir(path, 0755))
+	marker := filepath.Join(path, "keep")
+	require.NoError(t, os.WriteFile(marker, []byte("original"), 0600))
+	require.Error(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	data, err := os.ReadFile(marker)
+	require.NoError(t, err)
+	require.Equal(t, "original", string(data))
+	entries, err := os.ReadDir(directory)
+	require.NoError(t, err)
+	require.Len(t, entries, 1, "failed replacement must not leave a temporary file")
+}
+
+func TestWriteIndexFilePreservesACL(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("macOS ACL")
+	}
+	path := filepath.Join(t.TempDir(), "index.json")
+	require.NoError(t, os.WriteFile(path, []byte(`{"old":true}`), 0644))
+	output, err := exec.Command("chmod", "+a", "everyone deny read", path).CombinedOutput()
+	require.NoError(t, err, string(output))
+	t.Cleanup(func() { _ = exec.Command("chmod", "-N", path).Run() })
+	_, err = os.ReadFile(path)
+	require.Error(t, err)
+	require.NoError(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	_, err = os.ReadFile(path)
+	require.Error(t, err, "replacement must preserve the deny-read ACL")
+	output, err = exec.Command("ls", "-le", path).CombinedOutput()
+	require.NoError(t, err)
+	require.True(t, strings.Contains(string(output), "everyone deny read"))
+}
+
+func TestWriteIndexFileDoesNotInheritNewACL(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("macOS ACL")
+	}
+	directory := t.TempDir()
+	path := filepath.Join(directory, "index.json")
+	require.NoError(t, os.WriteFile(path, []byte(`{"old":true}`), 0600))
+	output, err := exec.Command("chmod", "+a", "everyone deny read,file_inherit", directory).CombinedOutput()
+	require.NoError(t, err, string(output))
+	t.Cleanup(func() { _ = exec.Command("chmod", "-RN", directory).Run() })
+	require.NoError(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	data, err := os.ReadFile(path)
+	require.NoError(t, err, "replacement must not inherit an ACL absent from the original")
+	require.Equal(t, `{"new":true}`, string(data))
+}
+
+func TestWriteIndexFileWithLongRepositoryName(t *testing.T) {
+	path := constants.IndexJsonPathForRepo(t.TempDir(), "registry.example/"+strings.Repeat("a", 148))
+	original := []byte(`{"old":true}`)
+	updated := []byte(`{"new":true}`)
+	require.NoError(t, os.WriteFile(path, original, 0600))
+	require.NoError(t, writeIndexFile(path, updated))
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, updated, got)
+}
+
+func TestCreatePrivateIndexFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix file permissions")
+	}
+	path := filepath.Join(t.TempDir(), "staging")
+	file, err := createPrivateIndexFile(path)
+	require.NoError(t, err)
+	defer file.Close()
+	info, err := file.Stat()
+	require.NoError(t, err)
+	require.Zero(t, info.Mode().Perm()&0077, "staging must not grant access to other users")
+}
+
+func TestCreatePrivateIndexFileDoesNotInheritACL(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("macOS ACL")
+	}
+	directory := t.TempDir()
+	output, err := exec.Command("chmod", "+a", "everyone allow read,file_inherit", directory).CombinedOutput()
+	require.NoError(t, err, string(output))
+	t.Cleanup(func() { _ = exec.Command("chmod", "-RN", directory).Run() })
+	path := filepath.Join(directory, "staging")
+	file, err := createPrivateIndexFile(path)
+	require.NoError(t, err)
+	defer file.Close()
+	output, err = exec.Command("ls", "-le", path).CombinedOutput()
+	require.NoError(t, err)
+	require.NotContains(t, string(output), "everyone", "staging must not inherit public read access")
+}
+
+func TestWriteNewIndexFilePreservesDefaultPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix file permissions")
+	}
+	directory := t.TempDir()
+	baseline := filepath.Join(directory, "baseline")
+	require.NoError(t, os.WriteFile(baseline, nil, 0666))
+	want, err := os.Stat(baseline)
+	require.NoError(t, err)
+	path := filepath.Join(directory, "index.json")
+	require.NoError(t, writeIndexFile(path, []byte(`{"new":true}`)))
+	got, err := os.Stat(path)
+	require.NoError(t, err)
+	require.Equal(t, want.Mode().Perm(), got.Mode().Perm())
 }
