@@ -1,0 +1,5 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  prompts:
+    - path: /tmp/skills/personal/
+errRegexp: "absolute paths are not supported in a Kitfile"

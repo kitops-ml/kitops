@@ -1,0 +1,6 @@
+kitfile: |
+  manifestVersion: 1.0.0
+  code:
+    - path: src/../lib
+  prompts:
+    - path: ./skills/personal/
