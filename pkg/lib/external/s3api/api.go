@@ -18,8 +18,10 @@ package s3api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/url"
 	"os"
 	"strings"
@@ -101,7 +103,10 @@ func VerifyObjectExists(ctx context.Context, client S3ClientAPI, ref *S3ObjectRe
 	return nil
 }
 
-func DownloadObject(ctx context.Context, client S3ClientAPI, ref *S3ObjectReference, outputPath string) error {
+// DownloadObject downloads the object to outputPath. The object is written to a temporary file next to outputPath
+// first and only moved into place once the download is complete, so a failed download doesn't leave a partial file
+// behind or replace an existing one.
+func DownloadObject(ctx context.Context, client S3ClientAPI, ref *S3ObjectReference, outputPath string) (err error) {
 	obj, err := client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket:    &ref.Bucket,
 		Key:       &ref.Key,
@@ -113,13 +118,27 @@ func DownloadObject(ctx context.Context, client S3ClientAPI, ref *S3ObjectRefere
 	}
 	defer obj.Body.Close()
 
-	outfile, err := os.Create(outputPath)
+	partialPath := outputPath + ".partial"
+	outfile, err := os.Create(partialPath)
 	if err != nil {
-		return fmt.Errorf("failed to create file %s: %w", outputPath, err)
+		return fmt.Errorf("failed to create file %s: %w", partialPath, err)
 	}
-	defer outfile.Close()
+	defer func() {
+		if err != nil {
+			outfile.Close()
+			if removeErr := os.Remove(partialPath); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+				output.Logf(output.LogLevelWarn, "Failed to remove partial file %s: %s", partialPath, removeErr)
+			}
+		}
+	}()
 	if _, err := io.Copy(outfile, obj.Body); err != nil {
 		return fmt.Errorf("failed to write file %s: %w", outputPath, err)
+	}
+	if err := outfile.Close(); err != nil {
+		return fmt.Errorf("failed to write file %s: %w", outputPath, err)
+	}
+	if err := os.Rename(partialPath, outputPath); err != nil {
+		return fmt.Errorf("failed to move downloaded file to %s: %w", outputPath, err)
 	}
 
 	return nil
