@@ -23,8 +23,10 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kitops-ml/kitops/pkg/lib/filesystem"
@@ -87,7 +89,7 @@ func DownloadFiles(
 			break
 		}
 
-		fileURL := fmt.Sprintf(resolveURLFmt, modelRepo, repoRef, f.Path)
+		fileURL := fmt.Sprintf(resolveURLFmt, modelRepo, repoRef, escapeFilePath(f.Path))
 		destPath := filepath.Join(destDir, f.Path)
 		errs.Go(func() error {
 			defer sem.Release(1)
@@ -105,6 +107,16 @@ func DownloadFiles(
 	progress.Done()
 
 	return nil
+}
+
+// escapeFilePath escapes each element of a repository file path for use in a URL, so that characters such as '#',
+// '?' and '%' in file names are sent as part of the path.
+func escapeFilePath(filePath string) string {
+	parts := strings.Split(filePath, "/")
+	for i, part := range parts {
+		parts[i] = url.PathEscape(part)
+	}
+	return strings.Join(parts, "/")
 }
 
 func downloadFile(
