@@ -18,11 +18,18 @@ package s3api
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseS3ObjectReference(t *testing.T) {
@@ -162,5 +169,62 @@ func TestVerifyObjectExists(t *testing.T) {
 			return
 		}
 		assert.Regexp(t, "missing ETag on object", err.Error(), "Should show useful message when missing ETag")
+	})
+}
+
+func TestDownloadObject(t *testing.T) {
+	testRef := &S3ObjectReference{
+		Bucket: "test-bucket",
+		Key:    "test-key",
+		Hash:   "test-hash",
+	}
+	clientWithBody := func(body io.Reader) *mockS3Client {
+		return &mockS3Client{
+			getFunc: func(_ context.Context, _ *s3.GetObjectInput, _ ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+				return &s3.GetObjectOutput{Body: io.NopCloser(body)}, nil
+			},
+		}
+	}
+	failingBody := func() io.Reader {
+		return io.MultiReader(strings.NewReader("partial data"), iotest.ErrReader(errors.New("connection reset")))
+	}
+	dirEntries := func(t *testing.T, dir string) []string {
+		entries, err := os.ReadDir(dir)
+		require.NoError(t, err)
+		var names []string
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		return names
+	}
+
+	t.Run("Writes file on success", func(t *testing.T) {
+		dir := t.TempDir()
+		outputPath := filepath.Join(dir, "data.csv")
+		err := DownloadObject(t.Context(), clientWithBody(strings.NewReader("full data")), testRef, outputPath)
+		require.NoError(t, err)
+		content, err := os.ReadFile(outputPath)
+		require.NoError(t, err)
+		assert.Equal(t, "full data", string(content))
+		assert.Equal(t, []string{"data.csv"}, dirEntries(t, dir), "should not leave other files behind")
+	})
+	t.Run("Does not leave a partial file when download fails", func(t *testing.T) {
+		dir := t.TempDir()
+		outputPath := filepath.Join(dir, "data.csv")
+		err := DownloadObject(t.Context(), clientWithBody(failingBody()), testRef, outputPath)
+		require.Error(t, err)
+		assert.Regexp(t, "connection reset", err.Error())
+		assert.Empty(t, dirEntries(t, dir), "should not leave a partial file behind")
+	})
+	t.Run("Keeps existing file when download fails", func(t *testing.T) {
+		dir := t.TempDir()
+		outputPath := filepath.Join(dir, "data.csv")
+		require.NoError(t, os.WriteFile(outputPath, []byte("old data"), 0644))
+		err := DownloadObject(t.Context(), clientWithBody(failingBody()), testRef, outputPath)
+		require.Error(t, err)
+		content, err := os.ReadFile(outputPath)
+		require.NoError(t, err)
+		assert.Equal(t, "old data", string(content), "existing file should not be changed")
+		assert.Equal(t, []string{"data.csv"}, dirEntries(t, dir), "should not leave other files behind")
 	})
 }
