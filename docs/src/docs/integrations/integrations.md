@@ -17,6 +17,7 @@ The KitOps community has built some great integrations:
 - Example workflows for [CI/CD platforms](../cicd.md)
 - Outputting ModelKits directly from [MLFlow](../mlflow.md)
 - Deploying to any [Kubernetes distribution](../k8s-init-container.md)
+- Sharing NVIDIA GPUs for ModelKit workloads with [HAMi](../hami.md)
 - Working with ML in [KServe](../kserve.md)
 - Building ML pipelines with [Kubeflow Pipeline components](../kubeflow.md)
 
@@ -109,3 +110,5 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 If you've used KitOps with a product or project we've missed, please [open an issue](https://github.com/jozu-ai/kitops/issues/new/choose) in our GitHub repository.
 
 For help please join our [Discord community](https://discord.gg/Tapeh8agYy).
+
+<!-- AGENT_MODIFIED: Human review required before merge -->
