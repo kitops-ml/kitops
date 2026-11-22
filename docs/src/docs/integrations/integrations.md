@@ -110,5 +110,3 @@ Thanks to its OCI-compatibility, KitOps works nearly any tool:
 If you've used KitOps with a product or project we've missed, please [open an issue](https://github.com/jozu-ai/kitops/issues/new/choose) in our GitHub repository.
 
 For help please join our [Discord community](https://discord.gg/Tapeh8agYy).
-
-<!-- AGENT_MODIFIED: Human review required before merge -->

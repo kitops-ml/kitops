@@ -62,5 +62,3 @@ The file check exits successfully if the weights are present and nonempty. The l
 To serve a model instead, use your inference image and point it at the unpacked files under `/modelkit`. Set the GPU memory request for that workload. For signature verification and other init container options, see [Deploying a ModelKit to Kubernetes](../k8s-init-container.md).
 
 When finished, delete the Pod with `kubectl delete -f hami-modelkit.yaml`.
-
-<!-- AGENT_MODIFIED: Human review required before merge -->
