@@ -172,6 +172,9 @@ func filterKitfile(config *artifact.KitFile, filter string) ([]byte, error) {
 		if value.Kind() == reflect.Ptr {
 			value = value.Elem()
 		}
+		if value.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("error filtering output: cannot find required node")
+		}
 		field := value.FieldByName(cases.Title(language.Und, cases.NoLower).String(str))
 		if !field.IsValid() {
 			return nil, fmt.Errorf("error filtering output: cannot find required node")
